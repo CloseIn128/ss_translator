@@ -17,6 +17,7 @@ export function useTask() {
 
 /** Log levels: debug | info | success | warning | error */
 const MAX_LOGS = 2000;
+let logIdCounter = 0;
 
 export function TaskProvider({ children }) {
   const [logs, setLogs] = useState([]);
@@ -29,7 +30,7 @@ export function TaskProvider({ children }) {
 
   const addLog = useCallback((level, message, source) => {
     const entry = {
-      id: Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      id: ++logIdCounter,
       timestamp: new Date(),
       level,   // 'debug' | 'info' | 'success' | 'warning' | 'error'
       message,

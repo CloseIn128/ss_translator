@@ -300,7 +300,9 @@ function registerIpcHandlers() {
   ipcMain.handle('app:notify', async (_, { title, body }) => {
     if (Notification.isSupported()) {
       new Notification({ title, body }).show();
+      return { success: true };
     }
+    return { success: false };
   });
 
   // ─── Unified keyword extraction (structural + AI with incremental updates) ───
