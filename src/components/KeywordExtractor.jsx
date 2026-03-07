@@ -7,10 +7,12 @@ import {
   RobotOutlined,
   TranslationOutlined,
 } from '@ant-design/icons';
+import { useTask } from './TaskContext';
 
 const api = window.electronAPI;
 
 export default function KeywordExtractor({ project, onUpdateGlossary, messageApi }) {
+  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
   const [keywords, setKeywords] = useState([]);
   const [extracting, setExtracting] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -42,6 +44,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
         }));
         keyCounterRef.current = counter + newItems.length;
         setKeywords(prev => [...prev, ...newItems]);
+        addLog('debug', `[${data.phase}] 发现 ${newItems.length} 个关键词`, '关键词提取');
       }
     });
     batchHandlerRef.current = handler;
@@ -66,11 +69,25 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       messageApi.warning('请先选择MOD文件夹');
       return;
     }
+
+    if (isTaskRunning) {
+      messageApi.warning('已有任务正在执行，请等待完成后再操作');
+      return;
+    }
+
+    const taskId = startTask('关键词提取');
+    if (!taskId) {
+      messageApi.warning('已有任务正在执行');
+      return;
+    }
+
     setExtracting(true);
     setKeywords([]);
     setSelectedRowKeys([]);
     keyCounterRef.current = 0;
     setExtractPhase('structure');
+    addLog('info', `开始提取关键词: ${targetPath}`, '关键词提取');
+    updateTaskProgress('结构提取中...');
 
     try {
       const result = await api.extractAllKeywords({
@@ -78,13 +95,19 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
         glossary: project?.glossary || [],
       });
       if (result?.success) {
-        messageApi.success(
-          `提取完成：结构提取 ${result.total.structure} 个，AI提取 ${result.total.ai} 个`
-        );
+        const msg = `提取完成：结构提取 ${result.total.structure} 个，AI提取 ${result.total.ai} 个`;
+        addLog('success', msg, '关键词提取');
+        completeTask(msg);
+        messageApi.success(msg);
       } else {
-        messageApi.error(result?.error || '关键词提取失败');
+        const errMsg = result?.error || '关键词提取失败';
+        addLog('error', errMsg, '关键词提取');
+        failTask(errMsg);
+        messageApi.error(errMsg);
       }
     } catch (err) {
+      addLog('error', `提取出错: ${err.message}`, '关键词提取');
+      failTask(`提取出错: ${err.message}`);
       messageApi.error('提取出错: ' + err.message);
       // Only reset on error – normal completion is driven by the 'complete' event
       setExtracting(false);
@@ -99,6 +122,11 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       return;
     }
 
+    if (isTaskRunning) {
+      messageApi.warning('已有任务正在执行，请等待完成后再操作');
+      return;
+    }
+
     const keywordMap = new Map(keywords.map(kw => [kw.key, kw]));
     const toTranslate = selectedRowKeys
       .map(k => keywordMap.get(k))
@@ -106,7 +134,14 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
 
     if (toTranslate.length === 0) return;
 
+    const taskId = startTask(`翻译 ${toTranslate.length} 个关键词`);
+    if (!taskId) {
+      messageApi.warning('已有任务正在执行');
+      return;
+    }
+
     setTranslating(true);
+    addLog('info', `开始翻译 ${toTranslate.length} 个关键词`, '关键词提取');
     try {
       const result = await api.translateKeywords({
         keywords: toTranslate.map(kw => ({ source: kw.source, category: kw.category })),
@@ -128,11 +163,22 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
           return kw;
         }));
         const translated = result.data.filter(d => d.target).length;
-        messageApi.success(`已翻译 ${translated} 个关键词`);
+        const msg = `已翻译 ${translated} 个关键词`;
+        addLog('success', msg, '关键词提取');
+        for (const item of result.data.filter(d => d.target).slice(0, 5)) {
+          addLog('debug', `"${item.source}" → "${item.target}"`, '关键词提取');
+        }
+        completeTask(msg);
+        messageApi.success(msg);
       } else {
-        messageApi.error(result?.error || '关键词翻译失败');
+        const errMsg = result?.error || '关键词翻译失败';
+        addLog('error', errMsg, '关键词提取');
+        failTask(errMsg);
+        messageApi.error(errMsg);
       }
     } catch (err) {
+      addLog('error', `翻译出错: ${err.message}`, '关键词提取');
+      failTask(`翻译出错: ${err.message}`);
       messageApi.error('翻译出错: ' + err.message);
     } finally {
       setTranslating(false);
@@ -273,6 +319,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
           icon={<SearchOutlined />}
           onClick={handleExtractAll}
           loading={extracting}
+          disabled={isTaskRunning && !extracting}
         >
           提取关键词
         </Button>
@@ -283,7 +330,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
               icon={<TranslationOutlined />}
               onClick={handleTranslate}
               loading={translating}
-              disabled={selectedRowKeys.length === 0 || extracting}
+              disabled={selectedRowKeys.length === 0 || extracting || (isTaskRunning && !translating)}
             >
               翻译关键词 ({selectedRowKeys.length})
             </Button>
@@ -300,7 +347,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
               size="small"
               icon={<PlusOutlined />}
               onClick={handleAddToGlossary}
-              disabled={selectedRowKeys.length === 0 || extracting}
+              disabled={selectedRowKeys.length === 0 || extracting || isTaskRunning}
             >
               添加到词库 ({selectedRowKeys.length})
             </Button>

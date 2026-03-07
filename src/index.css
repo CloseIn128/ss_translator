@@ -8,15 +8,26 @@
   --text-primary: #e8e8e8;
   --text-secondary: #8c8c8c;
   --border-color: #303030;
+  --app-font-size: 13px;
+  --log-font-size: 12px;
 }
 
 body {
   background: var(--bg-dark);
   color: var(--text-primary);
+  font-size: var(--app-font-size);
 }
 
 #root {
   height: 100vh;
+  overflow: hidden;
+}
+
+/* Root wrapper: fills the viewport, stacks main layout + log panel + bottom bar */
+.app-root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -38,9 +49,11 @@ body {
 
 /* Layout */
 .app-layout {
-  height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: row;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Left navigation sidebar */
@@ -381,5 +394,200 @@ body {
 .translation-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
+}
+
+/* ── Log Panel ───────────────────────────────────────────────────────────── */
+.log-panel {
+  height: 260px;
+  min-height: 80px;
+  max-height: 50vh;
+  border-top: 1px solid var(--border-color);
+  background: #181818;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Drag handle for resizing the log panel */
+.log-panel-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: row-resize;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.log-panel-drag-handle:hover,
+.log-panel-drag-handle:active {
+  background: var(--primary-color);
+  opacity: 0.6;
+}
+
+.log-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+.log-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.log-panel-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.log-panel-debug-toggle {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.log-panel-content {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: var(--log-font-size);
+  line-height: 1.6;
+}
+
+.log-panel-empty {
+  text-align: center;
+  padding: 24px;
+  color: #555;
+  font-size: var(--log-font-size);
+}
+
+.log-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  padding: 1px 12px;
+}
+
+.log-entry:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.log-time {
+  color: #555;
+  font-size: inherit;
+  flex-shrink: 0;
+  width: 60px;
+  text-align: left;
+}
+
+.log-level-tag {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+
+.log-source {
+  color: #888;
+  font-size: inherit;
+  flex-shrink: 0;
+  width: 80px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0 4px;
+}
+
+.log-message {
+  color: var(--text-primary);
+  word-break: break-word;
+  margin-left: 4px;
+}
+
+/* ── Bottom Bar ──────────────────────────────────────────────────────────── */
+.bottom-bar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-card);
+  flex-shrink: 0;
+  font-size: 12px;
+  gap: 12px;
+  transition: background 0.3s;
+}
+
+.bottom-bar.highlight {
+  background: rgba(24, 144, 255, 0.08);
+}
+
+.bottom-bar-left {
+  display: flex;
+  align-items: center;
+}
+
+.bottom-bar-log-btn {
+  font-size: 11px !important;
+  color: var(--text-secondary) !important;
+  padding: 0 6px !important;
+  height: 22px !important;
+}
+
+.bottom-bar-log-btn.active {
+  color: var(--primary-color) !important;
+}
+
+.bottom-bar-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bottom-bar-task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bottom-bar-progress {
+  color: var(--text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.bottom-bar-message {
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bottom-bar-dismiss {
+  padding: 0 2px !important;
+  height: 18px !important;
+  width: 18px !important;
+  min-width: 18px !important;
+}
+
+.bottom-bar-idle {
+  color: #555;
+  font-size: 11px;
 }
 

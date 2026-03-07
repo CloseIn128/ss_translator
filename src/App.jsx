@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ConfigProvider, theme, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/LeftNav';
@@ -7,14 +7,44 @@ import TranslationEditor from './components/TranslationEditor';
 import GlossaryPanel from './components/GlossaryPanel';
 import KeywordExtractor from './components/KeywordExtractor';
 import SettingsPanel from './components/SettingsPanel';
+import LogPanel from './components/LogPanel';
+import BottomBar from './components/BottomBar';
+import { TaskProvider } from './components/TaskContext';
 
 const api = window.electronAPI;
 
-export default function App() {
+const DEFAULT_APP_FONT_SIZE = 13;
+const DEFAULT_LOG_FONT_SIZE = 12;
+
+function AppInner() {
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
   const [selectedFile, setSelectedFile] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
+  const [logVisible, setLogVisible] = useState(false);
+
+  // Font size settings (persisted in localStorage)
+  const [appFontSize, setAppFontSize] = useState(() => {
+    const saved = localStorage.getItem('ss_translator_app_font_size');
+    const num = Number(saved);
+    return Number.isFinite(num) && num >= 10 && num <= 24 ? num : DEFAULT_APP_FONT_SIZE;
+  });
+  const [logFontSize, setLogFontSize] = useState(() => {
+    const saved = localStorage.getItem('ss_translator_log_font_size');
+    const num = Number(saved);
+    return Number.isFinite(num) && num >= 8 && num <= 20 ? num : DEFAULT_LOG_FONT_SIZE;
+  });
+
+  // Apply font sizes to CSS custom properties
+  useEffect(() => {
+    document.documentElement.style.setProperty('--app-font-size', `${appFontSize}px`);
+    localStorage.setItem('ss_translator_app_font_size', String(appFontSize));
+  }, [appFontSize]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--log-font-size', `${logFontSize}px`);
+    localStorage.setItem('ss_translator_log_font_size', String(logFontSize));
+  }, [logFontSize]);
 
   const handleOpenMod = useCallback(async () => {
     const modPath = await api.selectModFolder();
@@ -126,12 +156,48 @@ export default function App() {
           />
         );
       case 'settings':
-        return <SettingsPanel messageApi={messageApi} />;
+        return (
+          <SettingsPanel
+            messageApi={messageApi}
+            appFontSize={appFontSize}
+            onAppFontSizeChange={setAppFontSize}
+            logFontSize={logFontSize}
+            onLogFontSizeChange={setLogFontSize}
+          />
+        );
       default:
         return null;
     }
   };
 
+  return (
+    <>
+      {contextHolder}
+      <div className="app-root">
+        <div className="app-layout">
+          <LeftNav
+            project={project}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onOpenMod={handleOpenMod}
+            onLoadProject={handleLoadProject}
+            onSaveProject={handleSaveProject}
+            onExport={handleExport}
+            selectedFile={selectedFile}
+            onSelectFile={setSelectedFile}
+          />
+          <div className="app-content">
+            {renderContent()}
+          </div>
+        </div>
+        <LogPanel visible={logVisible} />
+        <BottomBar logVisible={logVisible} onToggleLog={() => setLogVisible(v => !v)} />
+      </div>
+    </>
+  );
+}
+
+export default function App() {
   return (
     <ConfigProvider
       locale={zhCN}
@@ -140,23 +206,9 @@ export default function App() {
         token: { colorPrimary: '#1890ff' },
       }}
     >
-      {contextHolder}
-      <div className="app-layout">
-        <LeftNav
-          project={project}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onOpenMod={handleOpenMod}
-          onLoadProject={handleLoadProject}
-          onSaveProject={handleSaveProject}
-          onExport={handleExport}
-          selectedFile={selectedFile}
-          onSelectFile={setSelectedFile}
-        />
-        <div className="app-content">
-          {renderContent()}
-        </div>
-      </div>
+      <TaskProvider>
+        <AppInner />
+      </TaskProvider>
     </ConfigProvider>
   );
 }
