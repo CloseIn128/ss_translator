@@ -1,4 +1,4 @@
-const { ipcMain, Notification } = require('electron');
+const { ipcMain } = require('electron');
 
 // Fields that indicate proper nouns / keyword candidates
 const KEYWORD_NAME_FIELDS = new Set([
@@ -12,21 +12,10 @@ const safeTermLower = (item) =>
   item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
 
 /**
- * Register keyword extraction, notification, and legacy IPC handlers.
+ * Register keyword extraction and translation IPC handlers.
  * @param {object} ctx - Shared context { getMainWindow, translationService, configManager, parseModFolder }
  */
 function register(ctx) {
-  // ─── System notification ───────────────────────────────────────────────
-  ipcMain.handle('app:notify', async (_, payload = {}) => {
-    const title = String(payload.title || '');
-    const body = String(payload.body || '');
-    if (Notification.isSupported()) {
-      new Notification({ title, body }).show();
-      return { success: true };
-    }
-    return { success: false };
-  });
-
   // ─── Unified keyword extraction (structural + AI with incremental updates) ───
 
   ipcMain.handle('keywords:extractAll', async (_, { modPath, glossary }) => {

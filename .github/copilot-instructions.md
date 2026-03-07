@@ -15,7 +15,8 @@
 │   │   ├── glossaryHandlers.js   # 术语库（项目 + 公共词库）
 │   │   ├── aiHandlers.js         # AI 翻译配置与调用
 │   │   ├── exportHandlers.js     # MOD 导出
-│   │   └── keywordHandlers.js    # 关键词提取与翻译、系统通知
+│   │   ├── keywordHandlers.js    # 关键词提取与翻译
+│   │   └── notificationHandlers.js # 系统通知
 │   ├── services/                 # 业务逻辑服务
 │   │   ├── configManager.js      # 配置持久化
 │   │   ├── translator.js         # AI 翻译服务

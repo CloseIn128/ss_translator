@@ -14,6 +14,7 @@ const glossaryHandlers = require('./ipc/glossaryHandlers');
 const aiHandlers = require('./ipc/aiHandlers');
 const exportHandlers = require('./ipc/exportHandlers');
 const keywordHandlers = require('./ipc/keywordHandlers');
+const notificationHandlers = require('./ipc/notificationHandlers');
 
 let mainWindow;
 let glossaryManager;
@@ -90,6 +91,7 @@ app.whenReady().then(() => {
   aiHandlers.register(ctx);
   exportHandlers.register(ctx);
   keywordHandlers.register(ctx);
+  notificationHandlers.register(ctx);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
