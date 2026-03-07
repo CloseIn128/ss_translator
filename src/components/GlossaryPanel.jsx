@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
-import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Tabs, Tag } from 'antd';
 import {
   PlusOutlined,
   DeleteOutlined,
   ImportOutlined,
   ExportOutlined,
   EditOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 const api = window.electronAPI;
 const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '战舰系统', '游戏术语', '人名/地名', '其他'];
-export default function GlossaryPanel({ project, onUpdateGlossary, messageApi }) {
+
+// ─── Project Glossary ─────────────────────────────────────────────────
+
+function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [form] = Form.useForm();
@@ -101,6 +105,76 @@ export default function GlossaryPanel({ project, onUpdateGlossary, messageApi })
           </Form.Item>
         </Form>
       </Modal>
+    </div>
+  );
+}
+
+// ─── Built-in Glossary Reference Tab ─────────────────────────────────
+
+function BuiltinGlossaryTab({ messageApi }) {
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchText, setSearchText] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    api.getBuiltinGlossary().then(data => {
+      setEntries(data || []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = searchText.trim()
+    ? entries.filter(e =>
+        e.source.toLowerCase().includes(searchText.toLowerCase()) ||
+        e.target.toLowerCase().includes(searchText.toLowerCase()))
+    : entries;
+
+  const columns = [
+    { title: '原文', dataIndex: 'source', key: 'source', width: '35%', sorter: (a, b) => a.source.localeCompare(b.source) },
+    { title: '译文', dataIndex: 'target', key: 'target', width: '35%' },
+    { title: '分类', dataIndex: 'category', key: 'category', width: '30%',
+      filters: CATEGORIES.map(c => ({ text: c, value: c })),
+      onFilter: (value, record) => record.category === value,
+      render: (cat) => <Tag color="blue">{cat}</Tag> },
+  ];
+
+  return (
+    <div>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)}
+          allowClear style={{ width: 250 }} size="small" />
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {entries.length} 条（可在"模型配置→公共词库"中管理）</span>
+      </div>
+      <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8 }}>
+        公共词库在 AI 翻译时自动注入到所有项目，可在"模型配置 → 公共词库"中添加/编辑。
+      </div>
+      <Table dataSource={filtered} columns={columns} rowKey={(_, i) => i} size="small"
+        loading={loading}
+        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }} />
+    </div>
+  );
+}
+
+// ─── Main Panel ───────────────────────────────────────────────────────
+
+export default function GlossaryPanel({ project, onUpdateGlossary, messageApi }) {
+  const tabItems = [
+    {
+      key: 'project',
+      label: '项目词库',
+      children: <ProjectGlossaryTab project={project} onUpdateGlossary={onUpdateGlossary} messageApi={messageApi} />,
+    },
+    {
+      key: 'builtin',
+      label: <><BookOutlined /> 公共词库（参考）</>,
+      children: <BuiltinGlossaryTab messageApi={messageApi} />,
+    },
+  ];
+
+  return (
+    <div style={{ height: '100%' }}>
+      <Tabs items={tabItems} size="small" />
     </div>
   );
 }

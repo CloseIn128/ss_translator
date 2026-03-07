@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { ConfigProvider, theme, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
+import LeftNav from './components/LeftNav';
 import WelcomePage from './components/WelcomePage';
 import TranslationEditor from './components/TranslationEditor';
 import GlossaryPanel from './components/GlossaryPanel';
+import KeywordExtractor from './components/KeywordExtractor';
 import SettingsPanel from './components/SettingsPanel';
 
 const api = window.electronAPI;
@@ -92,11 +92,11 @@ export default function App() {
   }, []);
 
   const renderContent = () => {
-    if (!project) {
-      return <WelcomePage onOpenMod={handleOpenMod} onLoadProject={handleLoadProject} />;
-    }
     switch (activeTab) {
       case 'editor':
+        if (!project) {
+          return <WelcomePage onOpenMod={handleOpenMod} onLoadProject={handleLoadProject} />;
+        }
         return (
           <TranslationEditor
             project={project}
@@ -107,8 +107,19 @@ export default function App() {
           />
         );
       case 'glossary':
+        if (!project) {
+          return <WelcomePage onOpenMod={handleOpenMod} onLoadProject={handleLoadProject} />;
+        }
         return (
           <GlossaryPanel
+            project={project}
+            onUpdateGlossary={handleUpdateGlossary}
+            messageApi={messageApi}
+          />
+        );
+      case 'keywords':
+        return (
+          <KeywordExtractor
             project={project}
             onUpdateGlossary={handleUpdateGlossary}
             messageApi={messageApi}
@@ -131,7 +142,7 @@ export default function App() {
     >
       {contextHolder}
       <div className="app-layout">
-        <Header
+        <LeftNav
           project={project}
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -139,18 +150,11 @@ export default function App() {
           onLoadProject={handleLoadProject}
           onSaveProject={handleSaveProject}
           onExport={handleExport}
+          selectedFile={selectedFile}
+          onSelectFile={setSelectedFile}
         />
-        <div className="app-body">
-          {project && (
-            <Sidebar
-              project={project}
-              selectedFile={selectedFile}
-              onSelectFile={setSelectedFile}
-            />
-          )}
-          <div className="app-content">
-            {renderContent()}
-          </div>
+        <div className="app-content">
+          {renderContent()}
         </div>
       </div>
     </ConfigProvider>

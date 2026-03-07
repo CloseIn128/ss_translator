@@ -29,9 +29,16 @@ export default function TranslationEditor({
 }) {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [translatingIds, setTranslatingIds] = useState(new Set());
   const [batchTranslating, setBatchTranslating] = useState(false);
+
+  // Build available category list
+  const categories = useMemo(() => {
+    const cats = new Set(project.entries.map(e => e.category).filter(Boolean));
+    return ['all', ...[...cats].sort()];
+  }, [project.entries]);
 
   // Filter entries
   const filteredEntries = useMemo(() => {
@@ -39,6 +46,10 @@ export default function TranslationEditor({
 
     if (selectedFile) {
       entries = entries.filter(e => e.file === selectedFile);
+    }
+
+    if (categoryFilter !== 'all') {
+      entries = entries.filter(e => e.category === categoryFilter);
     }
 
     if (statusFilter !== 'all') {
@@ -56,7 +67,7 @@ export default function TranslationEditor({
     }
 
     return entries;
-  }, [project.entries, selectedFile, statusFilter, searchText]);
+  }, [project.entries, selectedFile, categoryFilter, statusFilter, searchText]);
 
   // Paginate
   const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
@@ -66,7 +77,7 @@ export default function TranslationEditor({
   );
 
   // Reset page when filters change
-  React.useEffect(() => { setCurrentPage(1); }, [selectedFile, statusFilter, searchText]);
+  React.useEffect(() => { setCurrentPage(1); }, [selectedFile, categoryFilter, statusFilter, searchText]);
 
   // Stats for current filter
   const stats = useMemo(() => {
@@ -241,8 +252,18 @@ export default function TranslationEditor({
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
           allowClear
-          style={{ width: 300 }}
+          style={{ width: 280 }}
           size="small"
+        />
+        <Select
+          value={categoryFilter}
+          onChange={setCategoryFilter}
+          style={{ width: 140 }}
+          size="small"
+          options={categories.map(c => ({
+            value: c,
+            label: c === 'all' ? '全部分类' : c,
+          }))}
         />
         <Select
           value={statusFilter}

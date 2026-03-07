@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveProject: (projectData) => ipcRenderer.invoke('project:save', projectData),
   loadProject: () => ipcRenderer.invoke('project:load'),
 
-  // Glossary
+  // Project glossary
   getGlossary: (projectId) => ipcRenderer.invoke('glossary:getAll', projectId),
   addGlossaryEntry: (entry) => ipcRenderer.invoke('glossary:add', entry),
   updateGlossaryEntry: (entry) => ipcRenderer.invoke('glossary:update', entry),
@@ -20,13 +20,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   importGlossary: (projectId) => ipcRenderer.invoke('glossary:import', projectId),
   exportGlossary: (projectId) => ipcRenderer.invoke('glossary:export', projectId),
 
+  // Public / built-in glossary
+  getBuiltinGlossary: () => ipcRenderer.invoke('glossary:getBuiltin'),
+  saveBuiltinGlossary: (entries) => ipcRenderer.invoke('glossary:saveBuiltin', entries),
+  resetBuiltinGlossary: () => ipcRenderer.invoke('glossary:resetBuiltin'),
+  importBuiltinGlossary: () => ipcRenderer.invoke('glossary:importBuiltin'),
+  exportBuiltinGlossary: () => ipcRenderer.invoke('glossary:exportBuiltin'),
+
   // AI Translation
   configureAI: (config) => ipcRenderer.invoke('ai:configure', config),
   getAIConfig: () => ipcRenderer.invoke('ai:getConfig'),
+  resetAIConfig: () => ipcRenderer.invoke('ai:resetConfig'),
   translate: (data) => ipcRenderer.invoke('ai:translate', data),
   polish: (data) => ipcRenderer.invoke('ai:polish', data),
 
   // Export
   exportMod: (data) => ipcRenderer.invoke('export:mod', data),
+
+  // Keyword extraction
+  extractKeywords: (modPath) => ipcRenderer.invoke('mod:extractKeywords', modPath),
 });
 
