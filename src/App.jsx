@@ -7,14 +7,18 @@ import TranslationEditor from './components/TranslationEditor';
 import GlossaryPanel from './components/GlossaryPanel';
 import KeywordExtractor from './components/KeywordExtractor';
 import SettingsPanel from './components/SettingsPanel';
+import LogPanel from './components/LogPanel';
+import BottomBar from './components/BottomBar';
+import { TaskProvider } from './components/TaskContext';
 
 const api = window.electronAPI;
 
-export default function App() {
+function AppInner() {
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
   const [selectedFile, setSelectedFile] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
+  const [logVisible, setLogVisible] = useState(false);
 
   const handleOpenMod = useCallback(async () => {
     const modPath = await api.selectModFolder();
@@ -133,6 +137,34 @@ export default function App() {
   };
 
   return (
+    <>
+      {contextHolder}
+      <div className="app-root">
+        <div className="app-layout">
+          <LeftNav
+            project={project}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onOpenMod={handleOpenMod}
+            onLoadProject={handleLoadProject}
+            onSaveProject={handleSaveProject}
+            onExport={handleExport}
+            selectedFile={selectedFile}
+            onSelectFile={setSelectedFile}
+          />
+          <div className="app-content">
+            {renderContent()}
+          </div>
+        </div>
+        <LogPanel visible={logVisible} />
+        <BottomBar logVisible={logVisible} onToggleLog={() => setLogVisible(v => !v)} />
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  return (
     <ConfigProvider
       locale={zhCN}
       theme={{
@@ -140,23 +172,9 @@ export default function App() {
         token: { colorPrimary: '#1890ff' },
       }}
     >
-      {contextHolder}
-      <div className="app-layout">
-        <LeftNav
-          project={project}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onOpenMod={handleOpenMod}
-          onLoadProject={handleLoadProject}
-          onSaveProject={handleSaveProject}
-          onExport={handleExport}
-          selectedFile={selectedFile}
-          onSelectFile={setSelectedFile}
-        />
-        <div className="app-content">
-          {renderContent()}
-        </div>
-      </div>
+      <TaskProvider>
+        <AppInner />
+      </TaskProvider>
     </ConfigProvider>
   );
 }

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, Notification } = require('electron');
 const path = require('path');
 const { parseModFolder } = require('./services/modParser');
 const { GlossaryManager } = require('./services/glossary');
@@ -293,6 +293,13 @@ function registerIpcHandlers() {
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
+    }
+  });
+
+  // ─── System notification ───────────────────────────────────────────────
+  ipcMain.handle('app:notify', async (_, { title, body }) => {
+    if (Notification.isSupported()) {
+      new Notification({ title, body }).show();
     }
   });
 

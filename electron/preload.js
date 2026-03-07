@@ -38,6 +38,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Export
   exportMod: (data) => ipcRenderer.invoke('export:mod', data),
 
+  // System notification
+  sendNotification: (title, body) => ipcRenderer.invoke('app:notify', { title, body }),
+
   // Keyword extraction
   extractKeywords: (modPath) => ipcRenderer.invoke('mod:extractKeywords', modPath),
   aiExtractKeywords: (data) => ipcRenderer.invoke('ai:extractKeywords', data),
