@@ -107,6 +107,27 @@ describe('TranslationService', () => {
     });
   });
 
+  describe('_buildModPromptText', () => {
+    it('returns empty string for empty or blank modPrompt', () => {
+      expect(ts._buildModPromptText('')).toBe('');
+      expect(ts._buildModPromptText(null)).toBe('');
+      expect(ts._buildModPromptText(undefined)).toBe('');
+      expect(ts._buildModPromptText('   ')).toBe('');
+    });
+
+    it('formats modPrompt with header', () => {
+      const result = ts._buildModPromptText('这个MOD以银河战争为背景');
+      expect(result).toContain('【MOD设定说明】');
+      expect(result).toContain('这个MOD以银河战争为背景');
+    });
+
+    it('trims whitespace from modPrompt', () => {
+      const result = ts._buildModPromptText('  test prompt  ');
+      expect(result).toContain('test prompt');
+      expect(result).not.toContain('  test prompt  ');
+    });
+  });
+
   describe('_parseKeywordResponse', () => {
     it('parses valid JSON array response', () => {
       const response = '[{"source":"Hegemony","category":"势力名称"},{"source":"Onslaught","category":"舰船名称"}]';
