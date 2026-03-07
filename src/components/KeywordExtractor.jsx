@@ -86,7 +86,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       }
     } catch (err) {
       messageApi.error('提取出错: ' + err.message);
-    } finally {
+      // Only reset on error – normal completion is driven by the 'complete' event
       setExtracting(false);
       setExtractPhase('');
     }
@@ -251,7 +251,12 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
             </Tooltip>
           );
         }
-        return <span style={{ fontSize: 12, color: '#8c8c8c' }}>{record.context}</span>;
+        if (record.context) {
+          return <span style={{ fontSize: 12, color: '#8c8c8c' }}>{record.context}</span>;
+        }
+        // Fallback for AI-extracted rows or any record without file/context
+        const placeholder = record.extractType === 'ai' ? 'AI提取' : '—';
+        return <span style={{ fontSize: 12, color: '#8c8c8c' }}>{placeholder}</span>;
       },
     },
   ];

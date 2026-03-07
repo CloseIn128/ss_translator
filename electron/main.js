@@ -299,9 +299,13 @@ function registerIpcHandlers() {
       const parsed = await parseModFolder(modPath);
 
       // Build builtin glossary dedup set early (used for both phases)
-      const builtinGlossaryEntries = configManager.getBuiltinGlossary();
-      const builtinTerms = new Set(builtinGlossaryEntries.map(e => e.source.toLowerCase()));
-      const projectTerms = new Set((glossary || []).map(g => g.source.toLowerCase()));
+      // Defensively filter malformed entries to avoid crashing on bad glossary data
+      const safeTermLower = (item) =>
+        item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
+
+      const builtinGlossaryEntries = configManager.getBuiltinGlossary() || [];
+      const builtinTerms = new Set(builtinGlossaryEntries.map(safeTermLower).filter(Boolean));
+      const projectTerms = new Set((glossary || []).map(safeTermLower).filter(Boolean));
 
       // Phase 1: Structural extraction (filter against builtin glossary)
       const seen = new Set();
@@ -457,15 +461,24 @@ function registerIpcHandlers() {
         ? textSamples.slice(0, MAX_AI_SAMPLES)
         : textSamples;
 
-      // Merge glossary for deduplication
-      const builtinGlossary = configManager.getBuiltinGlossary().map(e => e.source.toLowerCase());
-      const projectGlossary = (glossary || []).map(g => g.source.toLowerCase());
+      // Merge glossary for deduplication (defensively handle malformed entries)
+      const safeTermLower = (item) =>
+        item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
+
+      const builtinGlossary = (configManager.getBuiltinGlossary() || [])
+        .map(safeTermLower).filter(Boolean);
+      const projectGlossary = (glossary || [])
+        .map(safeTermLower).filter(Boolean);
       const existingTerms = new Set([...builtinGlossary, ...projectGlossary]);
 
-      const keywords = await translationService.extractKeywords(sampled);
+      const keywords = (await translationService.extractKeywords(sampled)) || [];
 
-      // Filter out terms already in glossaries
-      const filtered = keywords.filter(kw => !existingTerms.has(kw.source.toLowerCase()));
+      // Filter out terms already in glossaries (skip malformed keyword entries)
+      const filtered = keywords.filter(kw => {
+        if (!kw || typeof kw.source !== 'string') return false;
+        const term = kw.source.trim().toLowerCase();
+        return term && !existingTerms.has(term);
+      });
 
       return { success: true, data: filtered };
     } catch (err) {
