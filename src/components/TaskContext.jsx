@@ -80,9 +80,7 @@ export function TaskProvider({ children }) {
     // System notification if window not focused
     if (typeof document !== 'undefined' && !document.hasFocus()) {
       try {
-        if (window.electronAPI?.sendNotification) {
-          window.electronAPI.sendNotification('任务完成', message || '任务已完成');
-        }
+        window.electronAPI?.sendNotification?.('任务完成', message || '任务已完成')?.catch?.(() => {});
       } catch (_) { /* ignore */ }
     }
   }, [addLog]);
@@ -97,9 +95,7 @@ export function TaskProvider({ children }) {
 
     if (typeof document !== 'undefined' && !document.hasFocus()) {
       try {
-        if (window.electronAPI?.sendNotification) {
-          window.electronAPI.sendNotification('任务失败', error || '任务执行失败');
-        }
+        window.electronAPI?.sendNotification?.('任务失败', error || '任务执行失败')?.catch?.(() => {});
       } catch (_) { /* ignore */ }
     }
   }, [addLog]);

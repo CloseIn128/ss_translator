@@ -57,7 +57,22 @@ export default function LogPanel({ visible }) {
     autoScrollRef.current = atBottom;
   };
 
-  // Drag-to-resize logic
+  // Drag-to-resize logic — store handlers in refs for cleanup on unmount
+  const moveHandlerRef = useRef(null);
+  const upHandlerRef = useRef(null);
+
+  const cleanupDrag = useCallback(() => {
+    dragging.current = false;
+    if (moveHandlerRef.current) {
+      document.removeEventListener('mousemove', moveHandlerRef.current);
+      moveHandlerRef.current = null;
+    }
+    if (upHandlerRef.current) {
+      document.removeEventListener('mouseup', upHandlerRef.current);
+      upHandlerRef.current = null;
+    }
+  }, []);
+
   const handleDragStart = useCallback((e) => {
     e.preventDefault();
     dragging.current = true;
@@ -67,21 +82,25 @@ export default function LogPanel({ visible }) {
 
     const handleMouseMove = (e) => {
       if (!dragging.current) return;
-      // Dragging up = increase height, dragging down = decrease
       const delta = startY.current - e.clientY;
       const newHeight = Math.max(MIN_LOG_HEIGHT, Math.min(maxH, startHeight.current + delta));
       setPanelHeight(newHeight);
     };
 
     const handleMouseUp = () => {
-      dragging.current = false;
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      cleanupDrag();
     };
 
+    moveHandlerRef.current = handleMouseMove;
+    upHandlerRef.current = handleMouseUp;
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [panelHeight]);
+  }, [panelHeight, cleanupDrag]);
+
+  // Clean up drag listeners on unmount
+  useEffect(() => {
+    return () => cleanupDrag();
+  }, [cleanupDrag]);
 
   if (!visible) return null;
 

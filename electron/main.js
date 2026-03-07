@@ -297,7 +297,9 @@ function registerIpcHandlers() {
   });
 
   // ─── System notification ───────────────────────────────────────────────
-  ipcMain.handle('app:notify', async (_, { title, body }) => {
+  ipcMain.handle('app:notify', async (_, payload = {}) => {
+    const title = String(payload.title || '');
+    const body = String(payload.body || '');
     if (Notification.isSupported()) {
       new Notification({ title, body }).show();
       return { success: true };

@@ -26,11 +26,13 @@ function AppInner() {
   // Font size settings (persisted in localStorage)
   const [appFontSize, setAppFontSize] = useState(() => {
     const saved = localStorage.getItem('ss_translator_app_font_size');
-    return saved ? Number(saved) : DEFAULT_APP_FONT_SIZE;
+    const num = Number(saved);
+    return Number.isFinite(num) && num >= 10 && num <= 24 ? num : DEFAULT_APP_FONT_SIZE;
   });
   const [logFontSize, setLogFontSize] = useState(() => {
     const saved = localStorage.getItem('ss_translator_log_font_size');
-    return saved ? Number(saved) : DEFAULT_LOG_FONT_SIZE;
+    const num = Number(saved);
+    return Number.isFinite(num) && num >= 8 && num <= 20 ? num : DEFAULT_LOG_FONT_SIZE;
   });
 
   // Apply font sizes to CSS custom properties
