@@ -179,6 +179,12 @@ function registerIpcHandlers() {
 
   // AI Translation
   ipcMain.handle('ai:configure', async (_, config) => {
+    // If apiKey is blank (user didn't re-enter it), preserve the existing key
+    // so the in-memory translator keeps working
+    if (!config.apiKey) {
+      const saved = configManager.getModelConfig();
+      config = { ...config, apiKey: saved.apiKey };
+    }
     translationService.configure(config);
     configManager.saveModelConfig(config);
     return { success: true };
