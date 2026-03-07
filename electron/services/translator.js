@@ -7,17 +7,19 @@
 
 class TranslationService {
   constructor() {
+    this._defaultSystemPrompt = this.getDefaultSystemPrompt();
+    this._defaultPolishPrompt = this.getDefaultPolishPrompt();
     this.config = {
       provider: 'openai', // openai | deepseek | custom
       apiKey: '',
       apiUrl: 'https://api.openai.com/v1/chat/completions',
       model: 'gpt-4o-mini',
-      maxTokens: 2048,
+      maxTokens: 4096,
       temperature: 0.3,
       batchSize: 5,
       rateLimitMs: 500,
-      systemPrompt: this.getDefaultSystemPrompt(),
-      polishPrompt: this.getDefaultPolishPrompt(),
+      systemPrompt: this._defaultSystemPrompt,
+      polishPrompt: this._defaultPolishPrompt,
     };
   }
 
@@ -48,6 +50,13 @@ class TranslationService {
 
   configure(config) {
     this.config = { ...this.config, ...config };
+    // Use built-in defaults when prompt fields are empty
+    if (!this.config.systemPrompt) {
+      this.config.systemPrompt = this._defaultSystemPrompt;
+    }
+    if (!this.config.polishPrompt) {
+      this.config.polishPrompt = this._defaultPolishPrompt;
+    }
     // Set API URL based on provider
     if (config.provider === 'deepseek' && !config.apiUrl) {
       this.config.apiUrl = 'https://api.deepseek.com/v1/chat/completions';
@@ -62,6 +71,16 @@ class TranslationService {
     return {
       ...this.config,
       apiKey: '',
+      // Return empty string if using built-in default, so UI knows it's default
+      systemPrompt: this.config.systemPrompt === this._defaultSystemPrompt ? '' : this.config.systemPrompt,
+      polishPrompt: this.config.polishPrompt === this._defaultPolishPrompt ? '' : this.config.polishPrompt,
+    };
+  }
+
+  getDefaultPrompts() {
+    return {
+      systemPrompt: this.getDefaultSystemPrompt(),
+      polishPrompt: this.getDefaultPolishPrompt(),
     };
   }
 

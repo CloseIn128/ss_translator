@@ -230,6 +230,10 @@ function registerIpcHandlers() {
     return { success: true, data: defaults };
   });
 
+  ipcMain.handle('ai:getDefaultPrompts', async () => {
+    return translationService.getDefaultPrompts();
+  });
+
   // Public / built-in glossary
   ipcMain.handle('glossary:getBuiltin', async () => {
     return configManager.getBuiltinGlossary();

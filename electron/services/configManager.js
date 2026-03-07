@@ -18,10 +18,12 @@ const DEFAULT_MODEL_CONFIG = {
   apiKey: '',
   apiUrl: 'https://api.openai.com/v1/chat/completions',
   model: 'gpt-4o-mini',
-  maxTokens: 2048,
+  maxTokens: 4096,
   temperature: 0.3,
   batchSize: 5,
   rateLimitMs: 500,
+  systemPrompt: '',   // empty = use built-in default
+  polishPrompt: '',   // empty = use built-in default
 };
 
 class ConfigManager {

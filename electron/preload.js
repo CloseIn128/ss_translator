@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   configureAI: (config) => ipcRenderer.invoke('ai:configure', config),
   getAIConfig: () => ipcRenderer.invoke('ai:getConfig'),
   resetAIConfig: () => ipcRenderer.invoke('ai:resetConfig'),
+  getDefaultPrompts: () => ipcRenderer.invoke('ai:getDefaultPrompts'),
   translate: (data) => ipcRenderer.invoke('ai:translate', data),
   polish: (data) => ipcRenderer.invoke('ai:polish', data),
 
