@@ -175,7 +175,9 @@ export default function TranslationEditor({
       okText: '开始翻译',
       cancelText: '取消',
       onOk() {
-        // Do not return the promise so the dialog closes immediately
+        // Do not return the promise so the dialog closes immediately.
+        // Using a fire-and-forget async IIFE: if onOk were async, Ant Design's
+        // Modal.confirm would keep the dialog open until the Promise resolves.
         const taskId = startTask(`批量翻译 ${untranslated.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');
@@ -244,7 +246,9 @@ export default function TranslationEditor({
       okText: '开始润色',
       cancelText: '取消',
       onOk() {
-        // Do not return the promise so the dialog closes immediately
+        // Do not return the promise so the dialog closes immediately.
+        // Using a fire-and-forget async IIFE: if onOk were async, Ant Design's
+        // Modal.confirm would keep the dialog open until the Promise resolves.
         const taskId = startTask(`批量润色 ${translated.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');

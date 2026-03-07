@@ -3,6 +3,52 @@
 
 # 项目结构
 
+## 目录结构
+
+```
+├── electron/                     # Electron 主进程（Node.js，CJS 模块）
+│   ├── main.js                   # 应用入口，窗口创建与服务初始化
+│   ├── preload.js                # 预加载脚本，暴露 IPC API
+│   ├── ipc/                      # IPC 处理器模块
+│   │   ├── dialogHandlers.js     # 对话框（文件夹选择等）
+│   │   ├── projectHandlers.js    # 项目管理（创建/保存/加载）
+│   │   ├── glossaryHandlers.js   # 术语库（项目 + 公共词库）
+│   │   ├── aiHandlers.js         # AI 翻译配置与调用
+│   │   ├── exportHandlers.js     # MOD 导出
+│   │   └── keywordHandlers.js    # 关键词提取与翻译、系统通知
+│   ├── services/                 # 业务逻辑服务
+│   │   ├── configManager.js      # 配置持久化
+│   │   ├── translator.js         # AI 翻译服务
+│   │   ├── modParser.js          # MOD 文件解析
+│   │   ├── glossary.js           # 术语库管理
+│   │   ├── project.js            # 项目文件管理
+│   │   ├── exporter.js           # 翻译导出
+│   │   ├── csvParser.js          # CSV 解析/序列化
+│   │   ├── relaxedJson.js        # Starsector 宽松 JSON 解析
+│   │   └── uuid.js               # UUID 生成
+│   └── data/
+│       └── default_glossary.json # 内置默认词库
+├── src/                          # React 前端（ESM，Vite 构建）
+│   ├── App.jsx                   # 应用根组件
+│   ├── main.jsx                  # 入口
+│   ├── index.css                 # 全局样式
+│   └── components/
+│       ├── context/
+│       │   └── TaskContext.jsx    # 任务管理与日志上下文
+│       ├── layout/
+│       │   ├── LeftNav.jsx       # 左侧导航栏
+│       │   ├── LogPanel.jsx      # 日志面板
+│       │   └── BottomBar.jsx     # 底部状态栏
+│       └── pages/
+│           ├── WelcomePage.jsx        # 欢迎页
+│           ├── TranslationEditor.jsx  # 翻译编辑页
+│           ├── GlossaryPanel.jsx      # 词库管理页
+│           ├── KeywordExtractor.jsx   # 关键词提取页
+│           └── SettingsPanel.jsx      # 模型配置页
+└── tests/                        # 自动化测试（vitest）
+    └── electron/services/        # 后端服务单元测试
+```
+
 ## 日志系统 (LogPanel / TaskContext)
 
 ### 功能
@@ -72,6 +118,8 @@
 - 提示词通过 `ConfigManager` 持久化，包括 `systemPrompt`、`polishPrompt`、`keywordPrompt`
 - `_ensureModelConfigComplete()` 在启动时自动迁移补全缺失字段
 - 后端文件（`electron/`）不经过 Vite 构建，修改后需用 `node --check ./electron/xxx.js` 验证语法
+- `ai:configure` IPC 处理器中，若前端传入空 `apiKey`，会自动从磁盘配置中恢复已保存的密钥，避免设置面板保存时意外清空内存中的 API Key
+- 批量翻译/润色的确认对话框（`Modal.confirm`）的 `onOk` 不返回 Promise，以确保对话框立即关闭，翻译任务在后台异步执行
 
 # 界面布局
 
@@ -114,7 +162,24 @@
 - 开发模式：`pnpm dev`
 - 前端构建：`npx vite build`
 - 语法检查后端文件：`node --check electron/main.js`
-- 无自动化测试套件
+- 运行测试：`npm test`（或 `npx vitest run`）
+- 监听模式测试：`npm run test:watch`（或 `npx vitest`）
+
+## 自动化测试
+
+- 测试框架：vitest（与 Vite 原生集成）
+- 测试文件位于 `tests/` 目录，与源码目录结构对应
+- 后端服务测试使用 ESM 语法 + `createRequire` 导入 CJS 模块
+- vitest 配置在 `vite.config.js` 的 `test` 字段中，已启用 `globals: true`
+- 新增后端服务或修改逻辑后，应在 `tests/electron/services/` 下编写或更新对应测试
+- 开发完成后需执行 `npm test` 确保所有测试通过
+
+## IPC 处理器架构
+
+- IPC 处理器从 `main.js` 拆分至 `electron/ipc/` 目录下的独立模块
+- 每个模块导出 `register(ctx)` 函数，接收共享上下文对象
+- 共享上下文 `ctx` 包含：`getMainWindow()`、`glossaryManager`、`translationService`、`projectManager`、`configManager`、`parseModFolder`、`exportMod`
+- 新增 IPC 处理器时，在对应模块中添加，并在 `main.js` 中注册
 
 # 作业规范
 
