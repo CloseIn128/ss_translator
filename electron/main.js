@@ -292,7 +292,112 @@ function registerIpcHandlers() {
     }
   });
 
-  // Keyword extraction from MOD folder
+  // ─── Unified keyword extraction (structural + AI with incremental updates) ───
+
+  ipcMain.handle('keywords:extractAll', async (_, { modPath, glossary }) => {
+    try {
+      const parsed = await parseModFolder(modPath);
+
+      // Phase 1: Structural extraction
+      const seen = new Set();
+      const structKeywords = [];
+      for (const entry of parsed.entries) {
+        if (KEYWORD_NAME_FIELDS.has(entry.field) && entry.original && !seen.has(entry.original.toLowerCase())) {
+          seen.add(entry.original.toLowerCase());
+          structKeywords.push({
+            source: entry.original,
+            target: '',
+            category: '通用',
+            context: entry.context,
+            file: entry.file,
+            extractType: 'structure',
+          });
+        }
+      }
+
+      // Send structural results immediately
+      if (structKeywords.length > 0) {
+        mainWindow.webContents.send('keywords:batch', {
+          keywords: structKeywords,
+          phase: 'structure',
+        });
+      }
+
+      // Phase 2: AI extraction with incremental batch updates
+      const textSamples = [];
+      const seenText = new Set();
+      for (const entry of parsed.entries) {
+        if (entry.original && entry.original.length >= 10 && !seenText.has(entry.original)) {
+          seenText.add(entry.original);
+          textSamples.push({
+            text: entry.original,
+            context: entry.context || entry.file,
+          });
+        }
+      }
+
+      const MAX_AI_SAMPLES = 200;
+      const sampled = textSamples.length > MAX_AI_SAMPLES
+        ? textSamples.slice(0, MAX_AI_SAMPLES)
+        : textSamples;
+
+      // Build dedup set from structural results + existing glossaries
+      const builtinGlossary = configManager.getBuiltinGlossary().map(e => e.source.toLowerCase());
+      const projectGlossary = (glossary || []).map(g => g.source.toLowerCase());
+      const existingTerms = new Set([...seen, ...builtinGlossary, ...projectGlossary]);
+
+      let aiCount = 0;
+      await translationService.extractKeywords(sampled, {}, (batchKeywords) => {
+        // Filter against structural results and glossaries
+        const newKeywords = batchKeywords
+          .filter(kw => !existingTerms.has(kw.source.toLowerCase()))
+          .map(kw => ({
+            ...kw,
+            target: kw.target || '',
+            extractType: 'ai',
+          }));
+
+        // Add to dedup set for future batches
+        for (const kw of newKeywords) {
+          existingTerms.add(kw.source.toLowerCase());
+        }
+
+        if (newKeywords.length > 0) {
+          aiCount += newKeywords.length;
+          mainWindow.webContents.send('keywords:batch', {
+            keywords: newKeywords,
+            phase: 'ai',
+          });
+        }
+      });
+
+      // Signal completion
+      mainWindow.webContents.send('keywords:batch', {
+        keywords: [],
+        phase: 'complete',
+      });
+
+      return { success: true, total: { structure: structKeywords.length, ai: aiCount } };
+    } catch (err) {
+      mainWindow.webContents.send('keywords:batch', {
+        keywords: [],
+        phase: 'complete',
+      });
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Keyword translation (separate from extraction)
+  ipcMain.handle('keywords:translate', async (_, { keywords }) => {
+    try {
+      const results = await translationService.translateKeywords(keywords);
+      return { success: true, data: results };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Legacy keyword extraction from MOD folder (kept for compatibility)
   ipcMain.handle('mod:extractKeywords', async (_, modPath) => {
     try {
       const parsed = await parseModFolder(modPath);

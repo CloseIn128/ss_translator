@@ -41,5 +41,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Keyword extraction
   extractKeywords: (modPath) => ipcRenderer.invoke('mod:extractKeywords', modPath),
   aiExtractKeywords: (data) => ipcRenderer.invoke('ai:extractKeywords', data),
+
+  // Unified keyword extraction (structural + AI with incremental updates)
+  extractAllKeywords: (data) => ipcRenderer.invoke('keywords:extractAll', data),
+  translateKeywords: (data) => ipcRenderer.invoke('keywords:translate', data),
+  onKeywordBatch: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('keywords:batch', handler);
+    return handler;
+  },
+  removeKeywordBatchListener: (handler) => {
+    ipcRenderer.removeListener('keywords:batch', handler);
+  },
 });
 

@@ -1,95 +1,141 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Table, Input, Tag, Space, Tooltip, Divider } from 'antd';
 import {
   FolderOpenOutlined,
   PlusOutlined,
   SearchOutlined,
   RobotOutlined,
+  TranslationOutlined,
 } from '@ant-design/icons';
 
 const api = window.electronAPI;
 
 export default function KeywordExtractor({ project, onUpdateGlossary, messageApi }) {
   const [keywords, setKeywords] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [modPath, setModPath] = useState(project?.modPath || '');
+  const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
+  const keyCounterRef = useRef(0);
+  const batchHandlerRef = useRef(null);
+
+  // Register / cleanup the keywords:batch event listener
+  useEffect(() => {
+    const handler = api.onKeywordBatch((data) => {
+      if (data.phase === 'complete') {
+        setExtracting(false);
+        setExtractPhase('');
+        return;
+      }
+
+      setExtractPhase(data.phase);
+
+      if (data.keywords && data.keywords.length > 0) {
+        const counter = keyCounterRef.current;
+        const newItems = data.keywords.map((kw, i) => ({
+          ...kw,
+          key: `${kw.extractType}_${counter + i}`,
+          target: kw.target || '',
+          category: kw.category || '通用',
+        }));
+        keyCounterRef.current = counter + newItems.length;
+        setKeywords(prev => [...prev, ...newItems]);
+      }
+    });
+    batchHandlerRef.current = handler;
+
+    return () => {
+      if (batchHandlerRef.current) {
+        api.removeKeywordBatchListener(batchHandlerRef.current);
+        batchHandlerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSelectFolder = async () => {
     const path = await api.selectModFolder();
     if (path) setModPath(path);
   };
 
-  // Structure-based extraction (existing)
-  const handleExtract = async () => {
+  // Unified extraction: structural first, then AI (incremental)
+  const handleExtractAll = async () => {
     const targetPath = modPath || project?.modPath;
     if (!targetPath) {
       messageApi.warning('请先选择MOD文件夹');
       return;
     }
-    setLoading(true);
+    setExtracting(true);
     setKeywords([]);
     setSelectedRowKeys([]);
+    keyCounterRef.current = 0;
+    setExtractPhase('structure');
+
     try {
-      const result = await api.extractKeywords(targetPath);
+      const result = await api.extractAllKeywords({
+        modPath: targetPath,
+        glossary: project?.glossary || [],
+      });
       if (result?.success) {
-        const mapped = result.data.map((kw, i) => ({
-          ...kw,
-          key: `struct_${i}`,
-          source: kw.original,
-          target: '',
-          category: '通用',
-          extractType: 'structure',
-        }));
-        setKeywords(mapped);
-        messageApi.success(`结构提取到 ${result.data.length} 个关键词`);
+        messageApi.success(
+          `提取完成：结构提取 ${result.total.structure} 个，AI提取 ${result.total.ai} 个`
+        );
       } else {
         messageApi.error(result?.error || '关键词提取失败');
       }
     } catch (err) {
       messageApi.error('提取出错: ' + err.message);
     } finally {
-      setLoading(false);
+      setExtracting(false);
+      setExtractPhase('');
     }
   };
 
-  // AI-enhanced extraction (new)
-  const handleAIExtract = async () => {
-    const targetPath = modPath || project?.modPath;
-    if (!targetPath) {
-      messageApi.warning('请先选择MOD文件夹');
+  // Translate selected keywords
+  const handleTranslate = async () => {
+    if (selectedRowKeys.length === 0) {
+      messageApi.warning('请先勾选要翻译的关键词');
       return;
     }
-    setAiLoading(true);
+
+    const keywordMap = new Map(keywords.map(kw => [kw.key, kw]));
+    const toTranslate = selectedRowKeys
+      .map(k => keywordMap.get(k))
+      .filter(Boolean);
+
+    if (toTranslate.length === 0) return;
+
+    setTranslating(true);
     try {
-      const result = await api.aiExtractKeywords({
-        modPath: targetPath,
-        glossary: project?.glossary || [],
+      const result = await api.translateKeywords({
+        keywords: toTranslate.map(kw => ({ source: kw.source, category: kw.category })),
       });
       if (result?.success) {
-        // Merge with existing keywords, avoiding duplicates
-        const existingSources = new Set(keywords.map(k => k.source.toLowerCase()));
-        const newKeywords = result.data
-          .filter(kw => !existingSources.has(kw.source.toLowerCase()))
-          .map((kw, i) => ({
-            ...kw,
-            key: `ai_${Date.now()}_${i}`,
-            original: kw.source,
-            context: kw.category,
-            file: '',
-            extractType: 'ai',
-          }));
-        setKeywords(prev => [...prev, ...newKeywords]);
-        messageApi.success(`AI提取到 ${newKeywords.length} 个新关键词`);
+        // Build translation lookup
+        const translationMap = new Map();
+        for (const item of result.data) {
+          if (item.source && item.target) {
+            translationMap.set(item.source.toLowerCase(), item.target);
+          }
+        }
+        // Update keywords with translations
+        setKeywords(prev => prev.map(kw => {
+          const translation = translationMap.get(kw.source.toLowerCase());
+          if (translation) {
+            return { ...kw, target: translation };
+          }
+          return kw;
+        }));
+        const translated = result.data.filter(d => d.target).length;
+        messageApi.success(`已翻译 ${translated} 个关键词`);
       } else {
-        messageApi.error(result?.error || 'AI关键词提取失败');
+        messageApi.error(result?.error || '关键词翻译失败');
       }
     } catch (err) {
-      messageApi.error('AI提取出错: ' + err.message);
+      messageApi.error('翻译出错: ' + err.message);
     } finally {
-      setAiLoading(false);
+      setTranslating(false);
     }
   };
 
@@ -152,7 +198,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       sorter: (a, b) => a.source.localeCompare(b.source),
     },
     {
-      title: '参考译文',
+      title: '译文',
       dataIndex: 'target',
       key: 'target',
       render: (text) => text ? (
@@ -219,21 +265,22 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
           type="primary"
           size="small"
           icon={<SearchOutlined />}
-          onClick={handleExtract}
-          loading={loading}
+          onClick={handleExtractAll}
+          loading={extracting}
         >
-          结构提取
-        </Button>
-        <Button
-          size="small"
-          icon={<RobotOutlined />}
-          onClick={handleAIExtract}
-          loading={aiLoading}
-        >
-          AI智能提取
+          提取关键词
         </Button>
         {keywords.length > 0 && (
           <>
+            <Button
+              size="small"
+              icon={<TranslationOutlined />}
+              onClick={handleTranslate}
+              loading={translating}
+              disabled={selectedRowKeys.length === 0 || extracting}
+            >
+              翻译关键词 ({selectedRowKeys.length})
+            </Button>
             <Divider type="vertical" />
             <Input
               placeholder="搜索关键词..."
@@ -247,7 +294,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
               size="small"
               icon={<PlusOutlined />}
               onClick={handleAddToGlossary}
-              disabled={selectedRowKeys.length === 0}
+              disabled={selectedRowKeys.length === 0 || extracting}
             >
               添加到词库 ({selectedRowKeys.length})
             </Button>
@@ -258,20 +305,36 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
         )}
       </div>
 
-      {keywords.length === 0 && !loading && !aiLoading && (
+      {extracting && (
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <RobotOutlined spin style={{ color: '#1677ff' }} />
+          <span style={{ fontSize: 13, color: '#8c8c8c' }}>
+            {extractPhase === 'structure' && '正在进行结构化提取...'}
+            {extractPhase === 'ai' && `AI智能提取中... 已发现 ${keywords.filter(k => k.extractType === 'ai').length} 个关键词`}
+          </span>
+        </div>
+      )}
+
+      {keywords.length === 0 && !extracting && (
         <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
           <SearchOutlined style={{ fontSize: 32, marginBottom: 12 }} />
           <div style={{ marginBottom: 8 }}>选择MOD文件夹后提取关键词</div>
           <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-            <b>结构提取</b>：基于MOD文件结构快速识别舰船名、武器名、势力名等字段
+            点击"提取关键词"将同时执行<b>结构提取</b>和<b>AI智能提取</b>
           </div>
           <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-            <b>AI智能提取</b>：通过AI分析文本内容，识别隐藏在描述和对话中的专有名词（需先在"设置"中配置AI服务）
+            结构提取基于MOD文件结构快速识别舰船名、武器名、势力名等字段
+          </div>
+          <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+            AI智能提取通过AI分析文本内容，识别隐藏在描述和对话中的专有名词
+          </div>
+          <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+            提取完成后，可选择关键词进行<b>翻译</b>，再添加到词库
           </div>
         </div>
       )}
 
-      {keywords.length > 0 && (
+      {(keywords.length > 0 || extracting) && (
         <Table
           dataSource={filteredKeywords}
           columns={columns}

@@ -91,12 +91,12 @@ class TranslationService {
 提取要求：
 1. 只提取英文专有名词，不要提取普通词汇
 2. 对每个提取的关键词进行分类
-3. 如果能推断出合适的中文翻译，请提供参考译文
+3. 不需要提供翻译，只需提取原文和分类
 4. 忽略变量占位符（如 $player.name、%s 等）和HTML标签
 5. 同一个词只需出现一次
 
 请严格按照以下JSON数组格式返回结果，不要添加任何其他说明文字：
-[{"source":"英文原文","target":"参考译文","category":"分类"}]
+[{"source":"英文原文","category":"分类"}]
 
 分类可选值：势力名称、舰船名称、武器名称、人名/地名、游戏术语、物品名称、其他`;
   }
@@ -106,9 +106,10 @@ class TranslationService {
    * Inspired by KeywordGacha: uses NER via LLM to identify proper nouns and key terms
    * @param {Array} textSamples - Array of { text, context } objects
    * @param {object} config - Optional config override
-   * @returns {Array} - Array of { source, target, category }
+   * @param {Function} onBatchProgress - Optional callback(batchKeywords) called after each batch
+   * @returns {Array} - Array of { source, category }
    */
-  async extractKeywords(textSamples, config = {}) {
+  async extractKeywords(textSamples, config = {}, onBatchProgress = null) {
     const cfg = { ...this.config, ...config };
     const allKeywords = [];
     const seen = new Set();
@@ -118,12 +119,18 @@ class TranslationService {
       const batch = textSamples.slice(i, i + cfg.batchSize);
       try {
         const keywords = await this._extractKeywordsBatch(batch, cfg);
+        const newKeywords = [];
         for (const kw of keywords) {
           const key = kw.source.toLowerCase();
           if (!seen.has(key)) {
             seen.add(key);
             allKeywords.push(kw);
+            newKeywords.push(kw);
           }
+        }
+        // Report batch progress to caller
+        if (onBatchProgress && newKeywords.length > 0) {
+          onBatchProgress(newKeywords);
         }
       } catch (err) {
         // Continue with next batch on error
@@ -178,17 +185,99 @@ ${textsFormatted}`;
     const keywords = [];
     const lines = text.split('\n').filter(l => l.trim());
     for (const line of lines) {
-      // Try patterns like: "word" → "translation" (category)
-      const match = line.match(/"([^"]+)"\s*[→>-]+\s*"([^"]*)"(?:\s*[（(]([^)）]+)[)）])?/);
-      if (match) {
+      // Try patterns like: "word" (category) or "word" → "translation" (category)
+      const matchWithTarget = line.match(/"([^"]+)"\s*[→>-]+\s*"([^"]*)"(?:\s*[（(]([^)）]+)[)）])?/);
+      if (matchWithTarget) {
         keywords.push({
-          source: match[1].trim(),
-          target: (match[2] || '').trim(),
-          category: match[3] || '其他',
+          source: matchWithTarget[1].trim(),
+          target: (matchWithTarget[2] || '').trim(),
+          category: matchWithTarget[3] || '其他',
+        });
+        continue;
+      }
+      // Try pattern without target: "word" (category)
+      const matchNoTarget = line.match(/"([^"]+)"(?:\s*[（(]([^)）]+)[)）])?/);
+      if (matchNoTarget) {
+        keywords.push({
+          source: matchNoTarget[1].trim(),
+          target: '',
+          category: matchNoTarget[2] || '其他',
         });
       }
     }
     return keywords;
+  }
+
+  /**
+   * Translate a batch of keywords (separate from extraction)
+   * @param {Array} keywords - Array of { source, category }
+   * @param {object} config - Optional config override
+   * @returns {Array} - Array of { source, target }
+   */
+  async translateKeywords(keywords, config = {}) {
+    const cfg = { ...this.config, ...config };
+    const results = [];
+
+    for (let i = 0; i < keywords.length; i += cfg.batchSize) {
+      const batch = keywords.slice(i, i + cfg.batchSize);
+      try {
+        const batchResults = await this._translateKeywordsBatch(batch, cfg);
+        results.push(...batchResults);
+      } catch (err) {
+        console.error('Keyword translation batch error:', err.message);
+        results.push(...batch.map(kw => ({ source: kw.source, target: '' })));
+      }
+
+      if (i + cfg.batchSize < keywords.length) {
+        await sleep(cfg.rateLimitMs);
+      }
+    }
+
+    return results;
+  }
+
+  async _translateKeywordsBatch(keywords, cfg) {
+    const keywordsText = keywords.map(kw =>
+      `- ${kw.source}${kw.category ? ` (${kw.category})` : ''}`
+    ).join('\n');
+
+    const userMessage = `请为以下${keywords.length}个游戏术语提供简体中文翻译。
+直接返回JSON数组格式，不要添加任何说明文字：
+
+${keywordsText}
+
+请严格按照以下格式返回：
+[{"source":"英文原文","target":"中文翻译"}]`;
+
+    const systemPrompt = `你是一位专业的游戏本地化翻译专家。请为提供的太空策略游戏"远行星号"(Starsector)的MOD术语提供准确的中文翻译。翻译应当符合太空科幻设定的措辞风格。`;
+
+    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+
+    try {
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed)) {
+          // Build a lookup map from the response
+          const translationMap = new Map();
+          for (const item of parsed) {
+            if (item.source && item.target) {
+              translationMap.set(item.source.trim().toLowerCase(), item.target.trim());
+            }
+          }
+          // Match back to original keywords to preserve order
+          return keywords.map(kw => ({
+            source: kw.source,
+            target: translationMap.get(kw.source.toLowerCase()) || '',
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse keyword translation response:', err.message);
+    }
+
+    return keywords.map(kw => ({ source: kw.source, target: '' }));
+  }
   }
 
   /**
