@@ -66,9 +66,9 @@ app.whenReady().then(() => {
   translationService = new TranslationService();
   projectManager = new ProjectManager();
 
-  // Load persisted AI config into translation service
+  // Load persisted AI config into translation service (always, not just when key exists)
   const savedConfig = configManager.getModelConfig();
-  if (savedConfig.apiKey) translationService.configure(savedConfig);
+  translationService.configure(savedConfig);
 
   createWindow();
   registerIpcHandlers();
@@ -212,15 +212,12 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('ai:getConfig', async () => {
-    const persisted = configManager.getModelConfig();
-    const inMemory = translationService.getConfig();
-    // Merge: in-memory wins for non-sensitive fields; mask the key completely
+    // Persisted config is the source of truth; mask the API key
+    const config = configManager.getModelConfig();
     return {
-      ...persisted,
-      ...inMemory,
-      // Return only whether a key exists; never expose key content
+      ...config,
       apiKey: '',
-      hasApiKey: !!(persisted.apiKey || inMemory.apiKey),
+      hasApiKey: !!config.apiKey,
     };
   });
 

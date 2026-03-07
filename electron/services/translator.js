@@ -50,13 +50,6 @@ class TranslationService {
 
   configure(config) {
     this.config = { ...this.config, ...config };
-    // Use built-in defaults when prompt fields are empty
-    if (!this.config.systemPrompt) {
-      this.config.systemPrompt = this._defaultSystemPrompt;
-    }
-    if (!this.config.polishPrompt) {
-      this.config.polishPrompt = this._defaultPolishPrompt;
-    }
     // Set API URL based on provider
     if (config.provider === 'deepseek' && !config.apiUrl) {
       this.config.apiUrl = 'https://api.deepseek.com/v1/chat/completions';
@@ -71,9 +64,6 @@ class TranslationService {
     return {
       ...this.config,
       apiKey: '',
-      // Return empty string if using built-in default, so UI knows it's default
-      systemPrompt: this.config.systemPrompt === this._defaultSystemPrompt ? '' : this.config.systemPrompt,
-      polishPrompt: this.config.polishPrompt === this._defaultPolishPrompt ? '' : this.config.polishPrompt,
     };
   }
 
@@ -81,6 +71,7 @@ class TranslationService {
     return {
       systemPrompt: this.getDefaultSystemPrompt(),
       polishPrompt: this.getDefaultPolishPrompt(),
+      keywordPrompt: this.getDefaultKeywordPrompt(),
     };
   }
 
@@ -157,7 +148,7 @@ class TranslationService {
 
 ${textsFormatted}`;
 
-    const systemPrompt = this.getDefaultKeywordPrompt();
+    const systemPrompt = cfg.keywordPrompt || this.getDefaultKeywordPrompt();
     const response = await this._callAPI(systemPrompt, userMessage, cfg);
     return this._parseKeywordResponse(response);
   }

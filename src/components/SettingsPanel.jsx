@@ -363,7 +363,7 @@ function PublicGlossaryTab({ messageApi }) {
 function PromptConfigTab({ messageApi }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [defaults, setDefaults] = useState({ systemPrompt: '', polishPrompt: '' });
+  const [defaults, setDefaults] = useState({ systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
 
   useEffect(() => {
     (async () => {
@@ -371,10 +371,11 @@ function PromptConfigTab({ messageApi }) {
         api.getAIConfig(),
         api.getDefaultPrompts(),
       ]);
-      setDefaults(defaultPrompts || { systemPrompt: '', polishPrompt: '' });
+      setDefaults(defaultPrompts || { systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
       form.setFieldsValue({
         systemPrompt: config?.systemPrompt || '',
         polishPrompt: config?.polishPrompt || '',
+        keywordPrompt: config?.keywordPrompt || '',
       });
     })();
   }, [form]);
@@ -397,11 +398,15 @@ function PromptConfigTab({ messageApi }) {
   };
 
   const handleResetSystem = () => {
-    form.setFieldsValue({ systemPrompt: '' });
+    form.setFieldsValue({ systemPrompt: defaults.systemPrompt });
   };
 
   const handleResetPolish = () => {
-    form.setFieldsValue({ polishPrompt: '' });
+    form.setFieldsValue({ polishPrompt: defaults.polishPrompt });
+  };
+
+  const handleResetKeyword = () => {
+    form.setFieldsValue({ keywordPrompt: defaults.keywordPrompt });
   };
 
   return (
@@ -418,11 +423,10 @@ function PromptConfigTab({ messageApi }) {
               </span>
             }
             name="systemPrompt"
-            extra="留空则使用内置默认提示词。自定义提示词会在AI翻译时作为系统消息发送。"
+            extra="自定义提示词会在AI翻译时作为系统消息发送。可直接在此编辑修改。"
           >
             <Input.TextArea
               rows={8}
-              placeholder={defaults.systemPrompt}
               style={{ fontFamily: 'monospace', fontSize: 12 }}
             />
           </Form.Item>
@@ -437,11 +441,28 @@ function PromptConfigTab({ messageApi }) {
               </span>
             }
             name="polishPrompt"
-            extra="留空则使用内置默认提示词。自定义提示词会在AI润色/校验时作为系统消息发送。"
+            extra="自定义提示词会在AI润色/校验时作为系统消息发送。可直接在此编辑修改。"
           >
             <Input.TextArea
               rows={8}
-              placeholder={defaults.polishPrompt}
+              style={{ fontFamily: 'monospace', fontSize: 12 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                关键词提取提示词
+                <Button size="small" type="link" onClick={handleResetKeyword} style={{ padding: 0, height: 'auto' }}>
+                  恢复默认
+                </Button>
+              </span>
+            }
+            name="keywordPrompt"
+            extra="自定义提示词会在AI智能提取关键词时作为系统消息发送。可直接在此编辑修改。"
+          >
+            <Input.TextArea
+              rows={8}
               style={{ fontFamily: 'monospace', fontSize: 12 }}
             />
           </Form.Item>
@@ -453,13 +474,14 @@ function PromptConfigTab({ messageApi }) {
             <Button danger icon={<ReloadOutlined />} onClick={() => {
               Modal.confirm({
                 title: '重置提示词',
-                content: '将恢复翻译和润色提示词为默认值，是否继续？',
+                content: '将恢复所有提示词为默认值，是否继续？',
                 okText: '确认重置',
                 cancelText: '取消',
                 okButtonProps: { danger: true },
                 onOk: () => {
                   handleResetSystem();
                   handleResetPolish();
+                  handleResetKeyword();
                   messageApi.info('已重置为默认提示词，请点击保存以生效');
                 },
               });
@@ -474,7 +496,8 @@ function PromptConfigTab({ messageApi }) {
         <ul style={{ fontSize: 13, color: '#8c8c8c', paddingLeft: 16, margin: 0 }}>
           <li><b>翻译提示词</b>：用于AI翻译时的系统级指令，控制翻译的风格、术语和格式要求</li>
           <li><b>润色/校验提示词</b>：用于AI润色/校验时的系统级指令，控制润色的方向和要求</li>
-          <li>留空即使用内置默认提示词（灰色占位文字所示内容）</li>
+          <li><b>关键词提取提示词</b>：用于AI智能关键词提取时的系统级指令，控制提取的范围和格式</li>
+          <li>所有提示词在初始化时已自动填入默认模板，可直接在此基础上修改</li>
           <li>名词对照表会自动注入到用户消息中，无需在提示词中手动添加</li>
           <li>提示词修改后需点击"保存提示词"按钮才能生效</li>
         </ul>
