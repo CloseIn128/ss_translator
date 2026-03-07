@@ -16,6 +16,7 @@
 │   │   ├── aiHandlers.js         # AI 翻译配置与调用
 │   │   ├── exportHandlers.js     # MOD 导出
 │   │   ├── keywordHandlers.js    # 关键词提取与翻译
+│   │   ├── legacyHandlers.js     # 老版本汉化加载/匹配
 │   │   └── notificationHandlers.js # 系统通知
 │   ├── services/                 # 业务逻辑服务
 │   │   ├── configManager.js      # 配置持久化
@@ -24,6 +25,7 @@
 │   │   ├── glossary.js           # 术语库管理
 │   │   ├── project.js            # 项目文件管理
 │   │   ├── exporter.js           # 翻译导出
+│   │   ├── legacyTranslation.js  # 老版本汉化匹配服务
 │   │   ├── csvParser.js          # CSV 解析/序列化
 │   │   ├── relaxedJson.js        # Starsector 宽松 JSON 解析
 │   │   └── uuid.js               # UUID 生成
@@ -45,6 +47,7 @@
 │           ├── TranslationEditor.jsx  # 翻译编辑页
 │           ├── GlossaryPanel.jsx      # 词库管理页
 │           ├── KeywordExtractor.jsx   # 关键词提取页
+│           ├── LegacyTranslation.jsx # 老版本汉化辅助页
 │           └── SettingsPanel.jsx      # 模型配置页
 └── tests/                        # 自动化测试（vitest）
     └── electron/services/        # 后端服务单元测试
@@ -108,11 +111,12 @@
 
 ### 功能
 
-- 批量翻译条目（`translateBatch`），支持传入术语表辅助
-- 润色已有翻译（`polish`）
+- 批量翻译条目（`translateBatch`），支持传入术语表和 MOD 专属提示词辅助
+- 润色已有翻译（`polish`），同样支持 MOD 专属提示词
 - 关键词翻译（`translateKeywords`），人名/星球名类别自动跳过
 - 批量翻译和批量润色操作受任务管理系统约束，执行期间不可启动其他任务
 - 单条翻译/润色不占用任务槽位，可随时执行
+- MOD 专属提示词通过 `modPrompt` 参数传入，以 `【MOD设定说明】` 格式注入到用户消息中
 
 ### 规范
 
@@ -121,6 +125,40 @@
 - 后端文件（`electron/`）不经过 Vite 构建，修改后需用 `node --check ./electron/xxx.js` 验证语法
 - `ai:configure` IPC 处理器中，若前端传入空 `apiKey`，会自动从磁盘配置中恢复已保存的密钥，避免设置面板保存时意外清空内存中的 API Key
 - 批量翻译/润色的确认对话框（`Modal.confirm`）的 `onOk` 不返回 Promise，以确保对话框立即关闭，翻译任务在后台异步执行
+- `ai:translate` 和 `ai:polish` IPC 处理器接受可选的 `modPrompt` 字段，传递给 TranslationService
+
+## 老版本汉化辅助 (LegacyTranslation)
+
+### 功能
+
+- 加载同一 MOD 的老版本已汉化文件夹，解析其中的中文文本
+- 将老版本文本条目与当前新版本项目进行结构匹配，匹配策略按优先级：
+  1. **完全匹配**：文件路径、行 ID、字段完全相同（最可靠）
+  2. **结构匹配**：相同文件名 + 行 ID + 字段，适应版本间目录变化
+- 匹配成功的条目可批量应用老版本翻译，支持"仅应用到未翻译条目"和"应用所有匹配"两种模式
+- 老版本汉化数据存储在 `LegacyTranslationService`（主进程内存），不持久化
+
+### 规范
+
+- IPC 处理器位于 `electron/ipc/legacyHandlers.js`，注册 `legacy:load`、`legacy:getInfo`、`legacy:match`、`legacy:clear`
+- `LegacyTranslationService` 在 `electron/services/legacyTranslation.js`，通过 `ctx.legacyTranslationService` 共享
+- 前端页面 `LegacyTranslation.jsx` 包含两个 Tab：老版本汉化加载/匹配 和 MOD 专属提示词
+- 日志输出 source 为 `'老版本汉化'`
+
+## MOD 专属提示词
+
+### 功能
+
+- 每个项目可设置独立的 MOD 专属提示词（`project.modPrompt`）
+- 提示词在 AI 翻译和润色时自动注入到上下文中，格式为 `【MOD设定说明】`
+- 提示词随项目一起保存/加载（存储在 `.sst` 项目文件中）
+- 编辑界面位于"老版本汉化"页面的"MOD专属提示词"Tab
+
+### 规范
+
+- `modPrompt` 是 project 对象上的字符串字段，由 `App.jsx` 的 `handleModPromptChange` 管理
+- `TranslationEditor` 自动从 `project.modPrompt` 读取并传递给 `ai:translate` 和 `ai:polish`
+- `translator.js` 的 `_buildModPromptText(modPrompt)` 负责格式化
 
 # 界面布局
 
@@ -128,8 +166,8 @@
 ┌──────────────────────────────────────────────────────┐
 │  LeftNav  │              app-content                 │
 │  (侧边栏)  │  (TranslationEditor / GlossaryPanel /  │
-│           │   KeywordExtractor / SettingsPanel)      │
-│           │                                          │
+│           │   KeywordExtractor / LegacyTranslation / │
+│           │   SettingsPanel)                         │
 ├───────────┴──────────────────────────────────────────┤
 │                    LogPanel (日志面板，可切换)           │
 ├──────────────────────────────────────────────────────┤
@@ -179,7 +217,7 @@
 
 - IPC 处理器从 `main.js` 拆分至 `electron/ipc/` 目录下的独立模块
 - 每个模块导出 `register(ctx)` 函数，接收共享上下文对象
-- 共享上下文 `ctx` 包含：`getMainWindow()`、`glossaryManager`、`translationService`、`projectManager`、`configManager`、`parseModFolder`、`exportMod`
+- 共享上下文 `ctx` 包含：`getMainWindow()`、`glossaryManager`、`translationService`、`projectManager`、`configManager`、`legacyTranslationService`、`parseModFolder`、`exportMod`
 - 新增 IPC 处理器时，在对应模块中添加，并在 `main.js` 中注册
 
 # 作业规范
