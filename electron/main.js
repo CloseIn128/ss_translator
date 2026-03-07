@@ -14,6 +14,10 @@ const KEYWORD_NAME_FIELDS = new Set([
   'hullName', 'designation',
 ]);
 
+/** Safely lowercase a glossary/keyword entry's source field. Returns null for malformed items. */
+const safeTermLower = (item) =>
+  item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
+
 let mainWindow;
 let glossaryManager;
 let translationService;
@@ -299,10 +303,6 @@ function registerIpcHandlers() {
       const parsed = await parseModFolder(modPath);
 
       // Build builtin glossary dedup set early (used for both phases)
-      // Defensively filter malformed entries to avoid crashing on bad glossary data
-      const safeTermLower = (item) =>
-        item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
-
       const builtinGlossaryEntries = configManager.getBuiltinGlossary() || [];
       const builtinTerms = new Set(builtinGlossaryEntries.map(safeTermLower).filter(Boolean));
       const projectTerms = new Set((glossary || []).map(safeTermLower).filter(Boolean));
@@ -461,10 +461,7 @@ function registerIpcHandlers() {
         ? textSamples.slice(0, MAX_AI_SAMPLES)
         : textSamples;
 
-      // Merge glossary for deduplication (defensively handle malformed entries)
-      const safeTermLower = (item) =>
-        item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
-
+      // Merge glossary for deduplication (uses module-level safeTermLower)
       const builtinGlossary = (configManager.getBuiltinGlossary() || [])
         .map(safeTermLower).filter(Boolean);
       const projectGlossary = (glossary || [])
