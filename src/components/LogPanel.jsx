@@ -61,18 +61,6 @@ export default function LogPanel({ visible }) {
   const moveHandlerRef = useRef(null);
   const upHandlerRef = useRef(null);
 
-  const cleanupDrag = useCallback(() => {
-    dragging.current = false;
-    if (moveHandlerRef.current) {
-      document.removeEventListener('mousemove', moveHandlerRef.current);
-      moveHandlerRef.current = null;
-    }
-    if (upHandlerRef.current) {
-      document.removeEventListener('mouseup', upHandlerRef.current);
-      upHandlerRef.current = null;
-    }
-  }, []);
-
   const handleDragStart = useCallback((e) => {
     e.preventDefault();
     dragging.current = true;
@@ -88,19 +76,26 @@ export default function LogPanel({ visible }) {
     };
 
     const handleMouseUp = () => {
-      cleanupDrag();
+      dragging.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      moveHandlerRef.current = null;
+      upHandlerRef.current = null;
     };
 
     moveHandlerRef.current = handleMouseMove;
     upHandlerRef.current = handleMouseUp;
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [panelHeight, cleanupDrag]);
+  }, [panelHeight]);
 
   // Clean up drag listeners on unmount
   useEffect(() => {
-    return () => cleanupDrag();
-  }, [cleanupDrag]);
+    return () => {
+      if (moveHandlerRef.current) document.removeEventListener('mousemove', moveHandlerRef.current);
+      if (upHandlerRef.current) document.removeEventListener('mouseup', upHandlerRef.current);
+    };
+  }, []);
 
   if (!visible) return null;
 
