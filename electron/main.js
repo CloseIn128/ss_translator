@@ -5,6 +5,7 @@ const { GlossaryManager } = require('./services/glossary');
 const { TranslationService } = require('./services/translator');
 const { ProjectManager } = require('./services/project');
 const { ConfigManager } = require('./services/configManager');
+const { LegacyTranslationService } = require('./services/legacyTranslation');
 const { exportMod } = require('./services/exporter');
 
 // IPC handler modules
@@ -15,12 +16,14 @@ const aiHandlers = require('./ipc/aiHandlers');
 const exportHandlers = require('./ipc/exportHandlers');
 const keywordHandlers = require('./ipc/keywordHandlers');
 const notificationHandlers = require('./ipc/notificationHandlers');
+const legacyHandlers = require('./ipc/legacyHandlers');
 
 let mainWindow;
 let glossaryManager;
 let translationService;
 let projectManager;
 let configManager;
+let legacyTranslationService;
 
 /** Returns the directory where user config files are persisted. */
 function getConfigDir() {
@@ -67,6 +70,7 @@ app.whenReady().then(() => {
   glossaryManager = new GlossaryManager();
   translationService = new TranslationService();
   projectManager = new ProjectManager();
+  legacyTranslationService = new LegacyTranslationService();
 
   // Load persisted AI config into translation service (always, not just when key exists)
   const savedConfig = configManager.getModelConfig();
@@ -81,6 +85,7 @@ app.whenReady().then(() => {
     translationService,
     projectManager,
     configManager,
+    legacyTranslationService,
     parseModFolder,
     exportMod,
   };
@@ -92,6 +97,7 @@ app.whenReady().then(() => {
   exportHandlers.register(ctx);
   keywordHandlers.register(ctx);
   notificationHandlers.register(ctx);
+  legacyHandlers.register(ctx);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

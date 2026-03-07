@@ -308,16 +308,17 @@ ${keywordsText}
    * @param {Array} entries - Array of { id, original, context }
    * @param {Array} glossary - Glossary entries for prompt
    * @param {object} config - Optional config override
+   * @param {string} modPrompt - Optional mod-level context prompt
    * @returns {Array} - Array of { id, translated }
    */
-  async translateBatch(entries, glossary = [], config = {}) {
+  async translateBatch(entries, glossary = [], config = {}, modPrompt = '') {
     const cfg = { ...this.config, ...config };
     const results = [];
 
     // Process in batches
     for (let i = 0; i < entries.length; i += cfg.batchSize) {
       const batch = entries.slice(i, i + cfg.batchSize);
-      const batchResults = await this._translateBatchRequest(batch, glossary, cfg);
+      const batchResults = await this._translateBatchRequest(batch, glossary, cfg, modPrompt);
       results.push(...batchResults);
 
       // Rate limiting
@@ -329,14 +330,15 @@ ${keywordsText}
     return results;
   }
 
-  async _translateBatchRequest(entries, glossary, cfg) {
+  async _translateBatchRequest(entries, glossary, cfg, modPrompt) {
+    const modPromptText = this._buildModPromptText(modPrompt);
     const glossaryText = this._buildGlossaryPrompt(glossary);
 
     const textsToTranslate = entries.map((e, i) =>
       `[${i + 1}] (${e.context || ''})\n${e.original}`
     ).join('\n\n---\n\n');
 
-    const userMessage = `${glossaryText ? glossaryText + '\n\n' : ''}请翻译以下${entries.length}段游戏文本为简体中文。请按照相同的编号格式返回翻译结果，每段翻译用 --- 分隔：
+    const userMessage = `${modPromptText}${glossaryText ? glossaryText + '\n\n' : ''}请翻译以下${entries.length}段游戏文本为简体中文。请按照相同的编号格式返回翻译结果，每段翻译用 --- 分隔：
 
 ${textsToTranslate}`;
 
@@ -361,12 +363,14 @@ ${textsToTranslate}`;
 
   /**
    * Polish/refine an existing translation
+   * @param {string} modPrompt - Optional mod-level context prompt
    */
-  async polish(entry, glossary = [], config = {}) {
+  async polish(entry, glossary = [], config = {}, modPrompt = '') {
     const cfg = { ...this.config, ...config };
+    const modPromptText = this._buildModPromptText(modPrompt);
     const glossaryText = this._buildGlossaryPrompt(glossary);
 
-    const userMessage = `${glossaryText ? glossaryText + '\n\n' : ''}原文：
+    const userMessage = `${modPromptText}${glossaryText ? glossaryText + '\n\n' : ''}原文：
 ${entry.original}
 
 当前翻译：
@@ -401,6 +405,11 @@ ${entry.translated}
       text += '\n';
     }
     return text;
+  }
+
+  _buildModPromptText(modPrompt) {
+    if (!modPrompt || !modPrompt.trim()) return '';
+    return `【MOD设定说明】\n${modPrompt.trim()}\n\n`;
   }
 
   async _callAPI(systemPrompt, userMessage, cfg) {

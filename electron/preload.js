@@ -41,6 +41,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // System notification
   sendNotification: (title, body) => ipcRenderer.invoke('app:notify', { title, body }),
 
+  // Legacy translation (old version Chinese mod support)
+  loadLegacyMod: () => ipcRenderer.invoke('legacy:load'),
+  getLegacyInfo: () => ipcRenderer.invoke('legacy:getInfo'),
+  matchLegacy: (data) => ipcRenderer.invoke('legacy:match', data),
+  clearLegacy: () => ipcRenderer.invoke('legacy:clear'),
+
   // Keyword extraction
   extractKeywords: (modPath) => ipcRenderer.invoke('mod:extractKeywords', modPath),
   aiExtractKeywords: (data) => ipcRenderer.invoke('ai:extractKeywords', data),
