@@ -7,7 +7,7 @@ import {
   RobotOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { useTask } from './TaskContext';
+import { useTask } from '../context/TaskContext';
 
 const api = window.electronAPI;
 

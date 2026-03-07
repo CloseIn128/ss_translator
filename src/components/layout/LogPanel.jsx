@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import { Button, Switch, Tag, Tooltip } from 'antd';
 import { ClearOutlined, BugOutlined, VerticalAlignBottomOutlined } from '@ant-design/icons';
-import { useTask } from './TaskContext';
+import { useTask } from '../context/TaskContext';
 
 const LEVEL_COLORS = {
   debug: '#555',
