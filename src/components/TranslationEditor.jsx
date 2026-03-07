@@ -1,0 +1,427 @@
+import React, { useState, useMemo, useCallback } from 'react';
+import { Input, Select, Button, Tag, Tooltip, Space, Modal, Spin } from 'antd';
+import {
+  TranslationOutlined,
+  HighlightOutlined,
+  SearchOutlined,
+  RobotOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons';
+
+const api = window.electronAPI;
+
+const STATUS_MAP = {
+  untranslated: { label: '未翻译', color: 'default' },
+  translated: { label: '已翻译', color: 'success' },
+  polished: { label: '已润色', color: 'processing' },
+  reviewed: { label: '已审核', color: 'warning' },
+  error: { label: '错误', color: 'error' },
+};
+
+const PAGE_SIZE = 50;
+
+export default function TranslationEditor({
+  project,
+  selectedFile,
+  onUpdateEntry,
+  onBatchUpdate,
+  messageApi,
+}) {
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [translatingIds, setTranslatingIds] = useState(new Set());
+  const [batchTranslating, setBatchTranslating] = useState(false);
+
+  // Filter entries
+  const filteredEntries = useMemo(() => {
+    let entries = project.entries;
+
+    if (selectedFile) {
+      entries = entries.filter(e => e.file === selectedFile);
+    }
+
+    if (statusFilter !== 'all') {
+      entries = entries.filter(e => e.status === statusFilter);
+    }
+
+    if (searchText.trim()) {
+      const lower = searchText.toLowerCase();
+      entries = entries.filter(e =>
+        e.original.toLowerCase().includes(lower) ||
+        e.translated?.toLowerCase().includes(lower) ||
+        e.context?.toLowerCase().includes(lower) ||
+        e.id.toLowerCase().includes(lower)
+      );
+    }
+
+    return entries;
+  }, [project.entries, selectedFile, statusFilter, searchText]);
+
+  // Paginate
+  const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
+  const pageEntries = filteredEntries.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  // Reset page when filters change
+  React.useEffect(() => { setCurrentPage(1); }, [selectedFile, statusFilter, searchText]);
+
+  // Stats for current filter
+  const stats = useMemo(() => {
+    const total = filteredEntries.length;
+    const translated = filteredEntries.filter(
+      e => e.status !== 'untranslated' && e.status !== 'error'
+    ).length;
+    return { total, translated };
+  }, [filteredEntries]);
+
+  // Translate single entry
+  const handleTranslate = useCallback(async (entry) => {
+    setTranslatingIds(prev => new Set(prev).add(entry.id));
+    try {
+      const result = await api.translate({
+        entries: [{ id: entry.id, original: entry.original, context: entry.context }],
+        glossary: project.glossary || [],
+      });
+      if (result?.success && result.data?.length > 0) {
+        const t = result.data[0];
+        onUpdateEntry(entry.id, { translated: t.translated, status: t.status });
+        if (t.status === 'error') {
+          messageApi.error(t.error || '翻译失败');
+        }
+      } else {
+        messageApi.error(result?.error || '翻译请求失败');
+      }
+    } catch (err) {
+      messageApi.error('翻译出错: ' + err.message);
+    } finally {
+      setTranslatingIds(prev => {
+        const s = new Set(prev);
+        s.delete(entry.id);
+        return s;
+      });
+    }
+  }, [project.glossary, onUpdateEntry, messageApi]);
+
+  // Polish single entry
+  const handlePolish = useCallback(async (entry) => {
+    if (!entry.translated) {
+      messageApi.warning('请先翻译该条目');
+      return;
+    }
+    setTranslatingIds(prev => new Set(prev).add(entry.id));
+    try {
+      const result = await api.polish({
+        entry: { id: entry.id, original: entry.original, translated: entry.translated },
+        glossary: project.glossary || [],
+      });
+      if (result?.success) {
+        onUpdateEntry(entry.id, { translated: result.data.translated, status: 'polished' });
+      } else {
+        messageApi.error(result?.error || '润色失败');
+      }
+    } catch (err) {
+      messageApi.error('润色出错: ' + err.message);
+    } finally {
+      setTranslatingIds(prev => {
+        const s = new Set(prev);
+        s.delete(entry.id);
+        return s;
+      });
+    }
+  }, [project.glossary, onUpdateEntry, messageApi]);
+
+  // Batch translate all untranslated in current filter
+  const handleBatchTranslate = useCallback(async () => {
+    const untranslated = filteredEntries.filter(e => e.status === 'untranslated');
+    if (untranslated.length === 0) {
+      messageApi.info('当前筛选下没有未翻译的条目');
+      return;
+    }
+
+    Modal.confirm({
+      title: '批量翻译',
+      content: `将翻译当前筛选范围内的 ${untranslated.length} 条未翻译文本，是否继续？`,
+      okText: '开始翻译',
+      cancelText: '取消',
+      onOk: async () => {
+        setBatchTranslating(true);
+        try {
+          const batchInput = untranslated.map(e => ({
+            id: e.id,
+            original: e.original,
+            context: e.context,
+          }));
+          const result = await api.translate({
+            entries: batchInput,
+            glossary: project.glossary || [],
+          });
+          if (result?.success) {
+            onBatchUpdate(result.data);
+            const successCount = result.data.filter(r => r.status === 'translated').length;
+            messageApi.success(`批量翻译完成：${successCount}/${untranslated.length} 成功`);
+          } else {
+            messageApi.error(result?.error || '批量翻译失败');
+          }
+        } catch (err) {
+          messageApi.error('批量翻译出错: ' + err.message);
+        } finally {
+          setBatchTranslating(false);
+        }
+      },
+    });
+  }, [filteredEntries, project.glossary, onBatchUpdate, messageApi]);
+
+  // Batch polish all translated
+  const handleBatchPolish = useCallback(async () => {
+    const translated = filteredEntries.filter(e => e.status === 'translated');
+    if (translated.length === 0) {
+      messageApi.info('当前筛选下没有可润色的条目');
+      return;
+    }
+
+    Modal.confirm({
+      title: '批量润色',
+      content: `将润色当前筛选范围内的 ${translated.length} 条已翻译文本，是否继续？`,
+      okText: '开始润色',
+      cancelText: '取消',
+      onOk: async () => {
+        setBatchTranslating(true);
+        try {
+          const updates = [];
+          for (const entry of translated) {
+            const result = await api.polish({
+              entry: { id: entry.id, original: entry.original, translated: entry.translated },
+              glossary: project.glossary || [],
+            });
+            if (result?.success) {
+              updates.push(result.data);
+            }
+          }
+          if (updates.length > 0) {
+            onBatchUpdate(updates);
+          }
+          messageApi.success(`批量润色完成：${updates.length}/${translated.length} 成功`);
+        } catch (err) {
+          messageApi.error('批量润色出错: ' + err.message);
+        } finally {
+          setBatchTranslating(false);
+        }
+      },
+    });
+  }, [filteredEntries, project.glossary, onBatchUpdate, messageApi]);
+
+  return (
+    <div>
+      {/* Stats */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-value">{stats.total}</div>
+          <div className="stat-label">当前条目数</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">{stats.translated}</div>
+          <div className="stat-label">已翻译</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">
+            {stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0}%
+          </div>
+          <div className="stat-label">翻译进度</div>
+        </div>
+      </div>
+
+      {/* Filter bar */}
+      <div className="filter-bar">
+        <Input
+          prefix={<SearchOutlined />}
+          placeholder="搜索原文、译文、上下文..."
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+          allowClear
+          style={{ width: 300 }}
+          size="small"
+        />
+        <Select
+          value={statusFilter}
+          onChange={setStatusFilter}
+          style={{ width: 120 }}
+          size="small"
+          options={[
+            { value: 'all', label: '全部状态' },
+            { value: 'untranslated', label: '未翻译' },
+            { value: 'translated', label: '已翻译' },
+            { value: 'polished', label: '已润色' },
+            { value: 'reviewed', label: '已审核' },
+            { value: 'error', label: '错误' },
+          ]}
+        />
+        <Button
+          type="primary"
+          size="small"
+          icon={<RobotOutlined />}
+          onClick={handleBatchTranslate}
+          loading={batchTranslating}
+        >
+          批量翻译
+        </Button>
+        <Button
+          size="small"
+          icon={<HighlightOutlined />}
+          onClick={handleBatchPolish}
+          loading={batchTranslating}
+        >
+          批量润色
+        </Button>
+        <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
+          共 {filteredEntries.length} 条
+        </span>
+      </div>
+
+      {/* Entries */}
+      <div className="translation-table">
+        {pageEntries.map(entry => (
+          <EntryRow
+            key={entry.id}
+            entry={entry}
+            isTranslating={translatingIds.has(entry.id)}
+            onUpdateEntry={onUpdateEntry}
+            onTranslate={handleTranslate}
+            onPolish={handlePolish}
+          />
+        ))}
+
+        {pageEntries.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 40, color: '#8c8c8c' }}>
+            没有匹配的条目
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
+          <Button size="small" disabled={currentPage === 1}
+            onClick={() => setCurrentPage(p => p - 1)}>上一页</Button>
+          <span style={{ fontSize: 13, lineHeight: '24px', color: '#8c8c8c' }}>
+            {currentPage} / {totalPages}
+          </span>
+          <Button size="small" disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(p => p + 1)}>下一页</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Single entry row component
+ */
+function EntryRow({ entry, isTranslating, onUpdateEntry, onTranslate, onPolish }) {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(entry.translated || '');
+
+  const handleSave = () => {
+    onUpdateEntry(entry.id, {
+      translated: editText,
+      status: editText.trim() ? 'translated' : 'untranslated',
+    });
+    setEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditText(entry.translated || '');
+    setEditing(false);
+  };
+
+  const statusInfo = STATUS_MAP[entry.status] || STATUS_MAP.untranslated;
+
+  return (
+    <div className="entry-row">
+      {/* Original text */}
+      <div className="entry-original">
+        <div className="entry-meta">
+          <Tag color={statusInfo.color} style={{ fontSize: 10 }}>{statusInfo.label}</Tag>
+          <span>{entry.context}</span>
+        </div>
+        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{entry.original}</div>
+      </div>
+
+      {/* Translated text */}
+      <div className="entry-translated">
+        {editing ? (
+          <div>
+            <textarea
+              className="translation-textarea"
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              rows={3}
+              autoFocus
+            />
+            <Space size={4} style={{ marginTop: 4 }}>
+              <Button size="small" type="primary" onClick={handleSave}>保存</Button>
+              <Button size="small" onClick={handleCancel}>取消</Button>
+            </Space>
+          </div>
+        ) : (
+          <div
+            onClick={() => { setEditText(entry.translated || ''); setEditing(true); }}
+            style={{
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              cursor: 'pointer',
+              minHeight: 40,
+              padding: 4,
+              borderRadius: 4,
+              border: '1px dashed transparent',
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#303030'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+          >
+            {entry.translated || <span style={{ color: '#555' }}>点击输入翻译...</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="entry-actions">
+        {isTranslating ? (
+          <Spin size="small" />
+        ) : (
+          <>
+            <Tooltip title="AI翻译">
+              <Button
+                size="small"
+                type="text"
+                icon={<TranslationOutlined />}
+                onClick={() => onTranslate(entry)}
+              />
+            </Tooltip>
+            <Tooltip title="AI润色">
+              <Button
+                size="small"
+                type="text"
+                icon={<HighlightOutlined />}
+                onClick={() => onPolish(entry)}
+                disabled={!entry.translated}
+              />
+            </Tooltip>
+            <Tooltip title="标记为已审核">
+              <Button
+                size="small"
+                type="text"
+                icon={<CheckCircleOutlined />}
+                onClick={() => onUpdateEntry(entry.id, { status: 'reviewed' })}
+                disabled={!entry.translated}
+              />
+            </Tooltip>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
