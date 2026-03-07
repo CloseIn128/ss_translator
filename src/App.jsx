@@ -9,6 +9,7 @@ import TranslationEditor from './components/pages/TranslationEditor';
 import GlossaryPanel from './components/pages/GlossaryPanel';
 import KeywordExtractor from './components/pages/KeywordExtractor';
 import SettingsPanel from './components/pages/SettingsPanel';
+import LegacyTranslation from './components/pages/LegacyTranslation';
 import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
@@ -121,6 +122,10 @@ function AppInner() {
     setProject(prev => prev ? { ...prev, glossary } : prev);
   }, []);
 
+  const handleModPromptChange = useCallback((modPrompt) => {
+    setProject(prev => prev ? { ...prev, modPrompt } : prev);
+  }, []);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'editor':
@@ -152,6 +157,16 @@ function AppInner() {
           <KeywordExtractor
             project={project}
             onUpdateGlossary={handleUpdateGlossary}
+            messageApi={messageApi}
+          />
+        );
+      case 'legacy':
+        return (
+          <LegacyTranslation
+            project={project}
+            modPrompt={project?.modPrompt || ''}
+            onModPromptChange={handleModPromptChange}
+            onBatchUpdate={handleBatchUpdate}
             messageApi={messageApi}
           />
         );

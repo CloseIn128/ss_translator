@@ -29,6 +29,7 @@ export default function TranslationEditor({
   messageApi,
 }) {
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
+  const modPrompt = project.modPrompt || '';
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -98,6 +99,7 @@ export default function TranslationEditor({
       const result = await api.translate({
         entries: [{ id: entry.id, original: entry.original, context: entry.context }],
         glossary: project.glossary || [],
+        modPrompt,
       });
       if (result?.success && result.data?.length > 0) {
         const t = result.data[0];
@@ -122,7 +124,7 @@ export default function TranslationEditor({
         return s;
       });
     }
-  }, [project.glossary, onUpdateEntry, messageApi, addLog]);
+  }, [project.glossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
   // Polish single entry
   const handlePolish = useCallback(async (entry) => {
@@ -136,6 +138,7 @@ export default function TranslationEditor({
       const result = await api.polish({
         entry: { id: entry.id, original: entry.original, translated: entry.translated },
         glossary: project.glossary || [],
+        modPrompt,
       });
       if (result?.success) {
         onUpdateEntry(entry.id, { translated: result.data.translated, status: 'polished' });
@@ -154,7 +157,7 @@ export default function TranslationEditor({
         return s;
       });
     }
-  }, [project.glossary, onUpdateEntry, messageApi, addLog]);
+  }, [project.glossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
   // Batch translate all untranslated in current filter
   const handleBatchTranslate = useCallback(async () => {
@@ -196,6 +199,7 @@ export default function TranslationEditor({
             const result = await api.translate({
               entries: batchInput,
               glossary: project.glossary || [],
+              modPrompt,
             });
             if (result?.success) {
               onBatchUpdate(result.data);
@@ -225,7 +229,7 @@ export default function TranslationEditor({
         })();
       },
     });
-  }, [filteredEntries, project.glossary, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
 
   // Batch polish all translated
   const handleBatchPolish = useCallback(async () => {
@@ -266,6 +270,7 @@ export default function TranslationEditor({
               const result = await api.polish({
                 entry: { id: entry.id, original: entry.original, translated: entry.translated },
                 glossary: project.glossary || [],
+                modPrompt,
               });
               if (result?.success) {
                 updates.push(result.data);
@@ -289,7 +294,7 @@ export default function TranslationEditor({
         })();
       },
     });
-  }, [filteredEntries, project.glossary, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
 
   return (
     <div>

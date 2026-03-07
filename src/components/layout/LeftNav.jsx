@@ -10,6 +10,7 @@ import {
   SearchOutlined,
   GlobalOutlined,
   DatabaseOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 
 const MIN_NAV_WIDTH = 160;
@@ -63,6 +64,7 @@ export default function LeftNav({
     { key: 'editor', icon: <FileTextOutlined />, label: '翻译编辑', requiresProject: true },
     { key: 'glossary', icon: <BookOutlined />, label: '词库管理', requiresProject: true },
     { key: 'keywords', icon: <SearchOutlined />, label: '关键词提取' },
+    { key: 'legacy', icon: <HistoryOutlined />, label: '老版本汉化' },
     { key: 'settings', icon: <SettingOutlined />, label: '模型配置' },
   ];
 
