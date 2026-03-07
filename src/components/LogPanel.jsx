@@ -63,12 +63,12 @@ export default function LogPanel({ visible }) {
     dragging.current = true;
     startY.current = e.clientY;
     startHeight.current = panelHeight;
+    const maxH = window.innerHeight * 0.5;
 
     const handleMouseMove = (e) => {
       if (!dragging.current) return;
       // Dragging up = increase height, dragging down = decrease
       const delta = startY.current - e.clientY;
-      const maxH = window.innerHeight * 0.5;
       const newHeight = Math.max(MIN_LOG_HEIGHT, Math.min(maxH, startHeight.current + delta));
       setPanelHeight(newHeight);
     };
