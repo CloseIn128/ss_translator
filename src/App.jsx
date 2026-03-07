@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ConfigProvider, theme, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/LeftNav';
@@ -13,12 +13,36 @@ import { TaskProvider } from './components/TaskContext';
 
 const api = window.electronAPI;
 
+const DEFAULT_APP_FONT_SIZE = 13;
+const DEFAULT_LOG_FONT_SIZE = 12;
+
 function AppInner() {
   const [project, setProject] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
   const [selectedFile, setSelectedFile] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [logVisible, setLogVisible] = useState(false);
+
+  // Font size settings (persisted in localStorage)
+  const [appFontSize, setAppFontSize] = useState(() => {
+    const saved = localStorage.getItem('ss_translator_app_font_size');
+    return saved ? Number(saved) : DEFAULT_APP_FONT_SIZE;
+  });
+  const [logFontSize, setLogFontSize] = useState(() => {
+    const saved = localStorage.getItem('ss_translator_log_font_size');
+    return saved ? Number(saved) : DEFAULT_LOG_FONT_SIZE;
+  });
+
+  // Apply font sizes to CSS custom properties
+  useEffect(() => {
+    document.documentElement.style.setProperty('--app-font-size', `${appFontSize}px`);
+    localStorage.setItem('ss_translator_app_font_size', String(appFontSize));
+  }, [appFontSize]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--log-font-size', `${logFontSize}px`);
+    localStorage.setItem('ss_translator_log_font_size', String(logFontSize));
+  }, [logFontSize]);
 
   const handleOpenMod = useCallback(async () => {
     const modPath = await api.selectModFolder();
@@ -130,7 +154,15 @@ function AppInner() {
           />
         );
       case 'settings':
-        return <SettingsPanel messageApi={messageApi} />;
+        return (
+          <SettingsPanel
+            messageApi={messageApi}
+            appFontSize={appFontSize}
+            onAppFontSizeChange={setAppFontSize}
+            logFontSize={logFontSize}
+            onLogFontSizeChange={setLogFontSize}
+          />
+        );
       default:
         return null;
     }

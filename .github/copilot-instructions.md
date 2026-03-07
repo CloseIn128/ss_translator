@@ -12,6 +12,9 @@
 - 日志级别：`debug`、`info`、`success`、`warning`、`error`
 - 支持 Debug 模式开关，开启后显示 `debug` 级别日志（默认隐藏）
 - 日志自动滚动到底部，支持手动滚动查看历史，最大保留 2000 条
+- 日志面板高度可通过顶部拖拽手柄调整（默认 260px，最小 80px，最大 50vh）
+- 日志条目中的时间、级别标签、来源列垂直对齐（固定宽度列）
+- 日志字体大小独立配置，不受程序字体大小影响
 
 ### 规范
 
@@ -89,6 +92,21 @@
 - `app-layout` 包含 LeftNav + app-content，占据剩余空间（`flex: 1`）
 - LogPanel 在 app-layout 下方，通过底栏按钮切换显示
 - BottomBar 固定在最底部
+
+## 界面设置 (AppearanceTab)
+
+### 功能
+
+- 程序字体大小和日志字体大小可独立配置
+- 设置通过 CSS 自定义属性 `--app-font-size` 和 `--log-font-size` 生效
+- 设置值保存在 `localStorage`（前端本地存储，不涉及后端 IPC）
+- 修改即时生效，无需点击保存按钮
+
+### 规范
+
+- 字体大小状态由 `App.jsx` 的 `AppInner` 组件管理，通过 props 传递给 `SettingsPanel`
+- `localStorage` key：`ss_translator_app_font_size`、`ss_translator_log_font_size`
+- 默认值：程序 13px，日志 12px；程序范围 10-24px，日志范围 8-20px
 
 # 构建与运行
 

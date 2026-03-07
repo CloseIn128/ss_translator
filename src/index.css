@@ -8,11 +8,14 @@
   --text-primary: #e8e8e8;
   --text-secondary: #8c8c8c;
   --border-color: #303030;
+  --app-font-size: 13px;
+  --log-font-size: 12px;
 }
 
 body {
   background: var(--bg-dark);
   color: var(--text-primary);
+  font-size: var(--app-font-size);
 }
 
 #root {
@@ -395,7 +398,7 @@ body {
 
 /* ── Log Panel ───────────────────────────────────────────────────────────── */
 .log-panel {
-  height: 200px;
+  height: 260px;
   min-height: 80px;
   max-height: 50vh;
   border-top: 1px solid var(--border-color);
@@ -403,6 +406,25 @@ body {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Drag handle for resizing the log panel */
+.log-panel-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: row-resize;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.log-panel-drag-handle:hover,
+.log-panel-drag-handle:active {
+  background: var(--primary-color);
+  opacity: 0.6;
 }
 
 .log-panel-header {
@@ -440,7 +462,7 @@ body {
   overflow: auto;
   padding: 4px 0;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 12px;
+  font-size: var(--log-font-size);
   line-height: 1.6;
 }
 
@@ -448,13 +470,13 @@ body {
   text-align: center;
   padding: 24px;
   color: #555;
-  font-size: 12px;
+  font-size: var(--log-font-size);
 }
 
 .log-entry {
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 0;
   padding: 1px 12px;
 }
 
@@ -464,19 +486,34 @@ body {
 
 .log-time {
   color: #555;
-  font-size: 11px;
+  font-size: inherit;
   flex-shrink: 0;
+  width: 60px;
+  text-align: left;
+}
+
+.log-level-tag {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
 }
 
 .log-source {
   color: #888;
-  font-size: 11px;
+  font-size: inherit;
   flex-shrink: 0;
+  width: 80px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0 4px;
 }
 
 .log-message {
   color: var(--text-primary);
   word-break: break-word;
+  margin-left: 4px;
 }
 
 /* ── Bottom Bar ──────────────────────────────────────────────────────────── */
