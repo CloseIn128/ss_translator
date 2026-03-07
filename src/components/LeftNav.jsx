@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { Button, Progress, Tooltip } from 'antd';
 import {
   FolderOpenOutlined,
@@ -12,6 +12,10 @@ import {
   DatabaseOutlined,
 } from '@ant-design/icons';
 
+const MIN_NAV_WIDTH = 160;
+const MAX_NAV_WIDTH = 420;
+const DEFAULT_NAV_WIDTH = 220;
+
 export default function LeftNav({
   project,
   activeTab,
@@ -23,6 +27,38 @@ export default function LeftNav({
   selectedFile,
   onSelectFile,
 }) {
+  const [navWidth, setNavWidth] = useState(DEFAULT_NAV_WIDTH);
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startWidth = useRef(0);
+
+  const handleResizeStart = useCallback((e) => {
+    e.preventDefault();
+    dragging.current = true;
+    startX.current = e.clientX;
+    startWidth.current = navWidth;
+    let rafId = null;
+
+    const handleMouseMove = (e) => {
+      if (!dragging.current) return;
+      if (rafId) return; // throttle via rAF
+      rafId = requestAnimationFrame(() => {
+        const delta = e.clientX - startX.current;
+        setNavWidth(Math.max(MIN_NAV_WIDTH, Math.min(MAX_NAV_WIDTH, startWidth.current + delta)));
+        rafId = null;
+      });
+    };
+
+    const handleMouseUp = () => {
+      dragging.current = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [navWidth]);
   const navItems = [
     { key: 'editor', icon: <FileTextOutlined />, label: '翻译编辑', requiresProject: true },
     { key: 'glossary', icon: <BookOutlined />, label: '词库管理', requiresProject: true },
@@ -64,7 +100,13 @@ export default function LeftNav({
     : 0;
 
   return (
-    <div className="left-nav">
+    <div className="left-nav" style={{ width: navWidth }}>
+      {/* Drag handle */}
+      <div
+        className="left-nav-resize-handle"
+        onMouseDown={handleResizeStart}
+        title="拖拽调整宽度"
+      />
       {/* Logo */}
       <div className="left-nav-logo">
         <span className="left-nav-logo-icon">🚀</span>

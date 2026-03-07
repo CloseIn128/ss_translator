@@ -58,10 +58,10 @@ class TranslationService {
   }
 
   getConfig() {
-    // Return config without sensitive apiKey in full
+    // Return config without exposing the API key value
     return {
       ...this.config,
-      apiKey: this.config.apiKey ? '***' + this.config.apiKey.slice(-4) : '',
+      apiKey: '',
     };
   }
 

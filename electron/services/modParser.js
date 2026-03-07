@@ -31,6 +31,36 @@ const CSV_TRANSLATABLE = {
   'LunaSettings.csv': { columns: ['fieldName', 'fieldDescription', 'tab'], idColumn: 'fieldID' },
 };
 
+/** Category labels for CSV files */
+const CSV_CATEGORY = {
+  'descriptions.csv': null, // derived from 'type' column at parse time
+  'ship_data.csv': '舰船',
+  'wing_data.csv': '飞行队',
+  'weapon_data.csv': '武器',
+  'hull_mods.csv': '舰船改装件',
+  'industries.csv': '工业建筑',
+  'special_items.csv': '特殊物品',
+  'market_conditions.csv': '市场条件',
+  'commodities.csv': '商品',
+  'rules.csv': '剧情对话',
+  'bar_events.csv': '酒吧事件',
+  'person_missions.csv': '任务文本',
+  'sim_opponents.csv': '战斗文本',
+  'title_screen_variants.csv': '界面文本',
+  'LunaSettings.csv': 'Luna设置',
+};
+
+/** descriptions.csv `type` column values → Chinese category */
+const DESCRIPTIONS_TYPE_CATEGORY = {
+  SHIP: '舰船描述',
+  WEAPON: '武器描述',
+  STATION: '空间站描述',
+  PLANET: '星球描述',
+  INDUSTRY: '工业建筑描述',
+  CUSTOM: '剧情描述',
+  RESOURCE: '资源描述',
+};
+
 /** JSON-like files and their translatable fields */
 const JSON_TRANSLATABLE_FIELDS = {
   '.faction': ['displayName', 'displayNameWithArticle', 'displayNameLong', 'displayNameLongWithArticle', 'entityNamePrefix', 'personNamePrefix'],
@@ -38,10 +68,17 @@ const JSON_TRANSLATABLE_FIELDS = {
   '.skin': ['hullName', 'descriptionPrefix'],
 };
 
+/** Category labels for JSON file extensions */
+const JSON_EXT_CATEGORY = {
+  '.faction': '势力',
+  '.ship': '舰船',
+  '.skin': '舰船皮肤',
+};
+
 /** Simple JSON files with array of strings */
 const JSON_STRING_ARRAYS = {
-  'tips.json': { path: 'tips' },
-  'ship_names.json': { path: '*' }, // all keys are arrays of ship name strings
+  'tips.json': { path: 'tips', category: '游戏提示' },
+  'ship_names.json': { path: '*', category: '舰船名称' },
 };
 
 // ─── Main parser ─────────────────────────────────────────────────────
@@ -129,6 +166,7 @@ function extractModInfoEntries(modInfo, filePath, modPath) {
         id: `mod_info::${field}`,
         file: relPath,
         fileType: 'mod_info',
+        category: 'MOD信息',
         field,
         original: modInfo[field],
         translated: '',
@@ -145,6 +183,7 @@ function parseCSVFile(filePath, relPath, fileName) {
   const config = CSV_TRANSLATABLE[fileName];
   const { headers, rows } = parseCSV(content);
   const entries = [];
+  const baseCategory = CSV_CATEGORY[fileName];
 
   for (const row of rows) {
     if (row._empty || row._comment) continue;
@@ -164,11 +203,19 @@ function parseCSVFile(filePath, relPath, fileName) {
         continue;
       }
 
+      // Derive category: use type column for descriptions.csv
+      let category = baseCategory;
+      if (fileName === 'descriptions.csv' && config.typeColumn) {
+        const typeVal = (row[config.typeColumn] || '').toUpperCase();
+        category = DESCRIPTIONS_TYPE_CATEGORY[typeVal] || '其他描述';
+      }
+
       const typeInfo = config.typeColumn ? ` [${row[config.typeColumn] || ''}]` : '';
       entries.push({
         id: `${relPath}::${rowId}::${col}`,
         file: relPath,
         fileType: 'csv',
+        category,
         csvFileName: fileName,
         field: col,
         rowId,
@@ -201,6 +248,7 @@ function extractAddTextFromScript(script, rowId, relPath) {
         id: `${relPath}::${rowId}::script_addtext_${idx}`,
         file: relPath,
         fileType: 'csv',
+        category: '剧情对话',
         csvFileName: 'rules.csv',
         field: 'script(AddText)',
         rowId,
@@ -221,6 +269,7 @@ function parseJsonStringArrayFile(filePath, relPath, fileName) {
   const data = parseRelaxedJson(content);
   const entries = [];
   const config = JSON_STRING_ARRAYS[fileName];
+  const category = config.category || '其他';
 
   if (config.path === '*') {
     // All keys contain string arrays (like ship_names.json)
@@ -232,6 +281,7 @@ function parseJsonStringArrayFile(filePath, relPath, fileName) {
               id: `${relPath}::${key}::${i}`,
               file: relPath,
               fileType: 'json_array',
+              category,
               field: key,
               arrayIndex: i,
               original: arr[i],
@@ -253,6 +303,7 @@ function parseJsonStringArrayFile(filePath, relPath, fileName) {
             id: `${relPath}::${config.path}::${i}`,
             file: relPath,
             fileType: 'json_array',
+            category,
             field: config.path,
             arrayIndex: i,
             original: arr[i],
@@ -272,6 +323,7 @@ function parseRelaxedJsonFile(filePath, relPath, ext) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const data = parseRelaxedJson(content);
   const fields = JSON_TRANSLATABLE_FIELDS[ext];
+  const category = JSON_EXT_CATEGORY[ext] || '其他';
   const entries = [];
 
   for (const field of fields) {
@@ -281,6 +333,7 @@ function parseRelaxedJsonFile(filePath, relPath, ext) {
         id: `${relPath}::${fileId}::${field}`,
         file: relPath,
         fileType: 'json',
+        category,
         field,
         original: data[field],
         translated: '',

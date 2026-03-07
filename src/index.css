@@ -45,13 +45,34 @@ body {
 
 /* Left navigation sidebar */
 .left-nav {
-  width: 220px;
+  /* width is set via inline style for resizing */
+  min-width: 160px;
+  max-width: 420px;
   background: var(--bg-card);
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
+}
+
+/* Drag resize handle */
+.left-nav-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.left-nav-resize-handle:hover,
+.left-nav-resize-handle:active {
+  background: var(--primary-color);
+  opacity: 0.6;
 }
 
 .left-nav-logo {
@@ -276,12 +297,34 @@ body {
 }
 
 /* Settings form */
-.settings-form {
-  max-width: 600px;
+.settings-panel-full {
+  width: 100%;
+  height: 100%;
 }
 
-.settings-form .ant-form-item {
+.settings-tab-content {
+  max-width: 860px;
+}
+
+.settings-form-grid {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px 20px;
   margin-bottom: 16px;
+}
+
+/* 2-column row inside settings form */
+.settings-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .settings-row-2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Stats card */
