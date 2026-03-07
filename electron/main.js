@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
 const path = require('path');
 const { parseModFolder } = require('./services/modParser');
 const { GlossaryManager } = require('./services/glossary');
@@ -6,12 +6,22 @@ const { TranslationService } = require('./services/translator');
 const { ProjectManager } = require('./services/project');
 const { exportMod } = require('./services/exporter');
 
+// Fields that indicate proper nouns / keyword candidates
+const KEYWORD_NAME_FIELDS = new Set([
+  'name', 'displayName', 'displayNameWithArticle',
+  'displayNameLong', 'displayNameLongWithArticle',
+  'hullName', 'designation',
+]);
+
 let mainWindow;
 let glossaryManager;
 let translationService;
 let projectManager;
 
 function createWindow() {
+  // Hide the default native menu bar
+  Menu.setApplicationMenu(null);
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -179,6 +189,29 @@ function registerIpcHandlers() {
       if (result.canceled) return null;
       await exportMod(projectData, result.filePaths[0]);
       return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Keyword extraction from MOD folder
+  ipcMain.handle('mod:extractKeywords', async (_, modPath) => {
+    try {
+      const parsed = await parseModFolder(modPath);
+      // Extract entries from name/title fields as keyword candidates
+      const seen = new Set();
+      const keywords = [];
+      for (const entry of parsed.entries) {
+        if (KEYWORD_NAME_FIELDS.has(entry.field) && entry.original && !seen.has(entry.original)) {
+          seen.add(entry.original);
+          keywords.push({
+            original: entry.original,
+            context: entry.context,
+            file: entry.file,
+          });
+        }
+      }
+      return { success: true, data: keywords };
     } catch (err) {
       return { success: false, error: err.message };
     }
