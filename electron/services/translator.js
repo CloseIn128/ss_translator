@@ -79,26 +79,27 @@ class TranslationService {
     return `你是一位专业的游戏本地化术语提取专家，擅长从游戏文本中识别和提取关键术语。你正在处理太空策略游戏"远行星号"(Starsector)的MOD文本。
 
 请从提供的游戏文本中提取所有专有名词和关键术语，包括但不限于：
-- 人名（角色名、NPC名）
-- 地名（星系名、星球名、空间站名）
 - 势力/组织名称
 - 舰船名称和型号
 - 武器名称
 - 游戏系统/机制名称
 - 物品/资源名称
+- 人名（角色名、NPC名）
+- 星球/星系名（星球名、星系名、空间站名）
 - 其他需要统一翻译的专有名词
 
 提取要求：
 1. 只提取英文专有名词，不要提取普通词汇
 2. 对每个提取的关键词进行分类
-3. 不需要提供翻译，只需提取原文和分类
+3. 只需提取原文和分类，不要提供任何翻译
 4. 忽略变量占位符（如 $player.name、%s 等）和HTML标签
 5. 同一个词只需出现一次
+6. 不要遗漏人名和星球/星系名，它们需要单独标注分类以便后续处理
 
 请严格按照以下JSON数组格式返回结果，不要添加任何其他说明文字：
-[{"source":"Hegemony","category":"势力名称"}]
+[{"source":"Hegemony","category":"势力名称"},{"source":"Galatia","category":"星球/星系名"}]
 
-分类可选值：势力名称、舰船名称、武器名称、人名/地名、游戏术语、物品名称、其他`;
+分类可选值：势力名称、舰船名称、武器名称、人名、星球/星系名、游戏术语、物品名称、其他`;
   }
 
   /**
@@ -171,7 +172,7 @@ ${textsFormatted}`;
             .filter(item => item.source && typeof item.source === 'string')
             .map(item => ({
               source: item.source.trim(),
-              target: (item.target || '').trim(),
+              target: '',  // Extraction only – never include translations
               category: item.category || '其他',
             }));
         }
@@ -190,7 +191,7 @@ ${textsFormatted}`;
       if (matchWithTarget) {
         keywords.push({
           source: matchWithTarget[1].trim(),
-          target: (matchWithTarget[2] || '').trim(),
+          target: '',  // Extraction only – discard any translations
           category: matchWithTarget[3] || '其他',
         });
         continue;
@@ -211,24 +212,37 @@ ${textsFormatted}`;
   /**
    * Translate a batch of keywords (separate from extraction)
    * @param {Array} keywords - Array of { source, category }
+   * @param {Array} glossary - Optional glossary entries for context
    * @param {object} config - Optional config override
    * @returns {Array} - Array of { source, target }
    */
-  async translateKeywords(keywords, config = {}) {
+  async translateKeywords(keywords, glossary = [], config = {}) {
     const cfg = { ...this.config, ...config };
     const results = [];
 
-    for (let i = 0; i < keywords.length; i += cfg.batchSize) {
-      const batch = keywords.slice(i, i + cfg.batchSize);
+    // Person names and planet/system names should not be translated
+    const NO_TRANSLATE_CATEGORIES = new Set(['人名', '星球/星系名']);
+    const toTranslate = [];
+    for (const kw of keywords) {
+      if (NO_TRANSLATE_CATEGORIES.has(kw.category)) {
+        // Keep original – no translation for person/planet names
+        results.push({ source: kw.source, target: kw.source });
+      } else {
+        toTranslate.push(kw);
+      }
+    }
+
+    for (let i = 0; i < toTranslate.length; i += cfg.batchSize) {
+      const batch = toTranslate.slice(i, i + cfg.batchSize);
       try {
-        const batchResults = await this._translateKeywordsBatch(batch, cfg);
+        const batchResults = await this._translateKeywordsBatch(batch, glossary, cfg);
         results.push(...batchResults);
       } catch (err) {
         console.error('Keyword translation batch error:', err.message);
         results.push(...batch.map(kw => ({ source: kw.source, target: '' })));
       }
 
-      if (i + cfg.batchSize < keywords.length) {
+      if (i + cfg.batchSize < toTranslate.length) {
         await sleep(cfg.rateLimitMs);
       }
     }
@@ -236,12 +250,22 @@ ${textsFormatted}`;
     return results;
   }
 
-  async _translateKeywordsBatch(keywords, cfg) {
+  async _translateKeywordsBatch(keywords, glossary, cfg) {
+    const glossaryText = glossary && glossary.length > 0
+      ? this._buildGlossaryPrompt(glossary) + '\n\n'
+      : '';
+
     const keywordsText = keywords.map(kw =>
       `- ${kw.source}${kw.category ? ` (${kw.category})` : ''}`
     ).join('\n');
 
-    const userMessage = `请为以下${keywords.length}个游戏术语提供简体中文翻译。
+    const userMessage = `${glossaryText}请为以下${keywords.length}个游戏术语提供简体中文翻译。
+注意：
+- 人名不翻译，直接保留英文原文
+- 星球名、星系名不翻译，直接保留英文原文
+- 如果名词对照表中已有对应翻译，请直接使用
+- 其他术语请提供准确的中文翻译
+
 直接返回JSON数组格式，不要添加任何说明文字：
 
 ${keywordsText}
@@ -249,7 +273,7 @@ ${keywordsText}
 请严格按照以下格式返回：
 [{"source":"Hegemony","target":"霸主"}]`;
 
-    const systemPrompt = `你是一位专业的游戏本地化翻译专家。请为提供的太空策略游戏"远行星号"(Starsector)的MOD术语提供准确的中文翻译。翻译应当符合太空科幻设定的措辞风格。`;
+    const systemPrompt = `你是一位专业的游戏本地化翻译专家。请为提供的太空策略游戏"远行星号"(Starsector)的MOD术语提供准确的中文翻译。翻译应当符合太空科幻设定的措辞风格。人名和星球/星系名保留英文原文不翻译。`;
 
     const response = await this._callAPI(systemPrompt, userMessage, cfg);
 
@@ -277,7 +301,6 @@ ${keywordsText}
     }
 
     return keywords.map(kw => ({ source: kw.source, target: '' }));
-  }
   }
 
   /**

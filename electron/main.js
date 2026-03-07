@@ -298,12 +298,20 @@ function registerIpcHandlers() {
     try {
       const parsed = await parseModFolder(modPath);
 
-      // Phase 1: Structural extraction
+      // Build builtin glossary dedup set early (used for both phases)
+      const builtinGlossaryEntries = configManager.getBuiltinGlossary();
+      const builtinTerms = new Set(builtinGlossaryEntries.map(e => e.source.toLowerCase()));
+      const projectTerms = new Set((glossary || []).map(g => g.source.toLowerCase()));
+
+      // Phase 1: Structural extraction (filter against builtin glossary)
       const seen = new Set();
       const structKeywords = [];
       for (const entry of parsed.entries) {
         if (KEYWORD_NAME_FIELDS.has(entry.field) && entry.original && !seen.has(entry.original.toLowerCase())) {
-          seen.add(entry.original.toLowerCase());
+          const lc = entry.original.toLowerCase();
+          seen.add(lc);
+          // Skip if already in builtin or project glossary
+          if (builtinTerms.has(lc) || projectTerms.has(lc)) continue;
           structKeywords.push({
             source: entry.original,
             target: '',
@@ -342,9 +350,7 @@ function registerIpcHandlers() {
         : textSamples;
 
       // Build dedup set from structural results + existing glossaries
-      const builtinGlossary = configManager.getBuiltinGlossary().map(e => e.source.toLowerCase());
-      const projectGlossary = (glossary || []).map(g => g.source.toLowerCase());
-      const existingTerms = new Set([...seen, ...builtinGlossary, ...projectGlossary]);
+      const existingTerms = new Set([...seen, ...builtinTerms, ...projectTerms]);
 
       let aiCount = 0;
       await translationService.extractKeywords(sampled, {}, (batchKeywords) => {
@@ -353,7 +359,7 @@ function registerIpcHandlers() {
           .filter(kw => !existingTerms.has(kw.source.toLowerCase()))
           .map(kw => ({
             ...kw,
-            target: kw.target || '',
+            target: '',
             extractType: 'ai',
           }));
 
@@ -387,10 +393,16 @@ function registerIpcHandlers() {
     }
   });
 
-  // Keyword translation (separate from extraction)
+  // Keyword translation (separate from extraction, uses builtin glossary for context)
   ipcMain.handle('keywords:translate', async (_, { keywords }) => {
     try {
-      const results = await translationService.translateKeywords(keywords);
+      // Merge builtin glossary for translation reference
+      const builtinGlossary = configManager.getBuiltinGlossary().map(e => ({
+        source: e.source,
+        target: e.target,
+        category: e.category,
+      }));
+      const results = await translationService.translateKeywords(keywords, builtinGlossary);
       return { success: true, data: results };
     } catch (err) {
       return { success: false, error: err.message };
