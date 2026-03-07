@@ -40,5 +40,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Keyword extraction
   extractKeywords: (modPath) => ipcRenderer.invoke('mod:extractKeywords', modPath),
+  aiExtractKeywords: (data) => ipcRenderer.invoke('ai:extractKeywords', data),
 });
 

@@ -317,5 +317,46 @@ function registerIpcHandlers() {
       return { success: false, error: err.message };
     }
   });
+
+  // AI-enhanced keyword extraction
+  ipcMain.handle('ai:extractKeywords', async (_, { modPath, glossary }) => {
+    try {
+      const parsed = await parseModFolder(modPath);
+
+      // Collect text samples from all translatable entries (descriptions, dialogues, etc.)
+      // Group by file to preserve context and avoid duplicates
+      const textSamples = [];
+      const seen = new Set();
+      for (const entry of parsed.entries) {
+        if (entry.original && entry.original.length >= 10 && !seen.has(entry.original)) {
+          seen.add(entry.original);
+          textSamples.push({
+            text: entry.original,
+            context: entry.context || entry.file,
+          });
+        }
+      }
+
+      // Limit total samples to avoid excessive API calls
+      const MAX_AI_SAMPLES = 200;
+      const sampled = textSamples.length > MAX_AI_SAMPLES
+        ? textSamples.slice(0, MAX_AI_SAMPLES)
+        : textSamples;
+
+      // Merge glossary for deduplication
+      const builtinGlossary = configManager.getBuiltinGlossary().map(e => e.source.toLowerCase());
+      const projectGlossary = (glossary || []).map(g => g.source.toLowerCase());
+      const existingTerms = new Set([...builtinGlossary, ...projectGlossary]);
+
+      const keywords = await translationService.extractKeywords(sampled);
+
+      // Filter out terms already in glossaries
+      const filtered = keywords.filter(kw => !existingTerms.has(kw.source.toLowerCase()));
+
+      return { success: true, data: filtered };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
 }
 

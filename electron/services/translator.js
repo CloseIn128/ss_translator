@@ -84,6 +84,122 @@ class TranslationService {
     };
   }
 
+  getDefaultKeywordPrompt() {
+    return `你是一位专业的游戏本地化术语提取专家，擅长从游戏文本中识别和提取关键术语。你正在处理太空策略游戏"远行星号"(Starsector)的MOD文本。
+
+请从提供的游戏文本中提取所有专有名词和关键术语，包括但不限于：
+- 人名（角色名、NPC名）
+- 地名（星系名、星球名、空间站名）
+- 势力/组织名称
+- 舰船名称和型号
+- 武器名称
+- 游戏系统/机制名称
+- 物品/资源名称
+- 其他需要统一翻译的专有名词
+
+提取要求：
+1. 只提取英文专有名词，不要提取普通词汇
+2. 对每个提取的关键词进行分类
+3. 如果能推断出合适的中文翻译，请提供参考译文
+4. 忽略变量占位符（如 $player.name、%s 等）和HTML标签
+5. 同一个词只需出现一次
+
+请严格按照以下JSON数组格式返回结果，不要添加任何其他说明文字：
+[{"source":"英文原文","target":"参考译文","category":"分类"}]
+
+分类可选值：势力名称、舰船名称、武器名称、人名/地名、游戏术语、物品名称、其他`;
+  }
+
+  /**
+   * AI-powered keyword extraction from game text
+   * Inspired by KeywordGacha: uses NER via LLM to identify proper nouns and key terms
+   * @param {Array} textSamples - Array of { text, context } objects
+   * @param {object} config - Optional config override
+   * @returns {Array} - Array of { source, target, category }
+   */
+  async extractKeywords(textSamples, config = {}) {
+    const cfg = { ...this.config, ...config };
+    const allKeywords = [];
+    const seen = new Set();
+
+    // Process text samples in batches
+    for (let i = 0; i < textSamples.length; i += cfg.batchSize) {
+      const batch = textSamples.slice(i, i + cfg.batchSize);
+      try {
+        const keywords = await this._extractKeywordsBatch(batch, cfg);
+        for (const kw of keywords) {
+          const key = kw.source.toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            allKeywords.push(kw);
+          }
+        }
+      } catch (err) {
+        // Continue with next batch on error
+        console.error('AI keyword extraction batch error:', err.message);
+      }
+
+      // Rate limiting between batches
+      if (i + cfg.batchSize < textSamples.length) {
+        await sleep(cfg.rateLimitMs);
+      }
+    }
+
+    return allKeywords;
+  }
+
+  async _extractKeywordsBatch(textSamples, cfg) {
+    const textsFormatted = textSamples.map((s, i) =>
+      `[${i + 1}] (${s.context || ''})\n${s.text}`
+    ).join('\n\n---\n\n');
+
+    const userMessage = `请从以下${textSamples.length}段游戏文本中提取所有专有名词和关键术语：
+
+${textsFormatted}`;
+
+    const systemPrompt = this.getDefaultKeywordPrompt();
+    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+    return this._parseKeywordResponse(response);
+  }
+
+  _parseKeywordResponse(text) {
+    try {
+      // Try to extract JSON array from response
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .filter(item => item.source && typeof item.source === 'string')
+            .map(item => ({
+              source: item.source.trim(),
+              target: (item.target || '').trim(),
+              category: item.category || '其他',
+            }));
+        }
+      }
+    } catch (err) {
+      // If JSON parsing fails, try line-by-line fallback
+      console.error('Failed to parse AI keyword response as JSON:', err.message);
+    }
+
+    // Fallback: try to extract keywords line by line
+    const keywords = [];
+    const lines = text.split('\n').filter(l => l.trim());
+    for (const line of lines) {
+      // Try patterns like: "word" → "translation" (category)
+      const match = line.match(/"([^"]+)"\s*[→>-]+\s*"([^"]*)"(?:\s*[（(]([^)）]+)[)）])?/);
+      if (match) {
+        keywords.push({
+          source: match[1].trim(),
+          target: (match[2] || '').trim(),
+          category: match[3] || '其他',
+        });
+      }
+    }
+    return keywords;
+  }
+
   /**
    * Translate a batch of entries
    * @param {Array} entries - Array of { id, original, context }
