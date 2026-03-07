@@ -6,7 +6,7 @@ import {
 import {
   SaveOutlined, ApiOutlined, ReloadOutlined,
   PlusOutlined, DeleteOutlined, ImportOutlined, ExportOutlined, EditOutlined,
-  BookOutlined,
+  BookOutlined, MessageOutlined,
 } from '@ant-design/icons';
 
 const api = window.electronAPI;
@@ -49,7 +49,7 @@ function ModelConfigTab({ messageApi }) {
           apiKey: '',
           apiUrl: config.apiUrl || '',
           model: config.model || '',
-          maxTokens: config.maxTokens || 2048,
+          maxTokens: config.maxTokens || 4096,
           temperature: config.temperature || 0.3,
           batchSize: config.batchSize || 5,
           rateLimitMs: config.rateLimitMs || 500,
@@ -156,7 +156,7 @@ function ModelConfigTab({ messageApi }) {
 
           <div className="settings-row-2">
             <Form.Item label="最大Token数" name="maxTokens">
-              <InputNumber min={256} max={8192} style={{ width: '100%' }} />
+              <InputNumber min={256} max={32768} style={{ width: '100%' }} />
             </Form.Item>
             <Form.Item label="Temperature（越低越精确）" name="temperature">
               <InputNumber min={0} max={2} step={0.1} style={{ width: '100%' }} />
@@ -358,6 +358,154 @@ function PublicGlossaryTab({ messageApi }) {
   );
 }
 
+// ─── Prompt Config Tab ────────────────────────────────────────────────
+
+function PromptConfigTab({ messageApi }) {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [defaults, setDefaults] = useState({ systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
+
+  useEffect(() => {
+    (async () => {
+      const [config, defaultPrompts] = await Promise.all([
+        api.getAIConfig(),
+        api.getDefaultPrompts(),
+      ]);
+      setDefaults(defaultPrompts || { systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
+      form.setFieldsValue({
+        systemPrompt: config?.systemPrompt || '',
+        polishPrompt: config?.polishPrompt || '',
+        keywordPrompt: config?.keywordPrompt || '',
+      });
+    })();
+  }, [form]);
+
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      setLoading(true);
+      const result = await api.configureAI(values);
+      if (result?.success) {
+        messageApi.success('提示词配置已保存');
+      } else {
+        messageApi.error('提示词保存失败');
+      }
+    } catch (err) {
+      // validation error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetSystem = () => {
+    form.setFieldsValue({ systemPrompt: defaults.systemPrompt });
+  };
+
+  const handleResetPolish = () => {
+    form.setFieldsValue({ polishPrompt: defaults.polishPrompt });
+  };
+
+  const handleResetKeyword = () => {
+    form.setFieldsValue({ keywordPrompt: defaults.keywordPrompt });
+  };
+
+  return (
+    <div className="settings-tab-content">
+      <div className="settings-form-grid">
+        <Form form={form} layout="vertical">
+          <Form.Item
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                翻译提示词
+                <Button size="small" type="link" onClick={handleResetSystem} style={{ padding: 0, height: 'auto' }}>
+                  恢复默认
+                </Button>
+              </span>
+            }
+            name="systemPrompt"
+            extra="自定义提示词会在AI翻译时作为系统消息发送。可直接在此编辑修改。"
+          >
+            <Input.TextArea
+              rows={8}
+              style={{ fontFamily: 'monospace', fontSize: 12 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                润色/校验提示词
+                <Button size="small" type="link" onClick={handleResetPolish} style={{ padding: 0, height: 'auto' }}>
+                  恢复默认
+                </Button>
+              </span>
+            }
+            name="polishPrompt"
+            extra="自定义提示词会在AI润色/校验时作为系统消息发送。可直接在此编辑修改。"
+          >
+            <Input.TextArea
+              rows={8}
+              style={{ fontFamily: 'monospace', fontSize: 12 }}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                关键词提取提示词
+                <Button size="small" type="link" onClick={handleResetKeyword} style={{ padding: 0, height: 'auto' }}>
+                  恢复默认
+                </Button>
+              </span>
+            }
+            name="keywordPrompt"
+            extra="自定义提示词会在AI智能提取关键词时作为系统消息发送。可直接在此编辑修改。"
+          >
+            <Input.TextArea
+              rows={8}
+              style={{ fontFamily: 'monospace', fontSize: 12 }}
+            />
+          </Form.Item>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={loading}>
+              保存提示词
+            </Button>
+            <Button danger icon={<ReloadOutlined />} onClick={() => {
+              Modal.confirm({
+                title: '重置提示词',
+                content: '将恢复所有提示词为默认值，是否继续？',
+                okText: '确认重置',
+                cancelText: '取消',
+                okButtonProps: { danger: true },
+                onOk: () => {
+                  handleResetSystem();
+                  handleResetPolish();
+                  handleResetKeyword();
+                  messageApi.info('已重置为默认提示词，请点击保存以生效');
+                },
+              });
+            }}>
+              全部重置
+            </Button>
+          </div>
+        </Form>
+      </div>
+
+      <Card size="small" title="使用说明" style={{ marginTop: 16 }}>
+        <ul style={{ fontSize: 13, color: '#8c8c8c', paddingLeft: 16, margin: 0 }}>
+          <li><b>翻译提示词</b>：用于AI翻译时的系统级指令，控制翻译的风格、术语和格式要求</li>
+          <li><b>润色/校验提示词</b>：用于AI润色/校验时的系统级指令，控制润色的方向和要求</li>
+          <li><b>关键词提取提示词</b>：用于AI智能关键词提取时的系统级指令，控制提取的范围和格式</li>
+          <li>所有提示词在初始化时已自动填入默认模板，可直接在此基础上修改</li>
+          <li>名词对照表会自动注入到用户消息中，无需在提示词中手动添加</li>
+          <li>提示词修改后需点击"保存提示词"按钮才能生效</li>
+        </ul>
+      </Card>
+    </div>
+  );
+}
+
 // ─── Settings Panel ───────────────────────────────────────────────────
 
 export default function SettingsPanel({ messageApi }) {
@@ -366,6 +514,11 @@ export default function SettingsPanel({ messageApi }) {
       key: 'model',
       label: <><ApiOutlined /> AI模型配置</>,
       children: <ModelConfigTab messageApi={messageApi} />,
+    },
+    {
+      key: 'prompt',
+      label: <><MessageOutlined /> 提示词配置</>,
+      children: <PromptConfigTab messageApi={messageApi} />,
     },
     {
       key: 'glossary',

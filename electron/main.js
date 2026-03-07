@@ -14,6 +14,10 @@ const KEYWORD_NAME_FIELDS = new Set([
   'hullName', 'designation',
 ]);
 
+/** Safely lowercase a glossary/keyword entry's source field. Returns null for malformed items. */
+const safeTermLower = (item) =>
+  item && typeof item.source === 'string' ? item.source.trim().toLowerCase() : null;
+
 let mainWindow;
 let glossaryManager;
 let translationService;
@@ -66,9 +70,9 @@ app.whenReady().then(() => {
   translationService = new TranslationService();
   projectManager = new ProjectManager();
 
-  // Load persisted AI config into translation service
+  // Load persisted AI config into translation service (always, not just when key exists)
   const savedConfig = configManager.getModelConfig();
-  if (savedConfig.apiKey) translationService.configure(savedConfig);
+  translationService.configure(savedConfig);
 
   createWindow();
   registerIpcHandlers();
@@ -212,15 +216,12 @@ function registerIpcHandlers() {
   });
 
   ipcMain.handle('ai:getConfig', async () => {
-    const persisted = configManager.getModelConfig();
-    const inMemory = translationService.getConfig();
-    // Merge: in-memory wins for non-sensitive fields; mask the key completely
+    // Persisted config is the source of truth; mask the API key
+    const config = configManager.getModelConfig();
     return {
-      ...persisted,
-      ...inMemory,
-      // Return only whether a key exists; never expose key content
+      ...config,
       apiKey: '',
-      hasApiKey: !!(persisted.apiKey || inMemory.apiKey),
+      hasApiKey: !!config.apiKey,
     };
   });
 
@@ -228,6 +229,10 @@ function registerIpcHandlers() {
     const defaults = configManager.resetModelConfig();
     translationService.configure(defaults);
     return { success: true, data: defaults };
+  });
+
+  ipcMain.handle('ai:getDefaultPrompts', async () => {
+    return translationService.getDefaultPrompts();
   });
 
   // Public / built-in glossary
@@ -291,7 +296,124 @@ function registerIpcHandlers() {
     }
   });
 
-  // Keyword extraction from MOD folder
+  // ─── Unified keyword extraction (structural + AI with incremental updates) ───
+
+  ipcMain.handle('keywords:extractAll', async (_, { modPath, glossary }) => {
+    try {
+      const parsed = await parseModFolder(modPath);
+
+      // Build builtin glossary dedup set early (used for both phases)
+      const builtinGlossaryEntries = configManager.getBuiltinGlossary() || [];
+      const builtinTerms = new Set(builtinGlossaryEntries.map(safeTermLower).filter(Boolean));
+      const projectTerms = new Set((glossary || []).map(safeTermLower).filter(Boolean));
+
+      // Phase 1: Structural extraction (filter against builtin glossary)
+      const seen = new Set();
+      const structKeywords = [];
+      for (const entry of parsed.entries) {
+        if (KEYWORD_NAME_FIELDS.has(entry.field) && entry.original && !seen.has(entry.original.toLowerCase())) {
+          const lc = entry.original.toLowerCase();
+          seen.add(lc);
+          // Skip if already in builtin or project glossary
+          if (builtinTerms.has(lc) || projectTerms.has(lc)) continue;
+          structKeywords.push({
+            source: entry.original,
+            target: '',
+            category: '通用',
+            context: entry.context,
+            file: entry.file,
+            extractType: 'structure',
+          });
+        }
+      }
+
+      // Send structural results immediately
+      if (structKeywords.length > 0) {
+        mainWindow.webContents.send('keywords:batch', {
+          keywords: structKeywords,
+          phase: 'structure',
+        });
+      }
+
+      // Phase 2: AI extraction with incremental batch updates
+      const textSamples = [];
+      const seenText = new Set();
+      for (const entry of parsed.entries) {
+        if (entry.original && entry.original.length >= 10 && !seenText.has(entry.original)) {
+          seenText.add(entry.original);
+          textSamples.push({
+            text: entry.original,
+            context: entry.context || entry.file,
+          });
+        }
+      }
+
+      const MAX_AI_SAMPLES = 200;
+      const sampled = textSamples.length > MAX_AI_SAMPLES
+        ? textSamples.slice(0, MAX_AI_SAMPLES)
+        : textSamples;
+
+      // Build dedup set from structural results + existing glossaries
+      const existingTerms = new Set([...seen, ...builtinTerms, ...projectTerms]);
+
+      let aiCount = 0;
+      await translationService.extractKeywords(sampled, {}, (batchKeywords) => {
+        // Filter against structural results and glossaries
+        const newKeywords = batchKeywords
+          .filter(kw => !existingTerms.has(kw.source.toLowerCase()))
+          .map(kw => ({
+            ...kw,
+            target: '',
+            extractType: 'ai',
+          }));
+
+        // Add to dedup set for future batches
+        for (const kw of newKeywords) {
+          existingTerms.add(kw.source.toLowerCase());
+        }
+
+        if (newKeywords.length > 0) {
+          aiCount += newKeywords.length;
+          mainWindow.webContents.send('keywords:batch', {
+            keywords: newKeywords,
+            phase: 'ai',
+          });
+        }
+      });
+
+      // Signal completion
+      mainWindow.webContents.send('keywords:batch', {
+        keywords: [],
+        phase: 'complete',
+      });
+
+      return { success: true, total: { structure: structKeywords.length, ai: aiCount } };
+    } catch (err) {
+      mainWindow.webContents.send('keywords:batch', {
+        keywords: [],
+        phase: 'complete',
+      });
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Keyword translation (separate from extraction, uses builtin glossary for context)
+  ipcMain.handle('keywords:translate', async (_, { keywords }) => {
+    try {
+      // Merge builtin glossary for translation reference
+      const builtinGlossary = configManager.getBuiltinGlossary().map(e => ({
+        source: e.source,
+        target: e.target,
+        category: e.category,
+      }));
+      const results = await translationService.translateKeywords(keywords, builtinGlossary);
+      return { success: true, data: results };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Legacy keyword extraction from MOD folder (kept for compatibility)
   ipcMain.handle('mod:extractKeywords', async (_, modPath) => {
     try {
       const parsed = await parseModFolder(modPath);
@@ -309,6 +431,53 @@ function registerIpcHandlers() {
         }
       }
       return { success: true, data: keywords };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // AI-enhanced keyword extraction
+  ipcMain.handle('ai:extractKeywords', async (_, { modPath, glossary }) => {
+    try {
+      const parsed = await parseModFolder(modPath);
+
+      // Collect text samples from all translatable entries (descriptions, dialogues, etc.)
+      // Group by file to preserve context and avoid duplicates
+      const textSamples = [];
+      const seen = new Set();
+      for (const entry of parsed.entries) {
+        if (entry.original && entry.original.length >= 10 && !seen.has(entry.original)) {
+          seen.add(entry.original);
+          textSamples.push({
+            text: entry.original,
+            context: entry.context || entry.file,
+          });
+        }
+      }
+
+      // Limit total samples to avoid excessive API calls
+      const MAX_AI_SAMPLES = 200;
+      const sampled = textSamples.length > MAX_AI_SAMPLES
+        ? textSamples.slice(0, MAX_AI_SAMPLES)
+        : textSamples;
+
+      // Merge glossary for deduplication (uses module-level safeTermLower)
+      const builtinGlossary = (configManager.getBuiltinGlossary() || [])
+        .map(safeTermLower).filter(Boolean);
+      const projectGlossary = (glossary || [])
+        .map(safeTermLower).filter(Boolean);
+      const existingTerms = new Set([...builtinGlossary, ...projectGlossary]);
+
+      const keywords = (await translationService.extractKeywords(sampled)) || [];
+
+      // Filter out terms already in glossaries (skip malformed keyword entries)
+      const filtered = keywords.filter(kw => {
+        if (!kw || typeof kw.source !== 'string') return false;
+        const term = kw.source.trim().toLowerCase();
+        return term && !existingTerms.has(term);
+      });
+
+      return { success: true, data: filtered };
     } catch (err) {
       return { success: false, error: err.message };
     }
