@@ -7,7 +7,7 @@ import {
   RobotOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { useTask } from './TaskContext';
+import { useTask } from '../context/TaskContext';
 
 const api = window.electronAPI;
 
@@ -174,7 +174,10 @@ export default function TranslationEditor({
       content: `将翻译当前筛选范围内的 ${untranslated.length} 条未翻译文本，是否继续？`,
       okText: '开始翻译',
       cancelText: '取消',
-      onOk: async () => {
+      onOk() {
+        // Do not return the promise so the dialog closes immediately.
+        // Using a fire-and-forget async IIFE: if onOk were async, Ant Design's
+        // Modal.confirm would keep the dialog open until the Promise resolves.
         const taskId = startTask(`批量翻译 ${untranslated.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');
@@ -182,42 +185,44 @@ export default function TranslationEditor({
         }
         setBatchTranslating(true);
         addLog('info', `开始批量翻译 ${untranslated.length} 条未翻译文本`, '翻译编辑');
-        try {
-          const batchInput = untranslated.map(e => ({
-            id: e.id,
-            original: e.original,
-            context: e.context,
-          }));
-          updateTaskProgress(`0/${untranslated.length}`);
-          const result = await api.translate({
-            entries: batchInput,
-            glossary: project.glossary || [],
-          });
-          if (result?.success) {
-            onBatchUpdate(result.data);
-            const successCount = result.data.filter(r => r.status === 'translated').length;
-            const msg = `批量翻译完成：${successCount}/${untranslated.length} 成功`;
-            addLog('success', msg, '翻译编辑');
-            for (const r of result.data.slice(0, 5)) {
-              if (r.status === 'translated') {
-                addLog('debug', `"${(r.original || '').slice(0, 30)}" → "${(r.translated || '').slice(0, 30)}"`, '翻译编辑');
+        (async () => {
+          try {
+            const batchInput = untranslated.map(e => ({
+              id: e.id,
+              original: e.original,
+              context: e.context,
+            }));
+            updateTaskProgress(`0/${untranslated.length}`);
+            const result = await api.translate({
+              entries: batchInput,
+              glossary: project.glossary || [],
+            });
+            if (result?.success) {
+              onBatchUpdate(result.data);
+              const successCount = result.data.filter(r => r.status === 'translated').length;
+              const msg = `批量翻译完成：${successCount}/${untranslated.length} 成功`;
+              addLog('success', msg, '翻译编辑');
+              for (const r of result.data.slice(0, 5)) {
+                if (r.status === 'translated') {
+                  addLog('debug', `"${(r.original || '').slice(0, 30)}" → "${(r.translated || '').slice(0, 30)}"`, '翻译编辑');
+                }
               }
+              completeTask(msg);
+              messageApi.success(msg);
+            } else {
+              const errMsg = result?.error || '批量翻译失败';
+              addLog('error', errMsg, '翻译编辑');
+              failTask(errMsg);
+              messageApi.error(errMsg);
             }
-            completeTask(msg);
-            messageApi.success(msg);
-          } else {
-            const errMsg = result?.error || '批量翻译失败';
-            addLog('error', errMsg, '翻译编辑');
-            failTask(errMsg);
-            messageApi.error(errMsg);
+          } catch (err) {
+            addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
+            failTask(`批量翻译出错: ${err.message}`);
+            messageApi.error('批量翻译出错: ' + err.message);
+          } finally {
+            setBatchTranslating(false);
           }
-        } catch (err) {
-          addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
-          failTask(`批量翻译出错: ${err.message}`);
-          messageApi.error('批量翻译出错: ' + err.message);
-        } finally {
-          setBatchTranslating(false);
-        }
+        })();
       },
     });
   }, [filteredEntries, project.glossary, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
@@ -240,7 +245,10 @@ export default function TranslationEditor({
       content: `将润色当前筛选范围内的 ${translated.length} 条已翻译文本，是否继续？`,
       okText: '开始润色',
       cancelText: '取消',
-      onOk: async () => {
+      onOk() {
+        // Do not return the promise so the dialog closes immediately.
+        // Using a fire-and-forget async IIFE: if onOk were async, Ant Design's
+        // Modal.confirm would keep the dialog open until the Promise resolves.
         const taskId = startTask(`批量润色 ${translated.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');
@@ -248,35 +256,37 @@ export default function TranslationEditor({
         }
         setBatchTranslating(true);
         addLog('info', `开始批量润色 ${translated.length} 条已翻译文本`, '翻译编辑');
-        try {
-          const updates = [];
-          for (let i = 0; i < translated.length; i++) {
-            const entry = translated[i];
-            updateTaskProgress(`${i + 1}/${translated.length}`);
-            addLog('debug', `润色 (${i + 1}/${translated.length}): "${entry.original.slice(0, 40)}"`, '翻译编辑');
-            const result = await api.polish({
-              entry: { id: entry.id, original: entry.original, translated: entry.translated },
-              glossary: project.glossary || [],
-            });
-            if (result?.success) {
-              updates.push(result.data);
-              addLog('debug', `润色结果: "${(result.data.translated || '').slice(0, 40)}"`, '翻译编辑');
+        (async () => {
+          try {
+            const updates = [];
+            for (let i = 0; i < translated.length; i++) {
+              const entry = translated[i];
+              updateTaskProgress(`${i + 1}/${translated.length}`);
+              addLog('debug', `润色 (${i + 1}/${translated.length}): "${entry.original.slice(0, 40)}"`, '翻译编辑');
+              const result = await api.polish({
+                entry: { id: entry.id, original: entry.original, translated: entry.translated },
+                glossary: project.glossary || [],
+              });
+              if (result?.success) {
+                updates.push(result.data);
+                addLog('debug', `润色结果: "${(result.data.translated || '').slice(0, 40)}"`, '翻译编辑');
+              }
             }
+            if (updates.length > 0) {
+              onBatchUpdate(updates);
+            }
+            const msg = `批量润色完成：${updates.length}/${translated.length} 成功`;
+            addLog('success', msg, '翻译编辑');
+            completeTask(msg);
+            messageApi.success(msg);
+          } catch (err) {
+            addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
+            failTask(`批量润色出错: ${err.message}`);
+            messageApi.error('批量润色出错: ' + err.message);
+          } finally {
+            setBatchTranslating(false);
           }
-          if (updates.length > 0) {
-            onBatchUpdate(updates);
-          }
-          const msg = `批量润色完成：${updates.length}/${translated.length} 成功`;
-          addLog('success', msg, '翻译编辑');
-          completeTask(msg);
-          messageApi.success(msg);
-        } catch (err) {
-          addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
-          failTask(`批量润色出错: ${err.message}`);
-          messageApi.error('批量润色出错: ' + err.message);
-        } finally {
-          setBatchTranslating(false);
-        }
+        })();
       },
     });
   }, [filteredEntries, project.glossary, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);

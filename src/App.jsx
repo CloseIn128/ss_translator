@@ -1,15 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ConfigProvider, theme, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
-import LeftNav from './components/LeftNav';
-import WelcomePage from './components/WelcomePage';
-import TranslationEditor from './components/TranslationEditor';
-import GlossaryPanel from './components/GlossaryPanel';
-import KeywordExtractor from './components/KeywordExtractor';
-import SettingsPanel from './components/SettingsPanel';
-import LogPanel from './components/LogPanel';
-import BottomBar from './components/BottomBar';
-import { TaskProvider } from './components/TaskContext';
+import LeftNav from './components/layout/LeftNav';
+import LogPanel from './components/layout/LogPanel';
+import BottomBar from './components/layout/BottomBar';
+import WelcomePage from './components/pages/WelcomePage';
+import TranslationEditor from './components/pages/TranslationEditor';
+import GlossaryPanel from './components/pages/GlossaryPanel';
+import KeywordExtractor from './components/pages/KeywordExtractor';
+import SettingsPanel from './components/pages/SettingsPanel';
+import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
 

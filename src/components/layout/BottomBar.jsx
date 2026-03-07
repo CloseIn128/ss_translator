@@ -7,7 +7,7 @@ import {
   CloseCircleOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import { useTask } from './TaskContext';
+import { useTask } from '../context/TaskContext';
 
 export default function BottomBar({ logVisible, onToggleLog }) {
   const { currentTask, taskHighlight, dismissTask, isTaskRunning } = useTask();
