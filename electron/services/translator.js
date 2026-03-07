@@ -96,7 +96,7 @@ class TranslationService {
 5. 同一个词只需出现一次
 
 请严格按照以下JSON数组格式返回结果，不要添加任何其他说明文字：
-[{"source":"英文原文","category":"分类"}]
+[{"source":"Hegemony","category":"势力名称"}]
 
 分类可选值：势力名称、舰船名称、武器名称、人名/地名、游戏术语、物品名称、其他`;
   }
@@ -247,7 +247,7 @@ ${textsFormatted}`;
 ${keywordsText}
 
 请严格按照以下格式返回：
-[{"source":"英文原文","target":"中文翻译"}]`;
+[{"source":"Hegemony","target":"霸主"}]`;
 
     const systemPrompt = `你是一位专业的游戏本地化翻译专家。请为提供的太空策略游戏"远行星号"(Starsector)的MOD术语提供准确的中文翻译。翻译应当符合太空科幻设定的措辞风格。`;
 

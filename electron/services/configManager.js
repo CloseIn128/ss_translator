@@ -62,7 +62,7 @@ const DEFAULT_MODEL_CONFIG = {
 5. 同一个词只需出现一次
 
 请严格按照以下JSON数组格式返回结果，不要添加任何其他说明文字：
-[{"source":"英文原文","category":"分类"}]
+[{"source":"Hegemony","category":"势力名称"}]
 
 分类可选值：势力名称、舰船名称、武器名称、人名/地名、游戏术语、物品名称、其他`,
 };
