@@ -1,16 +1,30 @@
 import React from 'react';
-import { Button, Tag, Tooltip } from 'antd';
+import { Button, Tag, Tooltip, Modal } from 'antd';
 import {
   CodeOutlined,
   LoadingOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   CloseOutlined,
+  StopOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
 export default function BottomBar({ logVisible, onToggleLog }) {
-  const { currentTask, taskHighlight, dismissTask, isTaskRunning } = useTask();
+  const { currentTask, taskHighlight, dismissTask, cancelTask, isTaskRunning } = useTask();
+
+  const handleCancel = () => {
+    Modal.confirm({
+      title: '取消任务',
+      content: `确定要取消当前任务"${currentTask?.name || ''}"吗？`,
+      okText: '确认取消',
+      cancelText: '继续执行',
+      okButtonProps: { danger: true },
+      onOk() {
+        cancelTask();
+      },
+    });
+  };
 
   const statusIcon = () => {
     if (!currentTask) return null;
@@ -63,6 +77,18 @@ export default function BottomBar({ logVisible, onToggleLog }) {
             )}
             {currentTask.message && currentTask.status !== 'running' && (
               <span className="bottom-bar-message">{currentTask.message}</span>
+            )}
+            {isTaskRunning && (
+              <Tooltip title="取消任务">
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<StopOutlined style={{ fontSize: 11 }} />}
+                  className="bottom-bar-dismiss"
+                  onClick={handleCancel}
+                />
+              </Tooltip>
             )}
             {!isTaskRunning && (
               <Tooltip title="关闭">

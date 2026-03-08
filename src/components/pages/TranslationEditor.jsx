@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Input, Select, Button, Tag, Tooltip, Space, Modal, Spin, Progress } from 'antd';
 import {
   TranslationOutlined,
@@ -33,8 +33,20 @@ export default function TranslationEditor({
   onBatchUpdate,
   messageApi,
 }) {
-  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
+  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning, isTaskCancelled } = useTask();
   const modPrompt = project.modPrompt || '';
+  const progressHandlerRef = useRef(null);
+
+  // Cleanup progress event listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (progressHandlerRef.current) {
+        api.removeTranslateProgressListener(progressHandlerRef.current);
+        api.removePolishProgressListener(progressHandlerRef.current);
+        progressHandlerRef.current = null;
+      }
+    };
+  }, []);
 
   // Merge project glossary with keywords (keywords with translations are usable as glossary)
   const mergedGlossary = useMemo(() => {
@@ -230,6 +242,20 @@ export default function TranslationEditor({
         }
         setBatchTranslating(true);
         addLog('info', `开始批量翻译 ${targetEntries.length} 条文本`, '翻译编辑');
+
+        // Listen for incremental progress from backend
+        if (progressHandlerRef.current) {
+          api.removeTranslateProgressListener(progressHandlerRef.current);
+        }
+        const handler = api.onTranslateProgress(({ completed, total, batchResults }) => {
+          updateTaskProgress(`${completed}/${total}`);
+          // Incrementally update entries as batches complete
+          if (batchResults && batchResults.length > 0) {
+            onBatchUpdate(batchResults);
+          }
+        });
+        progressHandlerRef.current = handler;
+
         (async () => {
           try {
             const batchInput = targetEntries.map(e => ({
@@ -243,7 +269,9 @@ export default function TranslationEditor({
               glossary: mergedGlossary,
               modPrompt,
             });
+            if (isTaskCancelled()) return;
             if (result?.success) {
+              // Final update with all results (ensures consistency)
               onBatchUpdate(result.data);
               const successCount = result.data.filter(r => r.status === 'translated').length;
               const msg = `批量翻译完成：${successCount}/${targetEntries.length} 成功`;
@@ -262,16 +290,22 @@ export default function TranslationEditor({
               messageApi.error(errMsg);
             }
           } catch (err) {
-            addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
-            failTask(`批量翻译出错: ${err.message}`);
-            messageApi.error('批量翻译出错: ' + err.message);
+            if (!isTaskCancelled()) {
+              addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
+              failTask(`批量翻译出错: ${err.message}`);
+              messageApi.error('批量翻译出错: ' + err.message);
+            }
           } finally {
             setBatchTranslating(false);
+            if (progressHandlerRef.current) {
+              api.removeTranslateProgressListener(progressHandlerRef.current);
+              progressHandlerRef.current = null;
+            }
           }
         })();
       },
     });
-  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog, isTaskCancelled]);
 
   // Batch polish all translated
   const handleBatchPolish = useCallback(async () => {
@@ -299,6 +333,19 @@ export default function TranslationEditor({
         }
         setBatchTranslating(true);
         addLog('info', `开始批量润色 ${translated.length} 条已翻译文本`, '翻译编辑');
+
+        // Listen for incremental progress from backend
+        if (progressHandlerRef.current) {
+          api.removePolishProgressListener(progressHandlerRef.current);
+        }
+        const handler = api.onPolishProgress(({ completed, total, batchResults }) => {
+          updateTaskProgress(`${completed}/${total}`);
+          if (batchResults && batchResults.length > 0) {
+            onBatchUpdate(batchResults);
+          }
+        });
+        progressHandlerRef.current = handler;
+
         (async () => {
           try {
             const batchInput = translated.map(e => ({
@@ -313,6 +360,7 @@ export default function TranslationEditor({
               glossary: mergedGlossary,
               modPrompt,
             });
+            if (isTaskCancelled()) return;
             if (result?.success) {
               onBatchUpdate(result.data);
               const successCount = result.data.filter(r => r.status === 'polished').length;
@@ -327,16 +375,22 @@ export default function TranslationEditor({
               messageApi.error(errMsg);
             }
           } catch (err) {
-            addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
-            failTask(`批量润色出错: ${err.message}`);
-            messageApi.error('批量润色出错: ' + err.message);
+            if (!isTaskCancelled()) {
+              addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
+              failTask(`批量润色出错: ${err.message}`);
+              messageApi.error('批量润色出错: ' + err.message);
+            }
           } finally {
             setBatchTranslating(false);
+            if (progressHandlerRef.current) {
+              api.removePolishProgressListener(progressHandlerRef.current);
+              progressHandlerRef.current = null;
+            }
           }
         })();
       },
     });
-  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog, isTaskCancelled]);
 
   // File stats for sidebar
   const fileStats = useMemo(() => {

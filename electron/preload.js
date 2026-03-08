@@ -37,6 +37,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   polish: (data) => ipcRenderer.invoke('ai:polish', data),
   polishBatch: (data) => ipcRenderer.invoke('ai:polishBatch', data),
 
+  // AI progress events (for batch translate/polish)
+  onTranslateProgress: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('ai:translateProgress', handler);
+    return handler;
+  },
+  removeTranslateProgressListener: (handler) => {
+    ipcRenderer.removeListener('ai:translateProgress', handler);
+  },
+  onPolishProgress: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('ai:polishProgress', handler);
+    return handler;
+  },
+  removePolishProgressListener: (handler) => {
+    ipcRenderer.removeListener('ai:polishProgress', handler);
+  },
+
   // Request History (AI debugging)
   getRequestHistory: () => ipcRenderer.invoke('ai:getRequestHistory'),
   getRequestDetail: (id) => ipcRenderer.invoke('ai:getRequestDetail', id),

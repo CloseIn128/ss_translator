@@ -484,9 +484,10 @@ ${keywordsText}
    * @param {Array} glossary - Glossary entries for prompt
    * @param {object} config - Optional config override
    * @param {string} modPrompt - Optional mod-level context prompt
+   * @param {Function} onProgress - Optional (completedCount, totalCount, batchResults) callback
    * @returns {Array} - Array of { id, translated }
    */
-  async translateBatch(entries, glossary = [], config = {}, modPrompt = '') {
+  async translateBatch(entries, glossary = [], config = {}, modPrompt = '', onProgress = null) {
     const cfg = { ...this.config, ...config };
     const results = [];
 
@@ -496,8 +497,14 @@ ${keywordsText}
       batches.push(entries.slice(i, i + cfg.batchSize));
     }
 
+    let completedEntries = 0;
     const batchResults = await this._runConcurrentBatches(batches, cfg, async (batch) => {
-      return await this._translateBatchRequest(batch, glossary, cfg, modPrompt);
+      const batchResult = await this._translateBatchRequest(batch, glossary, cfg, modPrompt);
+      completedEntries += batch.length;
+      if (onProgress) {
+        try { onProgress(completedEntries, entries.length, batchResult); } catch (_) {}
+      }
+      return batchResult;
     });
 
     for (const br of batchResults) {
@@ -578,9 +585,10 @@ ${entry.translated}
    * @param {Array} glossary - Glossary entries for prompt
    * @param {object} config - Optional config override
    * @param {string} modPrompt - Optional mod-level context prompt
+   * @param {Function} onProgress - Optional (completedCount, totalCount, batchResults) callback
    * @returns {Array} - Array of { id, translated, status }
    */
-  async polishBatch(entries, glossary = [], config = {}, modPrompt = '') {
+  async polishBatch(entries, glossary = [], config = {}, modPrompt = '', onProgress = null) {
     const cfg = { ...this.config, ...config };
     const results = [];
 
@@ -590,8 +598,14 @@ ${entry.translated}
       batches.push(entries.slice(i, i + cfg.batchSize));
     }
 
+    let completedEntries = 0;
     const batchResults = await this._runConcurrentBatches(batches, cfg, async (batch) => {
-      return await this._polishBatchRequest(batch, glossary, cfg, modPrompt);
+      const batchResult = await this._polishBatchRequest(batch, glossary, cfg, modPrompt);
+      completedEntries += batch.length;
+      if (onProgress) {
+        try { onProgress(completedEntries, entries.length, batchResult); } catch (_) {}
+      }
+      return batchResult;
     });
 
     for (const br of batchResults) {

@@ -188,6 +188,9 @@ function AppInner() {
     overflow: 'hidden',
   });
 
+  // CSS class for tab panels - editor gets no padding, others get padding
+  const tabClass = (tabKey) => tabKey === 'editor' ? 'tab-panel-editor' : 'tab-panel';
+
   // For project-requiring tabs, show WelcomePage if no project
   const needsProject = (tabKey) => {
     return ['info', 'editor', 'glossary'].includes(tabKey) && !project;
@@ -215,7 +218,7 @@ function AppInner() {
 
             {/* All tabs rendered but hidden when inactive to avoid unmount/remount */}
             {project && (
-              <div style={tabStyle('info')}>
+              <div className={tabClass('info')} style={tabStyle('info')}>
                 <ProjectInfo
                   project={project}
                   onProjectFieldsChange={handleProjectFieldsChange}
@@ -224,7 +227,7 @@ function AppInner() {
               </div>
             )}
             {project && (
-              <div style={tabStyle('editor')}>
+              <div className={tabClass('editor')} style={tabStyle('editor')}>
                 <TranslationEditor
                   project={project}
                   selectedFile={selectedFile}
@@ -236,7 +239,7 @@ function AppInner() {
               </div>
             )}
             {project && (
-              <div style={tabStyle('glossary')}>
+              <div className={tabClass('glossary')} style={tabStyle('glossary')}>
                 <GlossaryPanel
                   project={project}
                   onUpdateGlossary={handleUpdateGlossary}
@@ -245,18 +248,18 @@ function AppInner() {
                 />
               </div>
             )}
-            <div style={tabStyle('settings')}>
+            <div className={tabClass('settings')} style={tabStyle('settings')}>
               <SettingsPanel
                 messageApi={messageApi}
               />
             </div>
-            <div style={tabStyle('appSettings')}>
+            <div className={tabClass('appSettings')} style={tabStyle('appSettings')}>
               <AppSettingsPanel
                 zoomLevel={zoomLevel}
                 onZoomLevelChange={setZoomLevel}
               />
             </div>
-            <div style={tabStyle('requestHistory')}>
+            <div className={tabClass('requestHistory')} style={tabStyle('requestHistory')}>
               <RequestHistory />
             </div>
           </div>

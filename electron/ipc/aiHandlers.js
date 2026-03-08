@@ -26,7 +26,13 @@ function register(ctx) {
         category: e.category,
       }));
       const mergedGlossary = [...builtinGlossary, ...(glossary || [])];
-      const results = await ctx.translationService.translateBatch(entries, mergedGlossary, config, modPrompt || '');
+      const win = ctx.getMainWindow();
+      const onProgress = (completed, total, batchResults) => {
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('ai:translateProgress', { completed, total, batchResults });
+        }
+      };
+      const results = await ctx.translationService.translateBatch(entries, mergedGlossary, config, modPrompt || '', onProgress);
       return { success: true, data: results };
     } catch (err) {
       return { success: false, error: err.message };
@@ -56,7 +62,13 @@ function register(ctx) {
         category: e.category,
       }));
       const mergedGlossary = [...builtinGlossary, ...(glossary || [])];
-      const results = await ctx.translationService.polishBatch(entries, mergedGlossary, config, modPrompt || '');
+      const win = ctx.getMainWindow();
+      const onProgress = (completed, total, batchResults) => {
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('ai:polishProgress', { completed, total, batchResults });
+        }
+      };
+      const results = await ctx.translationService.polishBatch(entries, mergedGlossary, config, modPrompt || '', onProgress);
       return { success: true, data: results };
     } catch (err) {
       return { success: false, error: err.message };
