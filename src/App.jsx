@@ -180,71 +180,18 @@ function AppInner() {
     setProject(prev => prev ? { ...prev, ...fields } : prev);
   }, []);
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'info':
-        if (!project) {
-          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
-        }
-        return (
-          <ProjectInfo
-            project={project}
-            onProjectFieldsChange={handleProjectFieldsChange}
-            messageApi={messageApi}
-          />
-        );
-      case 'editor':
-        if (!project) {
-          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
-        }
-        return (
-          <TranslationEditor
-            project={project}
-            selectedFile={selectedFile}
-            onSelectFile={setSelectedFile}
-            onUpdateEntry={handleUpdateEntry}
-            onBatchUpdate={handleBatchUpdate}
-            messageApi={messageApi}
-          />
-        );
-      case 'glossary':
-        if (!project) {
-          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
-        }
-        return (
-          <GlossaryPanel
-            project={project}
-            onUpdateGlossary={handleUpdateGlossary}
-            messageApi={messageApi}
-          />
-        );
-      case 'keywords':
-        return (
-          <KeywordExtractor
-            project={project}
-            onUpdateKeywords={handleUpdateKeywords}
-            onUpdateGlossary={handleUpdateGlossary}
-            messageApi={messageApi}
-          />
-        );
-      case 'settings':
-        return (
-          <SettingsPanel
-            messageApi={messageApi}
-          />
-        );
-      case 'appSettings':
-        return (
-          <AppSettingsPanel
-            zoomLevel={zoomLevel}
-            onZoomLevelChange={setZoomLevel}
-          />
-        );
-      case 'requestHistory':
-        return <RequestHistory />;
-      default:
-        return null;
-    }
+  // Helper to wrap tab content with display:none for inactive tabs
+  const tabStyle = (tabKey) => ({
+    display: activeTab === tabKey ? 'flex' : 'none',
+    flexDirection: 'column',
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+  });
+
+  // For project-requiring tabs, show WelcomePage if no project
+  const needsProject = (tabKey) => {
+    return ['info', 'editor', 'glossary'].includes(tabKey) && !project;
   };
 
   return (
@@ -262,7 +209,65 @@ function AppInner() {
             onExport={handleExport}
           />
           <div className="app-content">
-            {renderContent()}
+            {/* WelcomePage shown for project-requiring tabs when no project */}
+            {needsProject(activeTab) && (
+              <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />
+            )}
+
+            {/* All tabs rendered but hidden when inactive to avoid unmount/remount */}
+            {project && (
+              <div style={tabStyle('info')}>
+                <ProjectInfo
+                  project={project}
+                  onProjectFieldsChange={handleProjectFieldsChange}
+                  messageApi={messageApi}
+                />
+              </div>
+            )}
+            {project && (
+              <div style={tabStyle('editor')}>
+                <TranslationEditor
+                  project={project}
+                  selectedFile={selectedFile}
+                  onSelectFile={setSelectedFile}
+                  onUpdateEntry={handleUpdateEntry}
+                  onBatchUpdate={handleBatchUpdate}
+                  messageApi={messageApi}
+                />
+              </div>
+            )}
+            {project && (
+              <div style={tabStyle('glossary')}>
+                <GlossaryPanel
+                  project={project}
+                  onUpdateGlossary={handleUpdateGlossary}
+                  onUpdateKeywords={handleUpdateKeywords}
+                  messageApi={messageApi}
+                />
+              </div>
+            )}
+            <div style={tabStyle('keywords')}>
+              <KeywordExtractor
+                project={project}
+                onUpdateKeywords={handleUpdateKeywords}
+                onUpdateGlossary={handleUpdateGlossary}
+                messageApi={messageApi}
+              />
+            </div>
+            <div style={tabStyle('settings')}>
+              <SettingsPanel
+                messageApi={messageApi}
+              />
+            </div>
+            <div style={tabStyle('appSettings')}>
+              <AppSettingsPanel
+                zoomLevel={zoomLevel}
+                onZoomLevelChange={setZoomLevel}
+              />
+            </div>
+            <div style={tabStyle('requestHistory')}>
+              <RequestHistory />
+            </div>
           </div>
         </div>
         <LogPanel visible={logVisible} />

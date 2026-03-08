@@ -44,7 +44,9 @@ class TranslationService {
 4. 保留所有HTML标签和格式代码
 5. 对于专有名词（人名、地名、组织名等），如果名词库中没有对应翻译，保留原文并在括号中给出参考译名
 6. 翻译应当自然流畅，符合中文表达习惯
-7. 武器、舰船描述应保持技术感和军事风格`;
+7. 武器、舰船描述应保持技术感和军事风格
+8. 不要翻译人名、星系名、星球名，保留英文原文
+9. 如果遇到单独占一行的"OR"，不要翻译，保留原文`;
   }
 
   getDefaultPolishPrompt() {
@@ -567,6 +569,66 @@ ${entry.translated}
         status: 'error',
         error: err.message,
       };
+    }
+  }
+
+  /**
+   * Polish a batch of entries with concurrency support
+   * @param {Array} entries - Array of { id, original, translated }
+   * @param {Array} glossary - Glossary entries for prompt
+   * @param {object} config - Optional config override
+   * @param {string} modPrompt - Optional mod-level context prompt
+   * @returns {Array} - Array of { id, translated, status }
+   */
+  async polishBatch(entries, glossary = [], config = {}, modPrompt = '') {
+    const cfg = { ...this.config, ...config };
+    const results = [];
+
+    // Build batches
+    const batches = [];
+    for (let i = 0; i < entries.length; i += cfg.batchSize) {
+      batches.push(entries.slice(i, i + cfg.batchSize));
+    }
+
+    const batchResults = await this._runConcurrentBatches(batches, cfg, async (batch) => {
+      return await this._polishBatchRequest(batch, glossary, cfg, modPrompt);
+    });
+
+    for (const br of batchResults) {
+      results.push(...br);
+    }
+
+    return results;
+  }
+
+  async _polishBatchRequest(entries, glossary, cfg, modPrompt) {
+    const modPromptText = this._buildModPromptText(modPrompt);
+    const glossaryText = this._buildGlossaryPrompt(glossary);
+
+    const textsToPolish = entries.map((e, i) =>
+      `[${i + 1}] (${e.context || ''})\n原文：${e.original}\n当前翻译：${e.translated}`
+    ).join('\n\n---\n\n');
+
+    const userMessage = `${modPromptText}${glossaryText ? glossaryText + '\n\n' : ''}请对以下${entries.length}段已翻译的游戏文本进行润色优化。请按照相同的编号格式返回润色结果，每段用 --- 分隔，只返回润色后的译文，不要添加任何说明：
+
+${textsToPolish}`;
+
+    try {
+      const response = await this._callAPI(cfg.polishPrompt, userMessage, cfg, 'batch-polish');
+      const polished = this._parseBatchResponse(response, entries.length);
+
+      return entries.map((entry, i) => ({
+        id: entry.id,
+        translated: polished[i] || entry.translated,
+        status: polished[i] ? 'polished' : 'error',
+      }));
+    } catch (err) {
+      return entries.map(entry => ({
+        id: entry.id,
+        translated: entry.translated,
+        status: 'error',
+        error: err.message,
+      }));
     }
   }
 

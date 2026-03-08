@@ -48,6 +48,21 @@ function register(ctx) {
     }
   });
 
+  ipcMain.handle('ai:polishBatch', async (_, { entries, glossary, config, modPrompt }) => {
+    try {
+      const builtinGlossary = ctx.configManager.getBuiltinGlossary().map(e => ({
+        source: e.source,
+        target: e.target,
+        category: e.category,
+      }));
+      const mergedGlossary = [...builtinGlossary, ...(glossary || [])];
+      const results = await ctx.translationService.polishBatch(entries, mergedGlossary, config, modPrompt || '');
+      return { success: true, data: results };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('ai:getConfig', async () => {
     // Persisted config is the source of truth; mask the API key
     const config = ctx.configManager.getModelConfig();
