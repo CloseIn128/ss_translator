@@ -315,9 +315,11 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
           if (onUpdateKeywords) onUpdateKeywords(merged);
           return merged;
         });
-        const changed = result.data.filter((d, i) => {
-          const orig = toPolish[i];
-          return orig && d.target !== orig.target;
+        // Count changes using source-based matching instead of index
+        const origMap = new Map(toPolish.map(kw => [kw.source.toLowerCase(), kw.target || '']));
+        const changed = result.data.filter(d => {
+          const origTarget = origMap.get(d.source?.toLowerCase());
+          return origTarget !== undefined && d.target !== origTarget;
         }).length;
         const msg = `润色完成，${changed} 个术语有变更`;
         addLog('success', msg, '关键词提取');

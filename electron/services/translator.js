@@ -5,6 +5,10 @@
  * for translating and polishing Starsector mod text.
  */
 
+const LOG_SYSTEM_PROMPT_LEN = 80;
+const LOG_USER_MSG_LEN = 200;
+const LOG_RESPONSE_LEN = 300;
+
 class TranslationService {
   constructor() {
     this._defaultSystemPrompt = this.getDefaultSystemPrompt();
@@ -365,14 +369,14 @@ ${keywordsText}
     const systemPrompt = `你是一位专业的游戏本地化润色专家。请对已翻译的太空策略游戏"远行星号"(Starsector)MOD术语进行润色优化，确保术语之间的翻译风格和用词保持一致。`;
 
     if (onLog) {
-      onLog('debug', `[润色请求] system: ${systemPrompt.substring(0, 80)}...`);
-      onLog('debug', `[润色请求] user: ${userMessage.substring(0, 200)}...`);
+      onLog('debug', `[润色请求] system: ${systemPrompt.substring(0, LOG_SYSTEM_PROMPT_LEN)}...`);
+      onLog('debug', `[润色请求] user: ${userMessage.substring(0, LOG_USER_MSG_LEN)}...`);
     }
 
     const response = await this._callAPI(systemPrompt, userMessage, cfg);
 
     if (onLog) {
-      onLog('debug', `[润色响应] ${response.substring(0, 300)}...`);
+      onLog('debug', `[润色响应] ${response.substring(0, LOG_RESPONSE_LEN)}...`);
     }
 
     try {
@@ -425,14 +429,14 @@ ${keywordsText}
     const systemPrompt = `你是一位专业的游戏本地化翻译专家。请为提供的太空策略游戏"远行星号"(Starsector)的MOD术语提供准确的中文翻译。翻译应当符合太空科幻设定的措辞风格。人名和星球/星系名保留英文原文不翻译。`;
 
     if (onLog) {
-      onLog('debug', `[翻译请求] system: ${systemPrompt.substring(0, 80)}...`);
-      onLog('debug', `[翻译请求] user: ${userMessage.substring(0, 200)}...`);
+      onLog('debug', `[翻译请求] system: ${systemPrompt.substring(0, LOG_SYSTEM_PROMPT_LEN)}...`);
+      onLog('debug', `[翻译请求] user: ${userMessage.substring(0, LOG_USER_MSG_LEN)}...`);
     }
 
     const response = await this._callAPI(systemPrompt, userMessage, cfg);
 
     if (onLog) {
-      onLog('debug', `[翻译响应] ${response.substring(0, 300)}...`);
+      onLog('debug', `[翻译响应] ${response.substring(0, LOG_RESPONSE_LEN)}...`);
     }
 
     try {
