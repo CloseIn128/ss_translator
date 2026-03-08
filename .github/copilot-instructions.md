@@ -220,6 +220,15 @@
 - 共享上下文 `ctx` 包含：`getMainWindow()`、`glossaryManager`、`translationService`、`projectManager`、`configManager`、`legacyTranslationService`、`parseModFolder`、`exportMod`
 - 新增 IPC 处理器时，在对应模块中添加，并在 `main.js` 中注册
 
+## 内置默认词库
+
+- 词库文件：`electron/data/default_glossary.json`，首次运行时复制到 `config/builtin_glossary.json` 供用户编辑
+- 词库格式：JSON 数组，每项 `{ source, target, category }`
+- 分类：势力名称、舰船名称、武器名称、物品名称、游戏术语、地名、人名、其他
+- 当前共 666 条词条，来源为游戏原版英文/中文资源文件对照提取（`example/vanilla_en` 与 `example/vanilla_cn`）
+- 提取覆盖范围：ship_data.csv（舰船名称、级别、科技派系）、weapon_data.csv（武器名称、角色描述）、wing_data.csv（联队描述）、commodities.csv（物资名称）、industries.csv（产业名称）、special_items.csv（特殊物品）、abilities.csv（能力名称）、market_conditions.csv（市场状况）、submarkets.csv、sim_opponents.csv、personalities.csv 以及部分 JSON 文件中的字符串对比
+- 如需更新词库，可参照 `example/` 目录中英文/中文对照文件重新提取
+
 # 作业规范
 
 每次修改完后，应当更新本文件中的内容，使其反映所做的修改，帮助协作者快速了解项目结构和约定。

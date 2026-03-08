@@ -1,68 +1,3332 @@
 [
-  {"source": "Hegemony",                   "target": "霸主",               "category": "势力名称"},
-  {"source": "Tri-Tachyon",                "target": "三联泰科",            "category": "势力名称"},
-  {"source": "Persean League",             "target": "波斯联盟",            "category": "势力名称"},
-  {"source": "Luddic Church",              "target": "勒德教会",            "category": "势力名称"},
-  {"source": "Luddic Path",               "target": "勒德之路",            "category": "势力名称"},
-  {"source": "Sindrian Diktat",            "target": "辛德里专制国",         "category": "势力名称"},
-  {"source": "Independents",              "target": "独立势力",            "category": "势力名称"},
-  {"source": "Pirates",                   "target": "海盗",               "category": "势力名称"},
-  {"source": "Remnants",                  "target": "遗迹",               "category": "势力名称"},
-  {"source": "Diktat",                    "target": "专制国",              "category": "势力名称"},
-  {"source": "Domain",                    "target": "领域",               "category": "游戏术语"},
-  {"source": "Collapse",                  "target": "大坍缩",              "category": "游戏术语"},
-  {"source": "Gate",                      "target": "星门",               "category": "游戏术语"},
-  {"source": "Transponder",               "target": "应答器",              "category": "游戏术语"},
-  {"source": "Hyperspace",                "target": "超空间",              "category": "游戏术语"},
-  {"source": "Slipstream",                "target": "滑流",               "category": "游戏术语"},
-  {"source": "colony",                    "target": "殖民地",              "category": "游戏术语"},
-  {"source": "orbital station",           "target": "轨道站",              "category": "游戏术语"},
-  {"source": "flux",                      "target": "通量",               "category": "游戏术语"},
-  {"source": "hull",                      "target": "船体",               "category": "游戏术语"},
-  {"source": "shield",                    "target": "护盾",               "category": "游戏术语"},
-  {"source": "armor",                     "target": "装甲",               "category": "游戏术语"},
-  {"source": "phase",                     "target": "相位",               "category": "游戏术语"},
-  {"source": "frigate",                   "target": "护卫舰",              "category": "游戏术语"},
-  {"source": "destroyer",                 "target": "驱逐舰",              "category": "游戏术语"},
-  {"source": "cruiser",                   "target": "巡洋舰",              "category": "游戏术语"},
-  {"source": "capital ship",              "target": "主力舰",              "category": "游戏术语"},
-  {"source": "carrier",                   "target": "航母",               "category": "游戏术语"},
-  {"source": "fighter",                   "target": "战斗机",              "category": "游戏术语"},
-  {"source": "bomber",                    "target": "轰炸机",              "category": "游戏术语"},
-  {"source": "salvage",                   "target": "打捞",               "category": "游戏术语"},
-  {"source": "credits",                   "target": "信用点",              "category": "游戏术语"},
-  {"source": "supply",                    "target": "补给",               "category": "游戏术语"},
-  {"source": "fuel",                      "target": "燃料",               "category": "游戏术语"},
-  {"source": "officer",                   "target": "军官",               "category": "游戏术语"},
-  {"source": "crew",                      "target": "船员",               "category": "游戏术语"},
-  {"source": "skill",                     "target": "技能",               "category": "游戏术语"},
-  {"source": "story point",              "target": "故事点",              "category": "游戏术语"},
-  {"source": "nanoforge",                 "target": "纳米锻炉",            "category": "游戏术语"},
-  {"source": "synchrotron core",          "target": "同步加速器核心",        "category": "游戏术语"},
-  {"source": "corrupted nanoforge",       "target": "损坏的纳米锻炉",        "category": "游戏术语"},
-  {"source": "pristine nanoforge",        "target": "完好的纳米锻炉",        "category": "游戏术语"},
-  {"source": "hull mod",                  "target": "舰船改装件",           "category": "游戏术语"},
-  {"source": "built-in",                  "target": "内置",               "category": "游戏术语"},
-  {"source": "s-mod",                     "target": "故事改装",            "category": "游戏术语"},
-  {"source": "combat rating",             "target": "战斗等级",            "category": "游戏术语"},
-  {"source": "deployment points",         "target": "部署点",              "category": "游戏术语"},
-  {"source": "combat readiness",          "target": "战斗准备度",           "category": "游戏术语"},
-  {"source": "CR",                        "target": "战备度",              "category": "游戏术语"},
-  {"source": "OP",                        "target": "装配点",              "category": "游戏术语"},
-  {"source": "ordnance points",           "target": "装配点",              "category": "游戏术语"},
-  {"source": "ballistic",                 "target": "动能武器",            "category": "游戏术语"},
-  {"source": "energy",                    "target": "能量武器",            "category": "游戏术语"},
-  {"source": "missile",                   "target": "导弹",               "category": "游戏术语"},
-  {"source": "small",                     "target": "小型",               "category": "游戏术语"},
-  {"source": "medium",                    "target": "中型",               "category": "游戏术语"},
-  {"source": "large",                     "target": "大型",               "category": "游戏术语"},
-  {"source": "hardpoint",                 "target": "固定炮台",            "category": "游戏术语"},
-  {"source": "turret",                    "target": "炮塔",               "category": "游戏术语"},
-  {"source": "Persean Sector",            "target": "波斯星区",            "category": "地名"},
-  {"source": "Corvus",                    "target": "乌鸦星系",            "category": "地名"},
-  {"source": "Askonia",                   "target": "阿斯科尼亚",           "category": "地名"},
-  {"source": "Jangala",                   "target": "詹加拉",              "category": "地名"},
-  {"source": "Chicomoztoc",               "target": "奇科莫兹托克",         "category": "地名"},
-  {"source": "Mayasura",                  "target": "玛雅苏拉",            "category": "地名"},
-  {"source": "Sindria",                   "target": "辛德里亚",            "category": "地名"}
+  {
+    "source": "Diktat",
+    "target": "专制国",
+    "category": "势力名称"
+  },
+  {
+    "source": "Domain Restricted",
+    "target": "人之领管制科技",
+    "category": "势力名称"
+  },
+  {
+    "source": "Eridani-Utopia Terraforming",
+    "target": "天苑四-乌托邦地貌改造集团",
+    "category": "势力名称"
+  },
+  {
+    "source": "Exodyne Biotech",
+    "target": "艾克索达因生物科技",
+    "category": "势力名称"
+  },
+  {
+    "source": "Explorarium",
+    "target": "开拓者",
+    "category": "势力名称"
+  },
+  {
+    "source": "Fabrique Orbitale",
+    "target": "轨道工厂制造公司",
+    "category": "势力名称"
+  },
+  {
+    "source": "Hegemony",
+    "target": "霸主",
+    "category": "势力名称"
+  },
+  {
+    "source": "High Tech",
+    "target": "扩展纪元",
+    "category": "势力名称"
+  },
+  {
+    "source": "Independents",
+    "target": "独立势力",
+    "category": "势力名称"
+  },
+  {
+    "source": "Ko Combine",
+    "target": "Ko 联合实业",
+    "category": "势力名称"
+  },
+  {
+    "source": "Low Tech",
+    "target": "主宰纪元",
+    "category": "势力名称"
+  },
+  {
+    "source": "Luddic Church",
+    "target": "勒德教会",
+    "category": "势力名称"
+  },
+  {
+    "source": "Luddic Path",
+    "target": "勒德之路",
+    "category": "势力名称"
+  },
+  {
+    "source": "Mbaye-Gogol",
+    "target": "姆巴耶-果戈尔",
+    "category": "势力名称"
+  },
+  {
+    "source": "Midline",
+    "target": "核心纪元",
+    "category": "势力名称"
+  },
+  {
+    "source": "Persean League",
+    "target": "波斯联盟",
+    "category": "势力名称"
+  },
+  {
+    "source": "Pirate",
+    "target": "海盗",
+    "category": "势力名称"
+  },
+  {
+    "source": "Pirates",
+    "target": "海盗",
+    "category": "势力名称"
+  },
+  {
+    "source": "Remnant",
+    "target": "余辉",
+    "category": "势力名称"
+  },
+  {
+    "source": "Remnants",
+    "target": "遗迹",
+    "category": "势力名称"
+  },
+  {
+    "source": "Sindrian Diktat",
+    "target": "辛德里专制国",
+    "category": "势力名称"
+  },
+  {
+    "source": "Tri-Tachyon",
+    "target": "三联泰科",
+    "category": "势力名称"
+  },
+  {
+    "source": "Unknown",
+    "target": "未知",
+    "category": "势力名称"
+  },
+  {
+    "source": "Advanced Gunship",
+    "target": "先进炮艇",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Afflictor",
+    "target": "折磨",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Apex",
+    "target": "折光",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Apogee",
+    "target": "至高点",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Aspect",
+    "target": "位向",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Assault Drone",
+    "target": "攻击无人机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Astral",
+    "target": "星体",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Atlas",
+    "target": "阿特拉斯",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Atlas Mk.II",
+    "target": "阿特拉斯 Mk.II",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Aurora",
+    "target": "极光",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Bastillon",
+    "target": "棱堡",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Battlecarrier",
+    "target": "航空战列舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Battlecruiser",
+    "target": "战列巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Battleship",
+    "target": "战列舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Battlestation",
+    "target": "作战基地",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Berserker",
+    "target": "狂战士",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Borer",
+    "target": "冥蜂",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Bow Sensor Mast",
+    "target": "前端传感器杆",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Bow Shield Module",
+    "target": "前端阻抗模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Brawler",
+    "target": "斗士",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Brilliant",
+    "target": "辉煌",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Broadsword",
+    "target": "阔剑",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Buffalo",
+    "target": "水牛",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Buffalo Mk.II",
+    "target": "水牛 Mk.II",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Carrier",
+    "target": "航母",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Centurion",
+    "target": "百夫长",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Cerberus",
+    "target": "地狱犬",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Champion",
+    "target": "捍卫者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Civilian Transport",
+    "target": "游轮",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Claw",
+    "target": "钩爪",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Cobra",
+    "target": "眼镜蛇",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Colossus",
+    "target": "巨像",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Colossus Mk.II",
+    "target": "巨像 Mk.II",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Colossus Mk.III",
+    "target": "巨像 Mk.III",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Combat Freighter",
+    "target": "武装商舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Condor",
+    "target": "秃鹰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Conquest",
+    "target": "征服者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Cruiser",
+    "target": "巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Dagger",
+    "target": "匕首",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Defender",
+    "target": "后卫",
+    "category": "舰船名称"
+  },
+  {
+    "source": "DEM Drone",
+    "target": "DEM 无人机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Destroyer",
+    "target": "驱逐舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Dextral Shard",
+    "target": "右旋",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Domain-era Survey Mothership",
+    "target": "人之领勘探母舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Dominator",
+    "target": "统治者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Doom",
+    "target": "厄运",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Dram",
+    "target": "德拉姆",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Dreadnought",
+    "target": "无畏舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Drone",
+    "target": "无人机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Drone Battlecruiser",
+    "target": "无人战列巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Drone Battleship",
+    "target": "无人战列舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Drone Tender",
+    "target": "无人机补给舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Droneship",
+    "target": "无人护卫舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Droneship Carrier",
+    "target": "无人航母",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Droneship Cruiser",
+    "target": "无人巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Drover",
+    "target": "赶牛人",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Eagle",
+    "target": "雄鹰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Enforcer",
+    "target": "执法者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Eradicator",
+    "target": "根除者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Facet",
+    "target": "构面",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Falcon",
+    "target": "猎鹰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Fast Carrier",
+    "target": "高速航母",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Fast Cruiser",
+    "target": "高速巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Flash",
+    "target": "闪光",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Freighter",
+    "target": "货舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Frigate",
+    "target": "护卫舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Fulgent",
+    "target": "光辉",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Fury",
+    "target": "狂怒",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gargoyle",
+    "target": "石像鬼",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gemini",
+    "target": "双子座",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gladius",
+    "target": "短剑",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Glimmer",
+    "target": "微光",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gremlin",
+    "target": "小精灵",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Grendel",
+    "target": "格伦德尔",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gryphon",
+    "target": "狮鹫",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Guardian",
+    "target": "守护者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gun Pod, Medium",
+    "target": "中型武器吊舱",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gun Pod, Rear",
+    "target": "尾部武器吊舱",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gun Pod, Small",
+    "target": "小型武器吊舱",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Gunship",
+    "target": "炮艇",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hammerhead",
+    "target": "锤头",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hangar Module",
+    "target": "机库模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Harbinger",
+    "target": "灾星",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Broadside Module",
+    "target": "重型侧舷模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Citadel",
+    "target": "重型星堡",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Combat Module",
+    "target": "重型战斗模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Cruiser",
+    "target": "重型巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Droneship",
+    "target": "重型无人巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Freighter",
+    "target": "重型货舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Frigate",
+    "target": "重型护卫舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Station Battery",
+    "target": "重型空间站炮台",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heavy Support Module",
+    "target": "重型支援模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hermes",
+    "target": "赫尔墨斯",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Heron",
+    "target": "苍鹭",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hound",
+    "target": "猎犬",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hyperion",
+    "target": "亥伯龙",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Invictus",
+    "target": "不败",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Khopesh",
+    "target": "镰状剑",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Kite",
+    "target": "风筝",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Lasher",
+    "target": "征伐",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Legion",
+    "target": "军团",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Light Carrier",
+    "target": "轻型航母",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Light Cruiser",
+    "target": "轻型巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Light Destroyer",
+    "target": "轻型驱逐舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Light Support Module",
+    "target": "轻型支援模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Longbow",
+    "target": "长弓",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Lumen",
+    "target": "流明",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Lux",
+    "target": "勒克斯",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Manticore",
+    "target": "蝎尾狮",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Medusa",
+    "target": "美杜莎",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Mercury",
+    "target": "墨丘利",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Merlon",
+    "target": "城齿",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Mining Pod",
+    "target": "探矿无人机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Missile Cruiser",
+    "target": "导弹巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Modified Freighter",
+    "target": "改装货舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Modified Superfreighter",
+    "target": "改装超级货舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Modified Tanker",
+    "target": "改装燃料输送舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Monitor",
+    "target": "监视者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Mora",
+    "target": "莫拉",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Mudskipper",
+    "target": "弹涂鱼",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Mule",
+    "target": "骡子",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Nebula",
+    "target": "星云",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Nova",
+    "target": "新星",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Odyssey",
+    "target": "奥德赛",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Omen",
+    "target": "预兆",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Onslaught",
+    "target": "攻势",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Orbital Station",
+    "target": "轨道站",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Ox",
+    "target": "公牛",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Paragon",
+    "target": "典范",
+    "category": "舰船名称"
+  },
+  {
+    "source": "PD Bastion",
+    "target": "PD 堡垒",
+    "category": "舰船名称"
+  },
+  {
+    "source": "PD Bastion 1",
+    "target": "PD 堡垒",
+    "category": "舰船名称"
+  },
+  {
+    "source": "PD Drone",
+    "target": "PD 无人机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Pegasus",
+    "target": "天马",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Perdition",
+    "target": "堕落",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phaeton",
+    "target": "辉腾",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phantom",
+    "target": "魅影",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phase Cruiser",
+    "target": "相位巡洋舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phase Destroyer",
+    "target": "相位驱逐舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phase Frigate",
+    "target": "相位护卫舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phase Tender",
+    "target": "相位补给舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phase Transport",
+    "target": "相位运输舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Phase Vessel",
+    "target": "相位舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Picket",
+    "target": "警戒",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Piranha",
+    "target": "食人鱼",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Pod",
+    "target": "载员舱",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Prometheus",
+    "target": "普罗米修斯",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Prometheus Mk.II",
+    "target": "普罗米修斯 Mk.II",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Radiant",
+    "target": "辐射",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Rampart",
+    "target": "堡垒",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Ravelin",
+    "target": "三角堡",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Remnant Station",
+    "target": "余辉空间站",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Remnant Station Armour",
+    "target": "余辉空间站装甲",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Remnant Station Citadel",
+    "target": "余辉空间站星堡",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Remnant Station Hangar",
+    "target": "余辉空间站机库",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Remnant Weapon Platform",
+    "target": "余辉武器平台",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Retribution",
+    "target": "惩戒",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Revenant",
+    "target": "幽魂",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Salvage Rig",
+    "target": "打捞平台",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Sarissa",
+    "target": "希腊矛",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Scarab",
+    "target": "圣甲虫",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Scintilla",
+    "target": "闪耀",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Sensor Drone",
+    "target": "感应无人机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Sentry",
+    "target": "岗哨",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Shade",
+    "target": "阴影",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Shepherd",
+    "target": "牧羊人",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Shield Module",
+    "target": "护盾模块",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Shrike",
+    "target": "伯劳鸟",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Shuttle",
+    "target": "穿梭机",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Shuttle Pod",
+    "target": "穿梭舱",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Sinistral Shard",
+    "target": "左旋",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Small Orbital Station",
+    "target": "小型轨道站",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Spark",
+    "target": "火花",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Star Fortress",
+    "target": "作战基地",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Starliner",
+    "target": "星际线",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Station Armour",
+    "target": "空间站装甲",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Station Battery",
+    "target": "空间站炮台",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Station Extension",
+    "target": "空间站外延结构",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Station Structural Spur",
+    "target": "空间站支撑结构",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Sunder",
+    "target": "破阵",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Superfreighter",
+    "target": "超级货舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Talon",
+    "target": "利爪",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Tanker",
+    "target": "燃料输送舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Tarsus",
+    "target": "塔尔苏斯",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Tempest",
+    "target": "暴雨",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Terminator",
+    "target": "终结者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Tesseract",
+    "target": "超体",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Thunder",
+    "target": "雷霆",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Trident",
+    "target": "三叉戟",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Troop Transport",
+    "target": "人员输送舰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Tug",
+    "target": "拖船",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Valkyrie",
+    "target": "女武神",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Vanguard",
+    "target": "先锋",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Venture",
+    "target": "历险",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Vigilance",
+    "target": "哨兵",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Warden",
+    "target": "典狱长",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Warthog",
+    "target": "疣猪",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Wasp",
+    "target": "黄蜂",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Wayfarer",
+    "target": "远行者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Weapons Platform",
+    "target": "武器平台",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Wolf",
+    "target": "野狼",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Xyphos",
+    "target": "希腊剑",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Ziggurat",
+    "target": "通灵塔",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Annihilator Rocket Launcher",
+    "target": "歼灭者火箭炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Annihilator Rocket Pod",
+    "target": "歼灭者火箭发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Antimatter Blaster",
+    "target": "反物质冲击波",
+    "category": "武器名称"
+  },
+  {
+    "source": "Antimatter SRM Launcher",
+    "target": "反物质 SRM 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Arbalest Autocannon",
+    "target": "劲弩自动炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Assault Chaingun",
+    "target": "突击链炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Atropos-class Torpedo (Single)",
+    "target": "阿特罗波斯鱼雷 (单发)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Atropos-class Torpedo Rack",
+    "target": "阿特罗波斯鱼雷发射架",
+    "category": "武器名称"
+  },
+  {
+    "source": "Autopulse Laser",
+    "target": "自动脉冲激光",
+    "category": "武器名称"
+  },
+  {
+    "source": "Blinker Green",
+    "target": "绿色信号灯",
+    "category": "武器名称"
+  },
+  {
+    "source": "Blinker Red",
+    "target": "红色信号灯",
+    "category": "武器名称"
+  },
+  {
+    "source": "Breach SRM",
+    "target": "破舱 SRM",
+    "category": "武器名称"
+  },
+  {
+    "source": "Breach SRM Pod",
+    "target": "破舱 SRM 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Burst PD Laser",
+    "target": "瞬发 PD 激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Burst PD Laser (High Delay)",
+    "target": "瞬发 PD 激光炮 (战机型)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Canister Flak",
+    "target": "罐式高射炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Cluster Bomb Bay",
+    "target": "毒刺-级感应空雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Cryoblaster",
+    "target": "低温冲击波",
+    "category": "武器名称"
+  },
+  {
+    "source": "Cryoflamer",
+    "target": "低温喷射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Cyclone Reaper Launcher",
+    "target": "旋风型死神鱼雷发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Decoy Flare Launcher",
+    "target": "诱饵发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Decoy Flare Launcher (Single)",
+    "target": "诱饵发射器 (单发)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Devastator Cannon",
+    "target": "蹂躏者加农炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Disintegrator",
+    "target": "裂解炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Dragonfire - Payload",
+    "target": "龙炎 - 光束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Dragonfire DEM Torpedo",
+    "target": "龙炎 DEM 鱼雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Dragonfire Torpedo Pod",
+    "target": "龙炎 鱼雷 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Dual Flak Cannon",
+    "target": "双管高射炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Flak Cannon",
+    "target": "高射炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Flare Launcher 1",
+    "target": "热诱弹发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gauss Cannon",
+    "target": "高斯炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gazer - Payload",
+    "target": "眼魔 - 光束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gazer DEM SRM",
+    "target": "眼魔 DEM SRM",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gazer SRM Pod",
+    "target": "眼魔 SRM 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gigacannon",
+    "target": "千兆加农炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gorgon - Payload",
+    "target": "戈耳工 - 光束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gorgon DEM SRM",
+    "target": "戈耳工 DEM SRM",
+    "category": "武器名称"
+  },
+  {
+    "source": "Gorgon SRM Pod",
+    "target": "戈耳工 SRM 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Graviton Beam",
+    "target": "引力子束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hammer Barrage",
+    "target": "大锤鱼雷发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hammer-class Torpedo",
+    "target": "大锤级鱼雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hammer-class Torpedo (Single)",
+    "target": "大锤级鱼雷 (单发)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Harpoon MRM",
+    "target": "鱼叉 MRM",
+    "category": "武器名称"
+  },
+  {
+    "source": "Harpoon MRM (Double)",
+    "target": "鱼叉 MRM (双发)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Harpoon MRM Pod",
+    "target": "鱼叉 MRM 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Autocannon",
+    "target": "重型自动炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Blaster",
+    "target": "重型冲击波",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Burst Laser",
+    "target": "重型瞬发激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Machine Gun",
+    "target": "重机枪",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Mauler",
+    "target": "重型撕裂者",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Minelayer",
+    "target": "重型感应空雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Mortar",
+    "target": "重型迫击炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Heavy Needler",
+    "target": "重型针刺",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hellbore Cannon",
+    "target": "炼狱炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hephaestus Assault Gun",
+    "target": "赫菲斯托斯突击炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "High Intensity Laser",
+    "target": "高强度激光",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hurricane MIRV Launcher",
+    "target": "飓风 MIRV 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hydra - Payload",
+    "target": "九头蛇 - 光束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hydra MDEM Launcher",
+    "target": "九头蛇 MDEM 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Hypervelocity Driver",
+    "target": "高速打击者",
+    "category": "武器名称"
+  },
+  {
+    "source": "Interdictor Beam",
+    "target": "指示光束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Ion Beam",
+    "target": "离子束",
+    "category": "武器名称"
+  },
+  {
+    "source": "Ion Cannon",
+    "target": "离子炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Ion Cannon (High Delay)",
+    "target": "离子炮 (战机型)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Ion Pulser",
+    "target": "离子脉冲",
+    "category": "武器名称"
+  },
+  {
+    "source": "IR Autolance",
+    "target": "IR 自动长矛",
+    "category": "武器名称"
+  },
+  {
+    "source": "IR Pulse Laser",
+    "target": "IR 脉冲激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "IR Pulse Laser (High Delay)",
+    "target": "IR 脉冲激光炮 (战机型)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Jackhammer",
+    "target": "气锤",
+    "category": "武器名称"
+  },
+  {
+    "source": "Kinetic Blaster",
+    "target": "动能冲击波",
+    "category": "武器名称"
+  },
+  {
+    "source": "Lidar Dish",
+    "target": "激光雷达",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Assault Gun",
+    "target": "轻型突击炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Autocannon",
+    "target": "轻型自动炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Dual Autocannon",
+    "target": "轻型双管自动炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Dual Machine Gun",
+    "target": "轻型双管机枪",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Machine Gun",
+    "target": "轻机枪",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Mortar",
+    "target": "轻型迫击炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Light Needler",
+    "target": "轻型针刺",
+    "category": "武器名称"
+  },
+  {
+    "source": "Lights - Buffalo",
+    "target": "灯-水牛",
+    "category": "武器名称"
+  },
+  {
+    "source": "Lights - Hound",
+    "target": "灯-猎犬",
+    "category": "武器名称"
+  },
+  {
+    "source": "Locust SRM Launcher",
+    "target": "蝗虫 SRM 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "LR PD Laser",
+    "target": "LR PD 激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Mark IX Autocannon",
+    "target": "马克 IX 自动炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Minelayer",
+    "target": "感应空雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Mining Blaster",
+    "target": "钻探冲击波",
+    "category": "武器名称"
+  },
+  {
+    "source": "Mining Laser",
+    "target": "钻探激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Minipulser",
+    "target": "微型脉冲",
+    "category": "武器名称"
+  },
+  {
+    "source": "Mjolnir Cannon",
+    "target": "雷神炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Mote Launcher",
+    "target": "光尘发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Nova Burst Bomb Launcher",
+    "target": "新星爆裂驱动器 炸弹发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Nova Laser",
+    "target": "新星激光",
+    "category": "武器名称"
+  },
+  {
+    "source": "Orion Device Bomb Launcher",
+    "target": "猎户座装置 炸弹发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Paladin PD System",
+    "target": "保卫者 PD 系统",
+    "category": "武器名称"
+  },
+  {
+    "source": "PD Laser",
+    "target": "PD 激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Phase Lance",
+    "target": "相位长矛",
+    "category": "武器名称"
+  },
+  {
+    "source": "Pilum LRM Catapult",
+    "target": "短矛 LRM 投射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Pilum LRM Launcher",
+    "target": "短矛 LRM 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Plasma Cannon",
+    "target": "等离子炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Proximity Charge Launcher",
+    "target": "感应空雷发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Pulse Laser",
+    "target": "脉冲激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Pusher Plate (Low Tech, Small)",
+    "target": "推进板 (主宰纪元 - 小)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Pusher Plate (Low Tech)",
+    "target": "推进板 (主宰纪元)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Pusher Plate (Remnant, Nova)",
+    "target": "推进板 (余辉 - 新星)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Railgun",
+    "target": "轨道炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Reality Disruptor",
+    "target": "现实干扰器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Reaper-class Torpedo",
+    "target": "死神鱼雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Resonator MRM Launcher",
+    "target": "共鸣体 MRM 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Beam",
+    "target": "裂隙射线",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Beam Minelayer",
+    "target": "裂隙射线布雷器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Cascade Emitter",
+    "target": "裂隙洪流发射极",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Cascade Emitter Minelayer",
+    "target": "裂隙洪流发射极布雷器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Lance",
+    "target": "裂隙长矛",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Lance Minelayer",
+    "target": "裂隙长矛布雷器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Rift Torpedo Launcher",
+    "target": "裂隙鱼雷发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Sabot SRM",
+    "target": "赛博 SRM",
+    "category": "武器名称"
+  },
+  {
+    "source": "Sabot SRM (Double)",
+    "target": "赛博 SRM (双发)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Sabot SRM (Single)",
+    "target": "赛博 SRM (单发)",
+    "category": "武器名称"
+  },
+  {
+    "source": "Sabot SRM Pod",
+    "target": "赛博 SRM 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Salamander MRM",
+    "target": "火蛇 MRM",
+    "category": "武器名称"
+  },
+  {
+    "source": "Salamander MRM Pod",
+    "target": "火蛇 MRM 发射舱",
+    "category": "武器名称"
+  },
+  {
+    "source": "Seeker Flare Launcher",
+    "target": "追踪热诱弹发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Sensor Dish",
+    "target": "碟形传感器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Shock Repeater",
+    "target": "电冲连发器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Squall MLRS",
+    "target": "暴风 MLRS",
+    "category": "武器名称"
+  },
+  {
+    "source": "Standard Bomb Bay",
+    "target": "标准炸弹发射架",
+    "category": "武器名称"
+  },
+  {
+    "source": "Stinger-class Proximity Mine",
+    "target": "毒刺-级感应空雷",
+    "category": "武器名称"
+  },
+  {
+    "source": "Storm Needler",
+    "target": "风暴针刺",
+    "category": "武器名称"
+  },
+  {
+    "source": "Swarmer SRM Launcher",
+    "target": "蜂群 SRM 发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Tachyon Lance",
+    "target": "速子长矛",
+    "category": "武器名称"
+  },
+  {
+    "source": "Tactical Laser",
+    "target": "战术激光炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Targeting Laser - Double Red Continuous",
+    "target": "目标定位激光 - 双红连续",
+    "category": "武器名称"
+  },
+  {
+    "source": "Targeting Laser - Green",
+    "target": "目标定位激光 - 绿",
+    "category": "武器名称"
+  },
+  {
+    "source": "Targeting Laser - Red",
+    "target": "目标定位激光 - 红",
+    "category": "武器名称"
+  },
+  {
+    "source": "Terminator Missile Conversion",
+    "target": "终结者导弹改装",
+    "category": "武器名称"
+  },
+  {
+    "source": "Thermal Pulse Cannon",
+    "target": "热脉冲加农炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "Thumper",
+    "target": "噪音",
+    "category": "武器名称"
+  },
+  {
+    "source": "Typhoon Reaper Launcher",
+    "target": "台风级死神鱼雷发射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Volatile Particle Driver",
+    "target": "不稳定粒子投射器",
+    "category": "武器名称"
+  },
+  {
+    "source": "Vulcan Cannon",
+    "target": "火神炮",
+    "category": "武器名称"
+  },
+  {
+    "source": "AI Cores",
+    "target": "AI 核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Alpha Core",
+    "target": "Alpha AI 核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Autonomous Mantle Bore",
+    "target": "全自动地幔钻机",
+    "category": "物品名称"
+  },
+  {
+    "source": "Base Fighter Blueprint",
+    "target": "基础战机蓝图",
+    "category": "物品名称"
+  },
+  {
+    "source": "Base Industry Blueprint",
+    "target": "基础工业蓝图",
+    "category": "物品名称"
+  },
+  {
+    "source": "Base ModSpec",
+    "target": "基础船体插件",
+    "category": "物品名称"
+  },
+  {
+    "source": "Base Ship Blueprint",
+    "target": "基础舰船蓝图",
+    "category": "物品名称"
+  },
+  {
+    "source": "Base Weapon Blueprint",
+    "target": "基础武器蓝图",
+    "category": "物品名称"
+  },
+  {
+    "source": "Beta Core",
+    "target": "Beta AI 核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Biofactory Embryo",
+    "target": "生物化工厂胚胎",
+    "category": "物品名称"
+  },
+  {
+    "source": "Blueprints",
+    "target": "蓝图",
+    "category": "物品名称"
+  },
+  {
+    "source": "Catalytic Core",
+    "target": "催化核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Class I Survey Data",
+    "target": "I 级 调查数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Class II Survey Data",
+    "target": "II 级 调查数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Class III Survey Data",
+    "target": "III 级 调查数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Class IV Survey Data",
+    "target": "IV 级 调查数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Class V Survey Data",
+    "target": "V 级 调查数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Combat Drone Replicator",
+    "target": "战斗无人机复制器",
+    "category": "物品名称"
+  },
+  {
+    "source": "Corrupted Nanoforge",
+    "target": "受损的纳米锻炉",
+    "category": "物品名称"
+  },
+  {
+    "source": "Credits",
+    "target": "星币",
+    "category": "物品名称"
+  },
+  {
+    "source": "Crew",
+    "target": "船员",
+    "category": "物品名称"
+  },
+  {
+    "source": "Cryoarithmetic Engine",
+    "target": "低温运算引擎",
+    "category": "物品名称"
+  },
+  {
+    "source": "Dealmaker Holosuite",
+    "target": "全息交易撮合套件",
+    "category": "物品名称"
+  },
+  {
+    "source": "Domestic Goods",
+    "target": "日用品",
+    "category": "物品名称"
+  },
+  {
+    "source": "Food",
+    "target": "食品",
+    "category": "物品名称"
+  },
+  {
+    "source": "Fuel",
+    "target": "燃料",
+    "category": "物品名称"
+  },
+  {
+    "source": "Fullerene Spool",
+    "target": "富勒烯线轴",
+    "category": "物品名称"
+  },
+  {
+    "source": "Gamma Core",
+    "target": "Gamma AI 核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Harvested Organs",
+    "target": "器官",
+    "category": "物品名称"
+  },
+  {
+    "source": "Heavy Armaments",
+    "target": "重型武器",
+    "category": "物品名称"
+  },
+  {
+    "source": "Heavy Machinery",
+    "target": "重型机械",
+    "category": "物品名称"
+  },
+  {
+    "source": "Hegemony Auxiliary Blueprint Package",
+    "target": "霸主军事配件蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "High Tech Blueprint Package",
+    "target": "扩展纪元蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Hypershunt Tap",
+    "target": "超分流阀门",
+    "category": "物品名称"
+  },
+  {
+    "source": "Janus Device",
+    "target": "\"双面神\"装置",
+    "category": "物品名称"
+  },
+  {
+    "source": "Low Tech Blueprint Package",
+    "target": "主宰纪元蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Luddic Church Blueprint Package",
+    "target": "卢德教会蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Luddic Path Blueprint Package",
+    "target": "卢德左径蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Luxury Goods",
+    "target": "奢侈品",
+    "category": "物品名称"
+  },
+  {
+    "source": "Marines",
+    "target": "陆战队员",
+    "category": "物品名称"
+  },
+  {
+    "source": "Metals",
+    "target": "金属",
+    "category": "物品名称"
+  },
+  {
+    "source": "Midline Blueprint Package",
+    "target": "核心纪元蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Missile Blueprint Package",
+    "target": "导弹蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Omega Core",
+    "target": "Omega AI 核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Orbital Fusion Lamp",
+    "target": "轨道聚变射灯",
+    "category": "物品名称"
+  },
+  {
+    "source": "Ore",
+    "target": "矿石",
+    "category": "物品名称"
+  },
+  {
+    "source": "Organics",
+    "target": "有机物",
+    "category": "物品名称"
+  },
+  {
+    "source": "Pirate Blueprint Package",
+    "target": "海盗蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Planetkiller",
+    "target": "行星杀手",
+    "category": "物品名称"
+  },
+  {
+    "source": "Plasma Dynamo",
+    "target": "等离子发电机",
+    "category": "物品名称"
+  },
+  {
+    "source": "Pristine Nanoforge",
+    "target": "完好的纳米锻炉",
+    "category": "物品名称"
+  },
+  {
+    "source": "Recreational Drugs",
+    "target": "毒品",
+    "category": "物品名称"
+  },
+  {
+    "source": "Ship Equipment",
+    "target": "舰载装备",
+    "category": "物品名称"
+  },
+  {
+    "source": "Ship Hulls & Weapons",
+    "target": "船体 & 武器",
+    "category": "物品名称"
+  },
+  {
+    "source": "Soil Nanites",
+    "target": "土壤纳米物质",
+    "category": "物品名称"
+  },
+  {
+    "source": "Supplies",
+    "target": "补给",
+    "category": "物品名称"
+  },
+  {
+    "source": "Survey Data",
+    "target": "调查数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Synchrotron Core",
+    "target": "同步加速器核心",
+    "category": "物品名称"
+  },
+  {
+    "source": "Topographic Data",
+    "target": "超空间测绘数据",
+    "category": "物品名称"
+  },
+  {
+    "source": "Transplutonic Ore",
+    "target": "稀有矿石",
+    "category": "物品名称"
+  },
+  {
+    "source": "Transplutonics",
+    "target": "稀有元素",
+    "category": "物品名称"
+  },
+  {
+    "source": "Volatiles",
+    "target": "挥发物",
+    "category": "物品名称"
+  },
+  {
+    "source": "Volturnian Lobster",
+    "target": "蓝龙虾",
+    "category": "物品名称"
+  },
+  {
+    "source": "Wormhole Anchor",
+    "target": "虫洞锚定装置",
+    "category": "物品名称"
+  },
+  {
+    "source": "Wormhole Scanner",
+    "target": "虫洞扫描仪",
+    "category": "物品名称"
+  },
+  {
+    "source": "XIV Battlegroup Blueprint Package",
+    "target": "第十四战斗群蓝图包",
+    "category": "物品名称"
+  },
+  {
+    "source": "Abandoned Station",
+    "target": "废弃空间站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Abundant Ore Deposits",
+    "target": "大量的矿床",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Abundant Organics",
+    "target": "丰富的有机物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Abundant Rare Ore Deposits",
+    "target": "大量的稀有元素",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Abundant Volatiles",
+    "target": "丰富的挥发物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Active Sensor Burst",
+    "target": "传感器扫描",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Adequate Farmland",
+    "target": "充足的耕地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Aggressive",
+    "target": "激进",
+    "category": "游戏术语"
+  },
+  {
+    "source": "AI Core Admin (hidden)",
+    "target": "AI 行政官 (隐藏)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anti Armor",
+    "target": "反装甲",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anti Engine",
+    "target": "反引擎",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anti Fighter",
+    "target": "反战机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anti Fighter (Area)",
+    "target": "反战机 (范围性)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anti Shield",
+    "target": "反护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anti Small Craft",
+    "target": "反小型舰艇",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Aquaculture",
+    "target": "水产养殖",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Arid World",
+    "target": "干旱地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "armor",
+    "target": "装甲",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Assault / Finisher",
+    "target": "突击 / 终结打击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "ballistic",
+    "target": "动能武器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Barren-marginal World",
+    "target": "贫瘠地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Battlestation - High Tech",
+    "target": "作战基地 - 扩展纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Battlestation - Low Tech",
+    "target": "作战基地 - 主宰纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Battlestation - Midline",
+    "target": "作战基地 - 核心纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Black",
+    "target": "黑市",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Blockaded",
+    "target": "遭到封锁",
+    "category": "游戏术语"
+  },
+  {
+    "source": "bomber",
+    "target": "轰炸机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Bomber",
+    "target": "轰炸机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Bountiful Farmland",
+    "target": "肥沃的耕地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "built-in",
+    "target": "内置",
+    "category": "游戏术语"
+  },
+  {
+    "source": "capital ship",
+    "target": "主力舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "carrier",
+    "target": "航母",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cautious",
+    "target": "谨慎",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Closed Immigration",
+    "target": "禁止移民",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cold",
+    "target": "寒冷",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Collapse",
+    "target": "大坍缩",
+    "category": "游戏术语"
+  },
+  {
+    "source": "colony",
+    "target": "殖民地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "combat rating",
+    "target": "战斗等级",
+    "category": "游戏术语"
+  },
+  {
+    "source": "combat readiness",
+    "target": "战斗准备度",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Comm Relay (hidden)",
+    "target": "通讯中继站 (隐藏)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Commerce",
+    "target": "贸易中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Common Organics",
+    "target": "少量的有机物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "corrupted nanoforge",
+    "target": "损坏的纳米锻炉",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cottage Industry",
+    "target": "家庭手工业",
+    "category": "游戏术语"
+  },
+  {
+    "source": "CR",
+    "target": "战备度",
+    "category": "游戏术语"
+  },
+  {
+    "source": "credits",
+    "target": "信用点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "crew",
+    "target": "船员",
+    "category": "游戏术语"
+  },
+  {
+    "source": "cruiser",
+    "target": "巡洋舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cryorevival Facility",
+    "target": "低温复苏设施",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cryosanctum",
+    "target": "低温避难所",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cryovolcanic World",
+    "target": "冰火山地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Darkness",
+    "target": "黑暗",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Decivilized",
+    "target": "荒蛮之地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Decivilized Subpopulation",
+    "target": "法外之地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Dense Atmosphere",
+    "target": "稠密大气层",
+    "category": "游戏术语"
+  },
+  {
+    "source": "deployment points",
+    "target": "部署点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Desert World",
+    "target": "沙漠地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "destroyer",
+    "target": "驱逐舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Diffuse Volatiles",
+    "target": "少量的挥发物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Dissident Population",
+    "target": "异议人士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Distress Call",
+    "target": "求救呼号",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain",
+    "target": "领域",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Emergency Burn",
+    "target": "紧急加速",
+    "category": "游戏术语"
+  },
+  {
+    "source": "energy",
+    "target": "能量武器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Extensive Ruins",
+    "target": "大量的废墟",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Extreme Cold",
+    "target": "极端寒冷",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Extreme Heat",
+    "target": "极端炎热",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Extreme Tectonic Activtity",
+    "target": "极端构造活动性",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Extreme Weather",
+    "target": "极端气候",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Farming",
+    "target": "农业",
+    "category": "游戏术语"
+  },
+  {
+    "source": "fighter",
+    "target": "战斗机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fighter",
+    "target": "战斗机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fighter Drone",
+    "target": "无人战斗机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Finisher",
+    "target": "终结打击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "flux",
+    "target": "通量",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Food Shortage",
+    "target": "食品短缺",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Free Port",
+    "target": "自由港",
+    "category": "游戏术语"
+  },
+  {
+    "source": "frigate",
+    "target": "护卫舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Frontier",
+    "target": "边境之地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "fuel",
+    "target": "燃料",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fuel Production",
+    "target": "燃料生产",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gate",
+    "target": "星门",
+    "category": "游戏术语"
+  },
+  {
+    "source": "General",
+    "target": "通用",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Generate Slipsurge",
+    "target": "激流迸发",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Go Dark",
+    "target": "匿踪",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ground Defenses",
+    "target": "地面防御设施",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Guided Torpedo",
+    "target": "追踪鱼雷",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Habitable",
+    "target": "宜居",
+    "category": "游戏术语"
+  },
+  {
+    "source": "hardpoint",
+    "target": "固定炮台",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Headquarters",
+    "target": "指挥中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavy Batteries",
+    "target": "重型防御阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavy Fighter",
+    "target": "重型战斗机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavy Industry",
+    "target": "重工业",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavy Interceptor",
+    "target": "重型截击机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Command",
+    "target": "最高指挥部",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Gravity",
+    "target": "高重力",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hostile Activity",
+    "target": "敌对活动",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hot",
+    "target": "炎热",
+    "category": "游戏术语"
+  },
+  {
+    "source": "hull",
+    "target": "船体",
+    "category": "游戏术语"
+  },
+  {
+    "source": "hull mod",
+    "target": "舰船改装件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hydroponics Complex",
+    "target": "水培复合体",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hyperspace",
+    "target": "超空间",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ice World",
+    "target": "冰川地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Industrial Polity",
+    "target": "工业化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Inimical Biosphere",
+    "target": "敌意生物圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Interceptor",
+    "target": "截击机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Interceptor Drone",
+    "target": "无人截击机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Interdiction Pulse",
+    "target": "阻断脉冲",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Irradiated",
+    "target": "辐射",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Jungle World",
+    "target": "丛林地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "large",
+    "target": "大型",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Large Refugee Population",
+    "target": "难民潮",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Light Industry",
+    "target": "轻工业",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Lion's Guard HQ",
+    "target": "狮心守卫总部",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Long Range Support",
+    "target": "远程支援",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Low Gravity",
+    "target": "低重力",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Luddic Majority",
+    "target": "卢德教众",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Luddic Path Cells",
+    "target": "左径狂信徒",
+    "category": "游戏术语"
+  },
+  {
+    "source": "medium",
+    "target": "中型",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Megaport",
+    "target": "特大型港口",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Meteor Impacts",
+    "target": "流星撞击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mild Climate",
+    "target": "温和气候",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Military Base",
+    "target": "军事基地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mining",
+    "target": "采矿业",
+    "category": "游戏术语"
+  },
+  {
+    "source": "missile",
+    "target": "导弹",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Missile",
+    "target": "导弹",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Moderate Ore Deposits",
+    "target": "少量的矿床",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Moderate Rare Ore Deposits",
+    "target": "少量的稀有元素",
+    "category": "游戏术语"
+  },
+  {
+    "source": "nanoforge",
+    "target": "纳米锻炉",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Neutrino Detector",
+    "target": "中微子探测器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "No Atmosphere",
+    "target": "没有大气层",
+    "category": "游戏术语"
+  },
+  {
+    "source": "officer",
+    "target": "军官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "OP",
+    "target": "装配点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Open",
+    "target": "开放市场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Solar Array",
+    "target": "轨道光照阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "orbital station",
+    "target": "轨道站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Station - High Tech",
+    "target": "轨道站 - 扩展纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Station - Low Tech",
+    "target": "轨道站 - 主宰纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Station - Midline",
+    "target": "轨道站 - 核心纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Works",
+    "target": "轨道工业设施",
+    "category": "游戏术语"
+  },
+  {
+    "source": "ordnance points",
+    "target": "装配点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Organized Crime",
+    "target": "犯罪组织",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Outpost",
+    "target": "前哨站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Patrol HQ",
+    "target": "巡逻队总部",
+    "category": "游戏术语"
+  },
+  {
+    "source": "phase",
+    "target": "相位",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Piracy Respite",
+    "target": "海盗活动减缓",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pirate Activity",
+    "target": "海盗袭击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Planetary Shield",
+    "target": "行星护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Plentiful Organics",
+    "target": "富足的有机物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Plentiful Volatiles",
+    "target": "富足的挥发物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Point Defense",
+    "target": "点防御",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Point Defense (Area)",
+    "target": "点防御 (范围性)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pollution",
+    "target": "污染",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Poor Farmland",
+    "target": "贫瘠的耕地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Poor Light",
+    "target": "昏暗",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Population",
+    "target": "人口",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Population & Infrastructure",
+    "target": "居住区 & 基础设施",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pressure",
+    "target": "压制",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pressure / Anti Fighter",
+    "target": "压制 / 反战机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "pristine nanoforge",
+    "target": "完好的纳米锻炉",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Recent Unrest",
+    "target": "最近动乱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Reckless",
+    "target": "鲁莽",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Refining",
+    "target": "冶炼厂",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Regional Capital",
+    "target": "地区首府",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Remote Survey",
+    "target": "远程调查",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Resource",
+    "target": "资源库存",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Reverse Polarity",
+    "target": "极性逆转",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rich Farmland",
+    "target": "丰富的耕地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rich Ore Deposits",
+    "target": "丰富的矿床",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rich Rare Ore Deposits",
+    "target": "丰富的稀有元素",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rogue AI Core",
+    "target": "失控的 AI 核心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rural Polity",
+    "target": "村镇化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "s-mod",
+    "target": "故事改装",
+    "category": "游戏术语"
+  },
+  {
+    "source": "salvage",
+    "target": "打捞",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Scattered Ruins",
+    "target": "散落的废墟",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Scavenge",
+    "target": "打捞",
+    "category": "游戏术语"
+  },
+  {
+    "source": "shield",
+    "target": "护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shipbreaking Center",
+    "target": "拆船中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "skill",
+    "target": "技能",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Slipstream",
+    "target": "滑流",
+    "category": "游戏术语"
+  },
+  {
+    "source": "small",
+    "target": "小型",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Smuggling",
+    "target": "走私",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Spaceport",
+    "target": "太空港",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sparse Ore Deposits",
+    "target": "零星的矿床",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sparse Rare Ore Deposits",
+    "target": "零星的稀有元素",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Special",
+    "target": "特殊",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Star Fortress - High Tech",
+    "target": "星际要塞 - 扩展纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Star Fortress - Low Tech",
+    "target": "星际要塞 - 主宰纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Star Fortress - Midline",
+    "target": "星际要塞 - 核心纪元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Steady",
+    "target": "沉着",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Stealth Minefields",
+    "target": "感应雷区",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Storage",
+    "target": "仓库",
+    "category": "游戏术语"
+  },
+  {
+    "source": "story point",
+    "target": "故事点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Strike",
+    "target": "打击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Strike Drone",
+    "target": "无人轰炸机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "supply",
+    "target": "补给",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Support",
+    "target": "支援战斗机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Suppression",
+    "target": "压制",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sustained Burn",
+    "target": "持续加速",
+    "category": "游戏术语"
+  },
+  {
+    "source": "synchrotron core",
+    "target": "同步加速器核心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "System Bounty",
+    "target": "星系悬赏",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Tech-Mining",
+    "target": "技术挖掘",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Tectonic Activity",
+    "target": "构造活动性",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Terran World",
+    "target": "宜居地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Thin Atmosphere",
+    "target": "稀薄大气层",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Timid",
+    "target": "胆小",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Torpedo",
+    "target": "鱼雷",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Toxic Atmosphere",
+    "target": "剧毒大气层",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Trace Organics",
+    "target": "微量的有机物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Trace Volatiles",
+    "target": "微量的挥发物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Trade Center",
+    "target": "贸易中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Trade Disruption",
+    "target": "贸易中断",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Transience",
+    "target": "无常",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Transponder",
+    "target": "应答器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Transverse Jump",
+    "target": "横轴跳跃",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Tundra World",
+    "target": "苔原地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "turret",
+    "target": "炮塔",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Twilight World",
+    "target": "暮光之地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ultrarich Ore Deposits",
+    "target": "富饶的矿床",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ultrarich Rare Ore Deposits",
+    "target": "富饶的稀有元素",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Uninhabitable World",
+    "target": "死寂之地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Urbanized Polity",
+    "target": "城市化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Vast Ruins",
+    "target": "巨大的废墟",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Vice Demand",
+    "target": "违禁品需求",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Volturnian Lobster Pens",
+    "target": "Volturn 蓝龙虾养殖场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Water World",
+    "target": "海洋地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Water-covered Surface",
+    "target": "海洋覆盖",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Waystation",
+    "target": "星际驿站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Widespread Ruins",
+    "target": "普遍的废墟",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Askonia",
+    "target": "阿斯科尼亚",
+    "category": "地名"
+  },
+  {
+    "source": "Chicomoztoc",
+    "target": "奇科莫兹托克",
+    "category": "地名"
+  },
+  {
+    "source": "Corvus",
+    "target": "乌鸦星系",
+    "category": "地名"
+  },
+  {
+    "source": "Jangala",
+    "target": "詹加拉",
+    "category": "地名"
+  },
+  {
+    "source": "Mayasura",
+    "target": "玛雅苏拉",
+    "category": "地名"
+  },
+  {
+    "source": "Persean Sector",
+    "target": "波斯星区",
+    "category": "地名"
+  },
+  {
+    "source": "Sindria",
+    "target": "辛德里亚",
+    "category": "地名"
+  }
 ]
