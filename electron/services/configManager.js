@@ -22,6 +22,7 @@ const DEFAULT_MODEL_CONFIG = {
   maxTokens: 4096,
   temperature: 0.3,
   batchSize: 5,
+  concurrentRequests: 1,
   rateLimitMs: 500,
   systemPrompt: `你是一位专业的游戏本地化翻译专家，正在将太空策略游戏"远行星号"(Starsector)的MOD内容从英文翻译为简体中文。
 

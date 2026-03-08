@@ -47,7 +47,7 @@ function formatResponseRaw(raw) {
 
 // ─── Active Requests Panel ──────────────────────────────────────────
 
-function ActiveRequestsPanel({ activeRequests }) {
+function ActiveRequestsPanel({ activeRequests, onViewDetail }) {
   if (activeRequests.length === 0) {
     return (
       <div style={{ padding: 24, textAlign: 'center', color: '#555' }}>
@@ -68,7 +68,10 @@ function ActiveRequestsPanel({ activeRequests }) {
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-        }}>
+          cursor: 'pointer',
+        }}
+          onClick={() => onViewDetail(req.id)}
+        >
           <SyncOutlined spin style={{ color: '#1890ff' }} />
           <Tag color="processing" style={{ fontSize: 11 }}>#{req.id}</Tag>
           <Tag style={{ fontSize: 11 }}>{TYPE_LABELS[req.type] || req.type}</Tag>
@@ -76,6 +79,8 @@ function ActiveRequestsPanel({ activeRequests }) {
           <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
             {formatTime(req.startTime)}
           </span>
+          <Button size="small" type="text" icon={<EyeOutlined />}
+            onClick={(e) => { e.stopPropagation(); onViewDetail(req.id); }} />
         </div>
       ))}
     </div>
@@ -87,6 +92,7 @@ function ActiveRequestsPanel({ activeRequests }) {
 function RequestDetailModal({ requestId, open, onClose }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(false);
+  const refreshRef = useRef(null);
 
   useEffect(() => {
     if (open && requestId != null) {
@@ -95,9 +101,27 @@ function RequestDetailModal({ requestId, open, onClose }) {
         setDetail(data);
         setLoading(false);
       });
+      // Auto-refresh for pending requests
+      refreshRef.current = setInterval(async () => {
+        const data = await api.getRequestDetail(requestId);
+        if (data) {
+          setDetail(data);
+          // Stop refreshing once completed
+          if (data.status !== 'pending' && refreshRef.current) {
+            clearInterval(refreshRef.current);
+            refreshRef.current = null;
+          }
+        }
+      }, 2000);
     } else {
       setDetail(null);
     }
+    return () => {
+      if (refreshRef.current) {
+        clearInterval(refreshRef.current);
+        refreshRef.current = null;
+      }
+    };
   }, [open, requestId]);
 
   const statusInfo = detail ? (STATUS_MAP[detail.status] || STATUS_MAP.pending) : null;
@@ -371,7 +395,7 @@ export default function RequestHistory() {
             <SyncOutlined spin style={{ marginRight: 4 }} />
             活跃请求 ({activeRequests.length})
           </div>
-          <ActiveRequestsPanel activeRequests={activeRequests} />
+          <ActiveRequestsPanel activeRequests={activeRequests} onViewDetail={handleViewDetail} />
         </div>
       )}
 

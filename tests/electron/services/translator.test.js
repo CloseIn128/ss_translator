@@ -349,4 +349,93 @@ describe('TranslationService', () => {
       expect(ts.getRequestDetail(99999)).toBeNull();
     });
   });
+
+  describe('_runConcurrentBatches', () => {
+    it('processes batches sequentially when concurrency is 1', async () => {
+      const order = [];
+      const cfg = { concurrentRequests: 1, rateLimitMs: 0 };
+      const batches = [['a'], ['b'], ['c']];
+      const results = await ts._runConcurrentBatches(batches, cfg, async (batch, num) => {
+        order.push(num);
+        return batch;
+      });
+      expect(results).toEqual([['a'], ['b'], ['c']]);
+      expect(order).toEqual([1, 2, 3]);
+    });
+
+    it('processes batches concurrently when concurrency > 1', async () => {
+      const cfg = { concurrentRequests: 3, rateLimitMs: 0 };
+      const batches = [['a'], ['b'], ['c']];
+      const results = await ts._runConcurrentBatches(batches, cfg, async (batch) => {
+        return batch;
+      });
+      expect(results).toEqual([['a'], ['b'], ['c']]);
+    });
+
+    it('returns results in original order regardless of completion order', async () => {
+      const cfg = { concurrentRequests: 3, rateLimitMs: 0 };
+      const batches = [[1], [2], [3]];
+      // Simulate varying processing times
+      const delays = [30, 10, 20];
+      const results = await ts._runConcurrentBatches(batches, cfg, async (batch, num) => {
+        await new Promise(r => setTimeout(r, delays[num - 1]));
+        return batch.map(v => v * 10);
+      });
+      expect(results).toEqual([[10], [20], [30]]);
+    });
+
+    it('defaults to sequential when concurrentRequests not set', async () => {
+      const cfg = { rateLimitMs: 0 };
+      const batches = [['x'], ['y']];
+      const results = await ts._runConcurrentBatches(batches, cfg, async (batch) => batch);
+      expect(results).toEqual([['x'], ['y']]);
+    });
+  });
+
+  describe('concurrentRequests config', () => {
+    it('includes concurrentRequests in default config', () => {
+      expect(ts.config.concurrentRequests).toBe(1);
+    });
+
+    it('can be configured', () => {
+      ts.configure({ concurrentRequests: 3 });
+      expect(ts.config.concurrentRequests).toBe(3);
+    });
+
+    it('translateKeywords uses concurrent batches', async () => {
+      let apiCallCount = 0;
+      ts._callAPI = vi.fn().mockImplementation(async () => {
+        apiCallCount++;
+        return '[{"source":"Test","target":"测试"}]';
+      });
+
+      ts.configure({ batchSize: 1, concurrentRequests: 2, rateLimitMs: 0 });
+
+      const keywords = [
+        { source: 'A', category: '通用' },
+        { source: 'B', category: '通用' },
+      ];
+      const results = await ts.translateKeywords(keywords);
+      expect(results).toHaveLength(2);
+      expect(apiCallCount).toBe(2);
+    });
+
+    it('polishKeywords uses concurrent batches', async () => {
+      let apiCallCount = 0;
+      ts._callAPI = vi.fn().mockImplementation(async () => {
+        apiCallCount++;
+        return '[{"source":"A","target":"甲"}]';
+      });
+
+      ts.configure({ batchSize: 1, concurrentRequests: 2, rateLimitMs: 0 });
+
+      const keywords = [
+        { source: 'A', target: '测试A', category: '通用' },
+        { source: 'B', target: '测试B', category: '通用' },
+      ];
+      const results = await ts.polishKeywords(keywords);
+      expect(results).toHaveLength(2);
+      expect(apiCallCount).toBe(2);
+    });
+  });
 });

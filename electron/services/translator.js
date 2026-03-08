@@ -24,6 +24,7 @@ class TranslationService {
       maxTokens: 4096,
       temperature: 0.3,
       batchSize: 5,
+      concurrentRequests: 1, // number of parallel API requests
       rateLimitMs: 500,
       systemPrompt: this._defaultSystemPrompt,
       polishPrompt: this._defaultPolishPrompt,
@@ -254,35 +255,37 @@ ${textsFormatted}`;
       onLog('info', `跳过 ${keywords.length - toTranslate.length} 个人名/星球名（保留原文）`);
     }
 
-    const totalBatches = Math.ceil(toTranslate.length / cfg.batchSize);
-
+    // Build batches
+    const batches = [];
     for (let i = 0; i < toTranslate.length; i += cfg.batchSize) {
-      const batch = toTranslate.slice(i, i + cfg.batchSize);
-      const batchNum = Math.floor(i / cfg.batchSize) + 1;
+      batches.push(toTranslate.slice(i, i + cfg.batchSize));
+    }
+
+    const batchResults = await this._runConcurrentBatches(batches, cfg, async (batch, batchNum) => {
       if (onLog) {
-        onLog('info', `翻译批次 ${batchNum}/${totalBatches}：${batch.map(kw => kw.source).join(', ')}`);
+        onLog('info', `翻译批次 ${batchNum}/${batches.length}：${batch.map(kw => kw.source).join(', ')}`);
       }
       try {
-        const batchResults = await this._translateKeywordsBatch(batch, glossary, cfg, onLog);
-        results.push(...batchResults);
+        const batchRes = await this._translateKeywordsBatch(batch, glossary, cfg, onLog);
         if (onLog) {
-          for (const r of batchResults) {
+          for (const r of batchRes) {
             if (r.target) {
               onLog('info', `  "${r.source}" → "${r.target}"`);
             }
           }
         }
+        return batchRes;
       } catch (err) {
         console.error('Keyword translation batch error:', err.message);
         if (onLog) {
           onLog('error', `批次 ${batchNum} 翻译失败: ${err.message}`);
         }
-        results.push(...batch.map(kw => ({ source: kw.source, target: '' })));
+        return batch.map(kw => ({ source: kw.source, target: '' }));
       }
+    });
 
-      if (i + cfg.batchSize < toTranslate.length) {
-        await sleep(cfg.rateLimitMs);
-      }
+    for (const br of batchResults) {
+      results.push(...br);
     }
 
     return results;
@@ -312,37 +315,39 @@ ${textsFormatted}`;
       return results;
     }
 
-    const totalBatches = Math.ceil(toPolish.length / cfg.batchSize);
-
+    // Build batches
+    const batches = [];
     for (let i = 0; i < toPolish.length; i += cfg.batchSize) {
-      const batch = toPolish.slice(i, i + cfg.batchSize);
-      const batchNum = Math.floor(i / cfg.batchSize) + 1;
+      batches.push(toPolish.slice(i, i + cfg.batchSize));
+    }
+
+    const batchResults = await this._runConcurrentBatches(batches, cfg, async (batch, batchNum) => {
       if (onLog) {
-        onLog('info', `润色批次 ${batchNum}/${totalBatches}：${batch.map(kw => `${kw.source}→${kw.target}`).join(', ')}`);
+        onLog('info', `润色批次 ${batchNum}/${batches.length}：${batch.map(kw => `${kw.source}→${kw.target}`).join(', ')}`);
       }
       try {
-        const batchResults = await this._polishKeywordsBatch(batch, glossary, cfg, onLog);
-        results.push(...batchResults);
+        const batchRes = await this._polishKeywordsBatch(batch, glossary, cfg, onLog);
         if (onLog) {
-          for (let j = 0; j < batchResults.length; j++) {
+          for (let j = 0; j < batchRes.length; j++) {
             const orig = batch[j];
-            const polished = batchResults[j];
+            const polished = batchRes[j];
             if (polished.target !== orig.target) {
               onLog('info', `  "${orig.source}": "${orig.target}" → "${polished.target}"`);
             }
           }
         }
+        return batchRes;
       } catch (err) {
         console.error('Keyword polish batch error:', err.message);
         if (onLog) {
           onLog('error', `批次 ${batchNum} 润色失败: ${err.message}`);
         }
-        results.push(...batch.map(kw => ({ source: kw.source, target: kw.target })));
+        return batch.map(kw => ({ source: kw.source, target: kw.target }));
       }
+    });
 
-      if (i + cfg.batchSize < toPolish.length) {
-        await sleep(cfg.rateLimitMs);
-      }
+    for (const br of batchResults) {
+      results.push(...br);
     }
 
     return results;
@@ -483,16 +488,18 @@ ${keywordsText}
     const cfg = { ...this.config, ...config };
     const results = [];
 
-    // Process in batches
+    // Build batches
+    const batches = [];
     for (let i = 0; i < entries.length; i += cfg.batchSize) {
-      const batch = entries.slice(i, i + cfg.batchSize);
-      const batchResults = await this._translateBatchRequest(batch, glossary, cfg, modPrompt);
-      results.push(...batchResults);
+      batches.push(entries.slice(i, i + cfg.batchSize));
+    }
 
-      // Rate limiting
-      if (i + cfg.batchSize < entries.length) {
-        await sleep(cfg.rateLimitMs);
-      }
+    const batchResults = await this._runConcurrentBatches(batches, cfg, async (batch) => {
+      return await this._translateBatchRequest(batch, glossary, cfg, modPrompt);
+    });
+
+    for (const br of batchResults) {
+      results.push(...br);
     }
 
     return results;
@@ -578,6 +585,50 @@ ${entry.translated}
   _buildModPromptText(modPrompt) {
     if (!modPrompt || !modPrompt.trim()) return '';
     return `【MOD设定说明】\n${modPrompt.trim()}\n\n`;
+  }
+
+  /**
+   * Run batch operations concurrently up to cfg.concurrentRequests limit.
+   * Results are returned in original batch order.
+   * @param {Array} batches - Array of batch data
+   * @param {object} cfg - Config with concurrentRequests and rateLimitMs
+   * @param {Function} processFn - async (batch, batchNum) => result
+   * @returns {Array} - Array of results in original order
+   */
+  async _runConcurrentBatches(batches, cfg, processFn) {
+    const concurrency = Math.max(1, cfg.concurrentRequests || 1);
+    const results = new Array(batches.length);
+
+    if (concurrency <= 1) {
+      // Sequential processing (original behavior)
+      for (let i = 0; i < batches.length; i++) {
+        results[i] = await processFn(batches[i], i + 1);
+        if (i + 1 < batches.length) {
+          await sleep(cfg.rateLimitMs);
+        }
+      }
+      return results;
+    }
+
+    // Concurrent processing
+    let nextIndex = 0;
+    const workers = [];
+
+    for (let w = 0; w < concurrency; w++) {
+      workers.push((async () => {
+        while (true) {
+          const idx = nextIndex++;
+          if (idx >= batches.length) break;
+          results[idx] = await processFn(batches[idx], idx + 1);
+          if (cfg.rateLimitMs > 0) {
+            await sleep(cfg.rateLimitMs);
+          }
+        }
+      })());
+    }
+
+    await Promise.all(workers);
+    return results;
   }
 
   // ── Request history API ─────────────────────────────────────────────
