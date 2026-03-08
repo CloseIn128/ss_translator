@@ -11,17 +11,32 @@ import { useTask } from '../context/TaskContext';
 
 const api = window.electronAPI;
 
-export default function KeywordExtractor({ project, onUpdateGlossary, messageApi }) {
+export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGlossary, messageApi }) {
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
-  const [keywords, setKeywords] = useState([]);
+  const [keywords, setKeywords] = useState(() => project?.keywords || []);
   const [extracting, setExtracting] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [modPath, setModPath] = useState(project?.modPath || '');
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
-  const keyCounterRef = useRef(0);
+  const keyCounterRef = useRef(project?.keywords?.length || 0);
   const batchHandlerRef = useRef(null);
+
+  // Sync keywords back to project whenever they change
+  useEffect(() => {
+    if (onUpdateKeywords) {
+      onUpdateKeywords(keywords);
+    }
+  }, [keywords, onUpdateKeywords]);
+
+  // Reset keywords when the project changes (e.g. loading a different project)
+  useEffect(() => {
+    const loaded = project?.keywords || [];
+    setKeywords(loaded);
+    keyCounterRef.current = loaded.length;
+    setSelectedRowKeys([]);
+  }, [project?.id]);
 
   // Register / cleanup the keywords:batch event listener
   useEffect(() => {

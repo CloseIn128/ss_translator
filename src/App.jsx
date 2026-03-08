@@ -122,6 +122,10 @@ function AppInner() {
     setProject(prev => prev ? { ...prev, glossary } : prev);
   }, []);
 
+  const handleUpdateKeywords = useCallback((keywords) => {
+    setProject(prev => prev ? { ...prev, keywords } : prev);
+  }, []);
+
   const handleModPromptChange = useCallback((modPrompt) => {
     setProject(prev => prev ? { ...prev, modPrompt } : prev);
   }, []);
@@ -156,6 +160,7 @@ function AppInner() {
         return (
           <KeywordExtractor
             project={project}
+            onUpdateKeywords={handleUpdateKeywords}
             onUpdateGlossary={handleUpdateGlossary}
             messageApi={messageApi}
           />

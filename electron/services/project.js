@@ -33,6 +33,7 @@ class ProjectManager {
       targetLanguage: 'zh-CN',
       entries: parsed.entries,
       glossary: [],
+      keywords: [],
       aiConfig: {},
       stats: parsed.stats,
       projectFilePath: null, // Will be set when saved
