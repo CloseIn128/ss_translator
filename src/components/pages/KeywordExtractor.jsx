@@ -480,9 +480,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
         content: `${newKws.length > 0 ? `将新增 ${newKws.length} 个术语。` : ''}术语库中已存在 ${overlapKws.length} 个同名条目，覆盖将更新它们的译文和分类。是否继续？`,
         okText: '确认覆盖',
         cancelText: '取消',
-        onOk() {
-          ;(async () => { await doAdd(); })();
-        },
+        onOk: doAdd,
       });
     } else {
       await doAdd();
@@ -600,20 +598,16 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
               style={{ width: '100%', fontSize: 11 }}
               options={CATEGORY_OPTIONS.map(c => ({ value: c, label: c }))}
               onSelect={(val) => {
-                setEditingValue(val);
-                // Use timeout to let state update before saving
-                setTimeout(() => {
-                  setKeywords(prev => {
-                    const updated = prev.map(kw =>
-                      kw.key === record.key ? { ...kw, category: val } : kw
-                    );
-                    if (onUpdateKeywords) onUpdateKeywords(updated);
-                    return updated;
-                  });
-                  setEditingKey(null);
-                  setEditingField(null);
-                  setEditingValue('');
-                }, 0);
+                setKeywords(prev => {
+                  const updated = prev.map(kw =>
+                    kw.key === record.key ? { ...kw, category: val } : kw
+                  );
+                  if (onUpdateKeywords) onUpdateKeywords(updated);
+                  return updated;
+                });
+                setEditingKey(null);
+                setEditingField(null);
+                setEditingValue('');
               }}
             />
           );

@@ -100,19 +100,21 @@ function RequestDetailModal({ requestId, open, onClose }) {
       api.getRequestDetail(requestId).then(data => {
         setDetail(data);
         setLoading(false);
-      });
-      // Auto-refresh for pending requests
-      refreshRef.current = setInterval(async () => {
-        const data = await api.getRequestDetail(requestId);
-        if (data) {
-          setDetail(data);
-          // Stop refreshing once completed
-          if (data.status !== 'pending' && refreshRef.current) {
-            clearInterval(refreshRef.current);
-            refreshRef.current = null;
-          }
+        // Only start auto-refresh for pending requests
+        if (data && data.status === 'pending') {
+          refreshRef.current = setInterval(async () => {
+            const refreshed = await api.getRequestDetail(requestId);
+            if (refreshed) {
+              setDetail(refreshed);
+              // Stop refreshing once completed
+              if (refreshed.status !== 'pending' && refreshRef.current) {
+                clearInterval(refreshRef.current);
+                refreshRef.current = null;
+              }
+            }
+          }, 2000);
         }
-      }, 2000);
+      });
     } else {
       setDetail(null);
     }
