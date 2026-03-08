@@ -1,7 +1,22 @@
 [
   {
-    "source": "Diktat",
-    "target": "专制国",
+    "source": "AI Remnants",
+    "target": "余辉",
+    "category": "势力名称"
+  },
+  {
+    "source": "Church of Galactic Redemption",
+    "target": "银河救赎教会",
+    "category": "势力名称"
+  },
+  {
+    "source": "Derelict",
+    "target": "遗弃船",
+    "category": "势力名称"
+  },
+  {
+    "source": "Domain Exploration Derelict",
+    "target": "遗弃的人之领勘探舰",
     "category": "势力名称"
   },
   {
@@ -40,13 +55,28 @@
     "category": "势力名称"
   },
   {
-    "source": "Independents",
-    "target": "独立势力",
+    "source": "independent",
+    "target": "非势力团体",
+    "category": "势力名称"
+  },
+  {
+    "source": "independents",
+    "target": "非势力团体",
+    "category": "势力名称"
+  },
+  {
+    "source": "Knights of Ludd",
+    "target": "卢德骑士团",
     "category": "势力名称"
   },
   {
     "source": "Ko Combine",
     "target": "Ko 联合实业",
+    "category": "势力名称"
+  },
+  {
+    "source": "Lion's Guard",
+    "target": "狮心卫队",
     "category": "势力名称"
   },
   {
@@ -56,12 +86,12 @@
   },
   {
     "source": "Luddic Church",
-    "target": "勒德教会",
+    "target": "卢德教会",
     "category": "势力名称"
   },
   {
     "source": "Luddic Path",
-    "target": "勒德之路",
+    "target": "卢德左径",
     "category": "势力名称"
   },
   {
@@ -70,13 +100,33 @@
     "category": "势力名称"
   },
   {
+    "source": "mercenaries",
+    "target": "雇佣兵",
+    "category": "势力名称"
+  },
+  {
+    "source": "mercenary",
+    "target": "雇佣兵",
+    "category": "势力名称"
+  },
+  {
     "source": "Midline",
     "target": "核心纪元",
     "category": "势力名称"
   },
   {
+    "source": "Neutral",
+    "target": "中立",
+    "category": "势力名称"
+  },
+  {
+    "source": "Omega",
+    "target": "欧米伽",
+    "category": "势力名称"
+  },
+  {
     "source": "Persean League",
-    "target": "波斯联盟",
+    "target": "英仙座联盟",
     "category": "势力名称"
   },
   {
@@ -85,8 +135,13 @@
     "category": "势力名称"
   },
   {
-    "source": "Pirates",
+    "source": "pirates",
     "target": "海盗",
+    "category": "势力名称"
+  },
+  {
+    "source": "refugees",
+    "target": "难民",
     "category": "势力名称"
   },
   {
@@ -96,22 +151,42 @@
   },
   {
     "source": "Remnants",
-    "target": "遗迹",
+    "target": "余辉",
+    "category": "势力名称"
+  },
+  {
+    "source": "scavengers",
+    "target": "拾荒者",
     "category": "势力名称"
   },
   {
     "source": "Sindrian Diktat",
-    "target": "辛德里专制国",
+    "target": "辛达强权",
+    "category": "势力名称"
+  },
+  {
+    "source": "sleeper",
+    "target": "沉睡者",
     "category": "势力名称"
   },
   {
     "source": "Tri-Tachyon",
-    "target": "三联泰科",
+    "target": "速子科技",
     "category": "势力名称"
   },
   {
-    "source": "Unknown",
-    "target": "未知",
+    "source": "Tri-Tachyon Corporation",
+    "target": "速子科技",
+    "category": "势力名称"
+  },
+  {
+    "source": "XIV Battlegroup",
+    "target": "第十四战斗群",
+    "category": "势力名称"
+  },
+  {
+    "source": "Your",
+    "target": "你",
     "category": "势力名称"
   },
   {
@@ -185,11 +260,6 @@
     "category": "舰船名称"
   },
   {
-    "source": "Battlestation",
-    "target": "作战基地",
-    "category": "舰船名称"
-  },
-  {
     "source": "Berserker",
     "target": "狂战士",
     "category": "舰船名称"
@@ -215,6 +285,21 @@
     "category": "舰船名称"
   },
   {
+    "source": "Brawler (LG)",
+    "target": "斗士 (LG)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Brawler (LP)",
+    "target": "斗士 (LP)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Brawler (TT)",
+    "target": "斗士 (TT)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Brilliant",
     "target": "辉煌",
     "category": "舰船名称"
@@ -227,6 +312,26 @@
   {
     "source": "Buffalo",
     "target": "水牛",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Buffalo (A)",
+    "target": "水牛 (A)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Buffalo (LC)",
+    "target": "水牛 (LC)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Buffalo (P)",
+    "target": "水牛 (P)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Buffalo (TT)",
+    "target": "水牛 (TT)",
     "category": "舰船名称"
   },
   {
@@ -245,8 +350,23 @@
     "category": "舰船名称"
   },
   {
+    "source": "Centurion (LG)",
+    "target": "百夫长 (LG)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Cerberus",
     "target": "地狱犬",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Cerberus (LP)",
+    "target": "地狱犬 (LP)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Cerberus (P)",
+    "target": "地狱犬 (P)",
     "category": "舰船名称"
   },
   {
@@ -340,6 +460,11 @@
     "category": "舰船名称"
   },
   {
+    "source": "Dominator (XIV)",
+    "target": "统治者 (XIV)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Doom",
     "target": "厄运",
     "category": "舰船名称"
@@ -400,13 +525,38 @@
     "category": "舰船名称"
   },
   {
-    "source": "Enforcer",
-    "target": "执法者",
+    "source": "Eagle (LG)",
+    "target": "雄鹰 (LG)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Eagle (XIV)",
+    "target": "雄鹰 (XIV)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Enforcer (P)",
+    "target": "执法者 (P)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Enforcer (XIV)",
+    "target": "执法者 (XIV)",
     "category": "舰船名称"
   },
   {
     "source": "Eradicator",
     "target": "根除者",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Eradicator (P)",
+    "target": "根除者 (P)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Executor",
+    "target": "执行官",
     "category": "舰船名称"
   },
   {
@@ -417,6 +567,21 @@
   {
     "source": "Falcon",
     "target": "猎鹰",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Falcon (LG)",
+    "target": "猎鹰 (LG)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Falcon (P)",
+    "target": "猎鹰 (P)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Falcon (XIV)",
+    "target": "猎鹰 (XIV)",
     "category": "舰船名称"
   },
   {
@@ -480,6 +645,11 @@
     "category": "舰船名称"
   },
   {
+    "source": "Gremlin (P)",
+    "target": "小精灵 (P)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Grendel",
     "target": "格伦德尔",
     "category": "舰船名称"
@@ -517,6 +687,11 @@
   {
     "source": "Hammerhead",
     "target": "锤头",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hammerhead (LG)",
+    "target": "锤头 (LG)",
     "category": "舰船名称"
   },
   {
@@ -590,6 +765,26 @@
     "category": "舰船名称"
   },
   {
+    "source": "Hound (A)",
+    "target": "猎犬 (A)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hound (LC)",
+    "target": "猎犬 (LC)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hound (LP)",
+    "target": "猎犬 (LP)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Hound (P)",
+    "target": "猎犬 (P)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Hyperion",
     "target": "亥伯龙",
     "category": "舰船名称"
@@ -610,13 +805,48 @@
     "category": "舰船名称"
   },
   {
+    "source": "Kite (A)",
+    "target": "风筝 (A)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Kite (LP)",
+    "target": "风筝 (LP)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Kite (P)",
+    "target": "风筝 (P)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Kite (S)",
+    "target": "风筝 (S)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Lasher",
     "target": "征伐",
     "category": "舰船名称"
   },
   {
+    "source": "Lasher (LC)",
+    "target": "征伐 (LC)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Lasher (LP)",
+    "target": "征伐 (LP)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Legion",
     "target": "军团",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Legion (XIV)",
+    "target": "军团 (XIV)",
     "category": "舰船名称"
   },
   {
@@ -657,6 +887,11 @@
   {
     "source": "Manticore",
     "target": "蝎尾狮",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Manticore (P)",
+    "target": "蝎尾狮 (P)",
     "category": "舰船名称"
   },
   {
@@ -715,8 +950,18 @@
     "category": "舰船名称"
   },
   {
+    "source": "Mudskipper Mk.II",
+    "target": "弹涂鱼 Mk.II",
+    "category": "舰船名称"
+  },
+  {
     "source": "Mule",
     "target": "骡子",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Mule (P)",
+    "target": "骡子 (P)",
     "category": "舰船名称"
   },
   {
@@ -742,6 +987,11 @@
   {
     "source": "Onslaught",
     "target": "攻势",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Onslaught (XIV)",
+    "target": "攻势 (XIV)",
     "category": "舰船名称"
   },
   {
@@ -950,6 +1200,11 @@
     "category": "舰船名称"
   },
   {
+    "source": "Shrike (P)",
+    "target": "伯劳鸟 (P)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Shuttle",
     "target": "穿梭机",
     "category": "舰船名称"
@@ -1010,6 +1265,11 @@
     "category": "舰船名称"
   },
   {
+    "source": "Sunder (LG)",
+    "target": "破阵 (LG)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Superfreighter",
     "target": "超级货舰",
     "category": "舰船名称"
@@ -1017,6 +1277,11 @@
   {
     "source": "Talon",
     "target": "利爪",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Talon (Tri-Tachyon)",
+    "target": "利爪 (TT)",
     "category": "舰船名称"
   },
   {
@@ -1075,8 +1340,23 @@
     "category": "舰船名称"
   },
   {
+    "source": "Vanguard (P)",
+    "target": "先锋 (P)",
+    "category": "舰船名称"
+  },
+  {
     "source": "Venture",
     "target": "历险",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Venture (LP)",
+    "target": "历险 (LP)",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Venture Mk.II",
+    "target": "历险 Mk.II",
     "category": "舰船名称"
   },
   {
@@ -1112,6 +1392,11 @@
   {
     "source": "Wolf",
     "target": "野狼",
+    "category": "舰船名称"
+  },
+  {
+    "source": "Wolf (H)",
+    "target": "野狼 (H)",
     "category": "舰船名称"
   },
   {
@@ -2155,6 +2440,11 @@
     "category": "游戏术语"
   },
   {
+    "source": "Ablative Armor",
+    "target": "烧蚀装甲",
+    "category": "游戏术语"
+  },
+  {
     "source": "Abundant Ore Deposits",
     "target": "大量的矿床",
     "category": "游戏术语"
@@ -2175,13 +2465,103 @@
     "category": "游戏术语"
   },
   {
+    "source": "Abyssal Light",
+    "target": "深渊光点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Academician",
+    "target": "院士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Academy Shuttle Service",
+    "target": "学院穿梭机航班",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Accelerated Ammo Feeder",
+    "target": "加速填弹器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Accelerated Shields",
+    "target": "敏捷护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Accepted",
+    "target": "已接受",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Active Flare Launcher",
+    "target": "追踪热诱弹发射器",
+    "category": "游戏术语"
+  },
+  {
     "source": "Active Sensor Burst",
     "target": "传感器扫描",
     "category": "游戏术语"
   },
   {
+    "source": "Activist",
+    "target": "激进主义分子",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Adaptive Phase Coils",
+    "target": "自适应相位线圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Additional Berthing",
+    "target": "船员宿舍扩容",
+    "category": "游戏术语"
+  },
+  {
     "source": "Adequate Farmland",
     "target": "充足的耕地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Adjust weapon groups",
+    "target": "调整武器组",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Administrator",
+    "target": "行政官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Admiral",
+    "target": "海军上将",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Advanced Ground Support",
+    "target": "进阶地面支援",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Advanced Optics",
+    "target": "先进光学器件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Advanced Targeting Core",
+    "target": "先进目标定位核心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Advanced Turret Gyros",
+    "target": "高级炮塔陀螺仪",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Agent",
+    "target": "探员",
     "category": "游戏术语"
   },
   {
@@ -2192,6 +2572,21 @@
   {
     "source": "AI Core Admin (hidden)",
     "target": "AI 行政官 (隐藏)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Always Detaches",
+    "target": "总是分离",
+    "category": "游戏术语"
+  },
+  {
+    "source": "an",
+    "target": "一座",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Anchor Rotation",
+    "target": "固定旋转",
     "category": "游戏术语"
   },
   {
@@ -2230,13 +2625,53 @@
     "category": "游戏术语"
   },
   {
+    "source": "Archcurate",
+    "target": "大祭司",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Archon",
+    "target": "执政官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "are",
+    "target": "可能",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Arid",
+    "target": "干旱",
+    "category": "游戏术语"
+  },
+  {
     "source": "Arid World",
     "target": "干旱地貌",
     "category": "游戏术语"
   },
   {
-    "source": "armor",
-    "target": "装甲",
+    "source": "Aristocrat",
+    "target": "贵族",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Armada",
+    "target": "无敌舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Armored Weapon Mounts",
+    "target": "炮塔装甲",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Arms Dealer",
+    "target": "军火商",
+    "category": "游戏术语"
+  },
+  {
+    "source": "array",
+    "target": "传感器阵列",
     "category": "游戏术语"
   },
   {
@@ -2245,13 +2680,128 @@
     "category": "游戏术语"
   },
   {
-    "source": "ballistic",
-    "target": "动能武器",
+    "source": "Assault Package",
+    "target": "突击套件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Assign Administrator",
+    "target": "分配行政官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Assign Captain",
+    "target": "指定舰长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Atlantian Cloud",
+    "target": "Atlantian 云",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Attack Fleet",
+    "target": "攻击舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Augmented Drive Field",
+    "target": "增强驱动力场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Automated Repair Unit",
+    "target": "自动修复单元",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Automated Ship",
+    "target": "全自动舰船",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Automated Ships",
+    "target": "无人战舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Auxiliary Fuel Tanks",
+    "target": "辅助燃料罐",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Auxiliary Support",
+    "target": "辅助支援",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Auxiliary Thrusters",
+    "target": "辅助推进器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Available credits.",
+    "target": "拥有的星币。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Available supplies and supply use per day.",
+    "target": "可用的补给以及每天使用的补给。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Axial Rotation",
+    "target": "绕轴旋转",
+    "category": "游戏术语"
+  },
+  {
+    "source": "B-Deck",
+    "target": "后备甲板",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ballistic Mastery",
+    "target": "实弹精通",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ballistic Rangefinder",
+    "target": "弹道测距仪",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Barren",
+    "target": "荒芜",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Barren-Bombarded",
+    "target": "荒芜-轰击地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Barren-Desert",
+    "target": "荒芜-沙漠地貌",
     "category": "游戏术语"
   },
   {
     "source": "Barren-marginal World",
     "target": "贫瘠地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Base Commander",
+    "target": "基地指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Base Director",
+    "target": "基地主管",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Battlestation",
+    "target": "作战基地",
     "category": "游戏术语"
   },
   {
@@ -2270,8 +2820,48 @@
     "category": "游戏术语"
   },
   {
+    "source": "Battletation",
+    "target": "作战基地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Best of the Best",
+    "target": "万里挑一",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Bishop-Governor",
+    "target": "主教-总督",
+    "category": "游戏术语"
+  },
+  {
     "source": "Black",
     "target": "黑市",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Black Hole",
+    "target": "黑洞",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Blast Doors",
+    "target": "防爆气密门",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Blessed Arbiter",
+    "target": "神佑仲裁者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Blessed Mission",
+    "target": "受祝之事",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Blessed Walker",
+    "target": "神圣行者",
     "category": "游戏术语"
   },
   {
@@ -2280,8 +2870,13 @@
     "category": "游戏术语"
   },
   {
-    "source": "bomber",
-    "target": "轰炸机",
+    "source": "Blue Giant",
+    "target": "蓝巨星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Blue Supergiant",
+    "target": "蓝超巨星",
     "category": "游戏术语"
   },
   {
@@ -2290,28 +2885,163 @@
     "category": "游戏术语"
   },
   {
+    "source": "Borer Drones",
+    "target": "钻探无人机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Boss",
+    "target": "头目",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Bounties",
+    "target": "赏金",
+    "category": "游戏术语"
+  },
+  {
     "source": "Bountiful Farmland",
     "target": "肥沃的耕地",
     "category": "游戏术语"
   },
   {
-    "source": "built-in",
-    "target": "内置",
+    "source": "Bounty Hunter",
+    "target": "赏金猎人",
     "category": "游戏术语"
   },
   {
-    "source": "capital ship",
-    "target": "主力舰",
+    "source": "Brother",
+    "target": "修士",
     "category": "游戏术语"
   },
   {
-    "source": "carrier",
-    "target": "航母",
+    "source": "Brown Dwarf",
+    "target": "褐矮星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Bulk Transport",
+    "target": "大宗物流",
+    "category": "游戏术语"
+  },
+  {
+    "source": "buoy",
+    "target": "导航浮标",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Burn Drive",
+    "target": "烈焰驱动器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Buy",
+    "target": "购买",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Buy this %s for %d credits.",
+    "target": "购买 %s 需花费 %d 星币。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "cache",
+    "target": "藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cache",
+    "target": "藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Capital Assurance Fleet",
+    "target": "商业保障舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Captain",
+    "target": "船长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "cargo pod",
+    "target": "货物吊舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cargo Pod",
+    "target": "货物吊舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "cargo pods",
+    "target": "货物吊舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cargo Pods",
+    "target": "货物吊舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Carrier Group",
+    "target": "航母集群",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cathedral Nebula",
+    "target": "Cathedral 星云",
     "category": "游戏术语"
   },
   {
     "source": "Cautious",
     "target": "谨慎",
+    "category": "游戏术语"
+  },
+  {
+    "source": "CEO",
+    "target": "首席执行官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Chief",
+    "target": "海军上士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Chief High Inspector",
+    "target": "最高检察长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Chief Investigator",
+    "target": "首席调查员",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Chiral Figment",
+    "target": "镜像投射",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Citizen",
+    "target": "公民",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Civilian-grade Hull",
+    "target": "民用级舰体",
+    "category": "游戏术语"
+  },
+  {
+    "source": "cleanly disengage from the enemy",
+    "target": "直接全身而退",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Clone",
+    "target": "克隆体",
     "category": "游戏术语"
   },
   {
@@ -2325,23 +3055,38 @@
     "category": "游戏术语"
   },
   {
-    "source": "Collapse",
-    "target": "大坍缩",
+    "source": "Colonel",
+    "target": "陆军上校",
     "category": "游戏术语"
   },
   {
-    "source": "colony",
-    "target": "殖民地",
+    "source": "Colony Management",
+    "target": "殖民管理",
     "category": "游戏术语"
   },
   {
-    "source": "combat rating",
-    "target": "战斗等级",
+    "source": "Colony threats",
+    "target": "殖民地威胁",
     "category": "游戏术语"
   },
   {
-    "source": "combat readiness",
-    "target": "战斗准备度",
+    "source": "Combat",
+    "target": "战斗",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Combat Endurance",
+    "target": "战斗耐力",
+    "category": "游戏术语"
+  },
+  {
+    "source": "comm relay",
+    "target": "通讯中继站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Comm Relay",
+    "target": "通讯中继站",
     "category": "游戏术语"
   },
   {
@@ -2350,8 +3095,23 @@
     "category": "游戏术语"
   },
   {
+    "source": "Commander",
+    "target": "指挥官",
+    "category": "游戏术语"
+  },
+  {
     "source": "Commerce",
     "target": "贸易中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Commerce Raiders",
+    "target": "商业竞争手段",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Commodities Agent",
+    "target": "代理商",
     "category": "游戏术语"
   },
   {
@@ -2360,8 +3120,78 @@
     "category": "游戏术语"
   },
   {
-    "source": "corrupted nanoforge",
-    "target": "损坏的纳米锻炉",
+    "source": "Commune Leader",
+    "target": "社区领导人",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Compromised Armor",
+    "target": "受损装甲",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Compromised Hull",
+    "target": "受损船体",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Compromised Storage",
+    "target": "受损货舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Contacts",
+    "target": "联络人",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Containment Procedures",
+    "target": "密闭流程",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Controller-General",
+    "target": "总审计长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Converted Cargo Bay",
+    "target": "改装货舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Converted Fighter Bay",
+    "target": "停用飞行甲板",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Converted Hangar",
+    "target": "改装机库",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Coordinated Maneuvers",
+    "target": "协调机动",
+    "category": "游戏术语"
+  },
+  {
+    "source": "coronal hypershunt",
+    "target": "星冕分流器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Coronal Hypershunt",
+    "target": "星冕分流器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Corporate Trader",
+    "target": "企业商队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Corsair",
+    "target": "劫掠者",
     "category": "游戏术语"
   },
   {
@@ -2370,23 +3200,28 @@
     "category": "游戏术语"
   },
   {
-    "source": "CR",
-    "target": "战备度",
+    "source": "Crew Boss",
+    "target": "工头",
     "category": "游戏术语"
   },
   {
-    "source": "credits",
-    "target": "信用点",
+    "source": "Crew Training",
+    "target": "船员训练",
     "category": "游戏术语"
   },
   {
-    "source": "crew",
-    "target": "船员",
+    "source": "Criminal",
+    "target": "罪犯",
     "category": "游戏术语"
   },
   {
-    "source": "cruiser",
-    "target": "巡洋舰",
+    "source": "Crusade",
+    "target": "十字军",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cryoflux Transducer",
+    "target": "幅能场变频",
     "category": "游戏术语"
   },
   {
@@ -2400,13 +3235,78 @@
     "category": "游戏术语"
   },
   {
+    "source": "cryosleeper",
+    "target": "休眠舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cryovolcanic",
+    "target": "冰火山",
+    "category": "游戏术语"
+  },
+  {
     "source": "Cryovolcanic World",
     "target": "冰火山地貌",
     "category": "游戏术语"
   },
   {
+    "source": "Curate Sacraria",
+    "target": "住持祭司",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Curate-Commander",
+    "target": "祭司-指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Cybernetic Augmentation",
+    "target": "模控增强",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Damage Control",
+    "target": "损伤管制",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Damaged Flight Deck",
+    "target": "受损的飞行甲板",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Damaged Weapon Mounts",
+    "target": "武器位损坏",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Damper Field",
+    "target": "阻尼力场",
+    "category": "游戏术语"
+  },
+  {
     "source": "Darkness",
     "target": "黑暗",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Deacon-Captain",
+    "target": "执事-船长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "debris",
+    "target": "区域",
+    "category": "游戏术语"
+  },
+  {
+    "source": "debris field",
+    "target": "残骸区",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Debris Field",
+    "target": "残骸区",
     "category": "游戏术语"
   },
   {
@@ -2420,13 +3320,88 @@
     "category": "游戏术语"
   },
   {
+    "source": "Dedicated Targeting Core",
+    "target": "专注型目标锁定核心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Defective Manufactory",
+    "target": "受损的制造工厂",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Defensive Targeting Array",
+    "target": "护航定位阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Degraded Drive Field",
+    "target": "驱动力场故障",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Degraded Engines",
+    "target": "老化引擎",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Degraded Life Support",
+    "target": "维生系统故障",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Degraded Phase Skimmer",
+    "target": "低效闪现",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Degraded Shields",
+    "target": "护盾发生器老化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Delicate Machinery",
+    "target": "精密机械",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Demi-Navarch",
+    "target": "下级海军都统",
+    "category": "游戏术语"
+  },
+  {
     "source": "Dense Atmosphere",
     "target": "稠密大气层",
     "category": "游戏术语"
   },
   {
-    "source": "deployment points",
-    "target": "部署点",
+    "source": "Deputy Star Marshal",
+    "target": "副星际元帅",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Derelict Operations",
+    "target": "废船舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "derelict ship",
+    "target": "遗弃舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Derelict Ship",
+    "target": "遗弃舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Derelict Sporeship Station",
+    "target": "废弃的孢子母舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Desert",
+    "target": "沙漠",
     "category": "游戏术语"
   },
   {
@@ -2435,13 +3410,38 @@
     "category": "游戏术语"
   },
   {
-    "source": "destroyer",
-    "target": "驱逐舰",
+    "source": "Destroyed Weapon Mounts",
+    "target": "武器位损毁",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Detachment",
+    "target": "特遣队",
     "category": "游戏术语"
   },
   {
     "source": "Diffuse Volatiles",
     "target": "少量的挥发物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Director of Intelligence",
+    "target": "情报局局长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Director of Special Forces",
+    "target": "特种部队总管",
+    "category": "游戏术语"
+  },
+  {
+    "source": "disengage without being pursued",
+    "target": "脱离战斗而不被追击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Dismiss",
+    "target": "关闭",
     "category": "游戏术语"
   },
   {
@@ -2455,8 +3455,108 @@
     "category": "游戏术语"
   },
   {
-    "source": "Domain",
-    "target": "领域",
+    "source": "Distributed Fire Control",
+    "target": "分布式火控系统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Distribution Convoy",
+    "target": "配送舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Do Not Back Off",
+    "target": "取消后退",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Do Not Fire Through",
+    "target": "视为障碍",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Doctor",
+    "target": "博士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era cryosleeper",
+    "target": "人之领-低温休眠舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era Cryosleeper",
+    "target": "人之领-低温休眠舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era Gate Hauler",
+    "target": "人之领-星门运输舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era mothership",
+    "target": "人之领-勘探母舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era Mothership",
+    "target": "人之领-勘探母舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era probe",
+    "target": "人之领-探测器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era Probe",
+    "target": "人之领-探测器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era survey ship",
+    "target": "人之领-勘探舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Domain-era Survey Ship",
+    "target": "人之领-勘探舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Drive Field Stabilizer",
+    "target": "驱动力场稳定器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Dynamic Stabilizer",
+    "target": "动态稳定器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "ECCM Package",
+    "target": "电子反制组件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "ECM Package",
+    "target": "电子对抗组件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Efficiency Overhaul",
+    "target": "高效检修",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Elder",
+    "target": "长老",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Electronic Warfare",
+    "target": "电子对抗",
     "category": "游戏术语"
   },
   {
@@ -2465,8 +3565,123 @@
     "category": "游戏术语"
   },
   {
-    "source": "energy",
-    "target": "能量武器",
+    "source": "EMP Emitter",
+    "target": "EMP 发生器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Energy Bolt Coherer",
+    "target": "能量弹体同调器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Energy Conversion",
+    "target": "能量转换",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Energy Damage",
+    "target": "能量伤害",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Energy Weapon Mastery",
+    "target": "能量精通",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Enforcer",
+    "target": "执法者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ensign",
+    "target": "海军少尉",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Entrepreneur",
+    "target": "企业家",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Entropy Amplifier",
+    "target": "熵放大器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Entropy Damper",
+    "target": "熵抑制器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "equipment cache",
+    "target": "设备藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Equipment Cache",
+    "target": "设备藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Erratic Fuel Injector",
+    "target": "不稳定推进器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Escort Package",
+    "target": "护航套件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Excubitor Orbis",
+    "target": "行星教卫",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Executive",
+    "target": "经理",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Expanded Cargo Holds",
+    "target": "货舱扩容",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Expanded Deck Crew",
+    "target": "扩编飞行甲板人员",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Expanded Magazines",
+    "target": "扩展弹仓",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Expanded Missile Racks",
+    "target": "扩展发射架",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Expedited Trader",
+    "target": "运输舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Experimental Phase Coils",
+    "target": "实验性相位线圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Explosion",
+    "target": "爆炸",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Extended Shields",
+    "target": "扩展护盾",
     "category": "游戏术语"
   },
   {
@@ -2495,13 +3710,58 @@
     "category": "游戏术语"
   },
   {
+    "source": "Faithful Convoy",
+    "target": "传信旅人",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Faithful Trader",
+    "target": "传信商队",
+    "category": "游戏术语"
+  },
+  {
     "source": "Farming",
     "target": "农业",
     "category": "游戏术语"
   },
   {
-    "source": "fighter",
-    "target": "战斗机",
+    "source": "Fast Missile Racks",
+    "target": "高速导弹挂架",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fast Picket",
+    "target": "纠察队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Father",
+    "target": "神父",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Faulty Automated Systems",
+    "target": "自动化系统损毁",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Faulty Power Grid",
+    "target": "缺损电网",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fence",
+    "target": "销赃犯",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Field Modulation",
+    "target": "相场调制",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Field Repairs",
+    "target": "现场维修",
     "category": "游戏术语"
   },
   {
@@ -2510,8 +3770,18 @@
     "category": "游戏术语"
   },
   {
+    "source": "Fighter Chassis Storage",
+    "target": "战机底盘储备",
+    "category": "游戏术语"
+  },
+  {
     "source": "Fighter Drone",
     "target": "无人战斗机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fighter Uplink",
+    "target": "战机传讯",
     "category": "游戏术语"
   },
   {
@@ -2520,8 +3790,48 @@
     "category": "游戏术语"
   },
   {
-    "source": "flux",
-    "target": "通量",
+    "source": "Flare Launcher",
+    "target": "热诱弹发射器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fleet Commander",
+    "target": "舰队指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fleet Director",
+    "target": "舰队主管",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fleet log",
+    "target": "舰队日志",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fleet Master",
+    "target": "船管事",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Flux Coil Adjunct",
+    "target": "附加幅能线圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Flux Distributor",
+    "target": "幅能配送器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Flux Regulation",
+    "target": "幅能调节",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Flux Shunt",
+    "target": "磁通分流",
     "category": "游戏术语"
   },
   {
@@ -2530,13 +3840,43 @@
     "category": "游戏术语"
   },
   {
+    "source": "Force Concentration",
+    "target": "力量集中",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fortress Shield",
+    "target": "堡垒护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fourteenth Battlegroup",
+    "target": "第十四战斗群",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fragment",
+    "target": "断片",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fragmentation Damage",
+    "target": "破片伤害",
+    "category": "游戏术语"
+  },
+  {
     "source": "Free Port",
     "target": "自由港",
     "category": "游戏术语"
   },
   {
-    "source": "frigate",
-    "target": "护卫舰",
+    "source": "Freedom Fighter",
+    "target": "自由斗士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Freelance Administrator",
+    "target": "自由行政官",
     "category": "游戏术语"
   },
   {
@@ -2545,8 +3885,8 @@
     "category": "游戏术语"
   },
   {
-    "source": "fuel",
-    "target": "燃料",
+    "source": "Frozen",
+    "target": "冰冻",
     "category": "游戏术语"
   },
   {
@@ -2555,13 +3895,43 @@
     "category": "游戏术语"
   },
   {
-    "source": "Gate",
-    "target": "星门",
+    "source": "Full Burn",
+    "target": "巡航驱动",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Fusion Lamp",
+    "target": "聚变射灯",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Galatia Academy Station",
+    "target": "Galatia 学院 空间站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gangster",
+    "target": "匪徒",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gargoyle Drones",
+    "target": "石像鬼无人机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gas Giant",
+    "target": "气态巨行星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "gate hauler",
+    "target": "运输舰",
     "category": "游戏术语"
   },
   {
     "source": "General",
-    "target": "通用",
+    "target": "陆军上将",
     "category": "游戏术语"
   },
   {
@@ -2570,8 +3940,33 @@
     "category": "游戏术语"
   },
   {
+    "source": "Gens Matriarch",
+    "target": "宗主夫人",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gens Parriarch",
+    "target": "宗主",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gens Patriarch",
+    "target": "宗主",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Glitched Sensor Array",
+    "target": "传感器阵列失灵",
+    "category": "游戏术语"
+  },
+  {
     "source": "Go Dark",
     "target": "匿踪",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Grand Armada",
+    "target": "无敌舰队 - 领队",
     "category": "游戏术语"
   },
   {
@@ -2580,8 +3975,33 @@
     "category": "游戏术语"
   },
   {
+    "source": "Ground Operations",
+    "target": "地表行动",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ground Support Package",
+    "target": "地面支援",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Guard High Deputy Executor",
+    "target": "卫队最高副首长",
+    "category": "游戏术语"
+  },
+  {
     "source": "Guided Torpedo",
     "target": "追踪鱼雷",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Guildmaster",
+    "target": "公会首领",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Gunnery Implants",
+    "target": "火控植入",
     "category": "游戏术语"
   },
   {
@@ -2590,13 +4010,53 @@
     "category": "游戏术语"
   },
   {
-    "source": "hardpoint",
-    "target": "固定炮台",
+    "source": "Habitat",
+    "target": "轨道居住站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hacker",
+    "target": "骇客",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hallowed Arbiter",
+    "target": "神佑仲裁者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hammer",
+    "target": "锤击者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hardened Shields",
+    "target": "强化护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hardened Subsystems",
+    "target": "硬化子系统",
     "category": "游戏术语"
   },
   {
     "source": "Headquarters",
     "target": "指挥中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavily Shielded Cache",
+    "target": "大型屏蔽式藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavy Armor",
+    "target": "重型装甲",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heavy Ballistics Integration",
+    "target": "重弹集成",
     "category": "游戏术语"
   },
   {
@@ -2620,13 +4080,83 @@
     "category": "游戏术语"
   },
   {
+    "source": "Helmsmanship",
+    "target": "操舵技术",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Heretic",
+    "target": "异教徒",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hermit",
+    "target": "隐士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "hidden cache",
+    "target": "隐蔽藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hidden Cache",
+    "target": "隐蔽藏匿点",
+    "category": "游戏术语"
+  },
+  {
     "source": "High Command",
     "target": "最高指挥部",
     "category": "游戏术语"
   },
   {
+    "source": "High Commander",
+    "target": "最高指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Energy Focus",
+    "target": "高能聚焦系统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Explosive Damage",
+    "target": "高爆伤害",
+    "category": "游戏术语"
+  },
+  {
     "source": "High Gravity",
     "target": "高重力",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Hegemon",
+    "target": "至高霸主",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Maintenance",
+    "target": "高维护需求",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Resolution Sensors",
+    "target": "高精度传感器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Scatter Amplifier",
+    "target": "高散射增幅器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "High Volition Attractor",
+    "target": "感灵吸引场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Holy Armada",
+    "target": "神圣无敌舰队",
     "category": "游戏术语"
   },
   {
@@ -2640,13 +4170,23 @@
     "category": "游戏术语"
   },
   {
-    "source": "hull",
-    "target": "船体",
+    "source": "House Matriarch",
+    "target": "宗主夫人",
     "category": "游戏术语"
   },
   {
-    "source": "hull mod",
-    "target": "舰船改装件",
+    "source": "House Parriarch",
+    "target": "宗主",
+    "category": "游戏术语"
+  },
+  {
+    "source": "House Patriarch",
+    "target": "宗主",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Hull Restoration",
+    "target": "船体修复",
     "category": "游戏术语"
   },
   {
@@ -2655,8 +4195,13 @@
     "category": "游戏术语"
   },
   {
-    "source": "Hyperspace",
-    "target": "超空间",
+    "source": "Hypercognition",
+    "target": "超越认知",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ice Giant",
+    "target": "冰态巨行星",
     "category": "游戏术语"
   },
   {
@@ -2665,13 +4210,83 @@
     "category": "游戏术语"
   },
   {
+    "source": "Ill-Advised Modifications",
+    "target": "不明智改装",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Impact Mitigation",
+    "target": "冲击缓解",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Important",
+    "target": "重要",
+    "category": "游戏术语"
+  },
+  {
+    "source": "inactive gate",
+    "target": "不运转的星门",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Inactive Gate",
+    "target": "不运转的星门",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Increased Maintenance",
+    "target": "过度维护",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Industrial Planning",
+    "target": "工业规划",
+    "category": "游戏术语"
+  },
+  {
     "source": "Industrial Polity",
     "target": "工业化",
     "category": "游戏术语"
   },
   {
+    "source": "Industry",
+    "target": "工业",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Infernium Injector",
+    "target": "烈焰喷射",
+    "category": "游戏术语"
+  },
+  {
     "source": "Inimical Biosphere",
     "target": "敌意生物圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Initiate",
+    "target": "新人",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Inspection Fleet",
+    "target": "视察舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Insulated Engine Assembly",
+    "target": "引擎隔离性装配",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Integrated Point Defense AI",
+    "target": "整合点防御 AI",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Integrated Targeting Unit",
+    "target": "目标定位系统",
     "category": "游戏术语"
   },
   {
@@ -2690,8 +4305,38 @@
     "category": "游戏术语"
   },
   {
+    "source": "Interdictor Array",
+    "target": "阻绝阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Internal Security Fleet",
+    "target": "内部安防舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Investigators",
+    "target": "审查团",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Investor",
+    "target": "投资者",
+    "category": "游戏术语"
+  },
+  {
     "source": "Irradiated",
     "target": "辐射",
+    "category": "游戏术语"
+  },
+  {
+    "source": "is",
+    "target": "可能",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Jungle",
+    "target": "丛林",
     "category": "游戏术语"
   },
   {
@@ -2700,8 +4345,18 @@
     "category": "游戏术语"
   },
   {
-    "source": "large",
-    "target": "大型",
+    "source": "Kinetic Damage",
+    "target": "动能伤害",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Knight-Captain",
+    "target": "骑士队长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Knight-Commander",
+    "target": "骑士-指挥官",
     "category": "游戏术语"
   },
   {
@@ -2710,13 +4365,63 @@
     "category": "游戏术语"
   },
   {
+    "source": "Leader of Executive Guard",
+    "target": "执行护卫队队长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Leadership",
+    "target": "领导",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Lidar Array",
+    "target": "激光雷达阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Lieutenant",
+    "target": "海军上尉",
+    "category": "游戏术语"
+  },
+  {
     "source": "Light Industry",
     "target": "轻工业",
     "category": "游戏术语"
   },
   {
+    "source": "Liner Convoy",
+    "target": "客运舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Lion's Guard Detachment",
+    "target": "狮心卫队特遣舰队",
+    "category": "游戏术语"
+  },
+  {
     "source": "Lion's Guard HQ",
     "target": "狮心守卫总部",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Lion's Guard Patrol",
+    "target": "狮心卫队巡逻舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Lion's Guard Recon",
+    "target": "狮心卫队侦察舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Local",
+    "target": "附近事件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Logistical Priority",
+    "target": "后勤优先",
     "category": "游戏术语"
   },
   {
@@ -2740,8 +4445,73 @@
     "category": "游戏术语"
   },
   {
-    "source": "medium",
-    "target": "中型",
+    "source": "Luddic Pilgrims",
+    "target": "卢德朝圣者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Luddic shrines",
+    "target": "卢德圣地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Major",
+    "target": "陆军少校",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Major events",
+    "target": "重大事件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Major Incursion",
+    "target": "介入",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Makeshift Comm Relay",
+    "target": "临时通讯中继站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Makeshift Equipment",
+    "target": "临时设备",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Makeshift Nav Buoy",
+    "target": "临时导航浮标",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Makeshift Sensor Array",
+    "target": "临时传感器阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Makeshift Shield Generator",
+    "target": "定向护盾生成器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Malfunctioning Comms",
+    "target": "通讯系统故障",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Maneuvering Jets",
+    "target": "机动推进器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Manifestation",
+    "target": "显灵",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Medical Supplier",
+    "target": "医疗供应商",
     "category": "游戏术语"
   },
   {
@@ -2750,8 +4520,63 @@
     "category": "游戏术语"
   },
   {
+    "source": "Mercantile Convoy",
+    "target": "贸易舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Company",
+    "target": "佣兵舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Fleet",
+    "target": "雇佣军舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Flotilla",
+    "target": "佣兵连队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Officer",
+    "target": "雇佣军官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Patrol",
+    "target": "巡逻佣兵",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Scout",
+    "target": "侦查佣兵",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mercenary Squadron",
+    "target": "佣兵中队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Merchant",
+    "target": "贸易商",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Merlon Drones",
+    "target": "城齿无人机",
+    "category": "游戏术语"
+  },
+  {
     "source": "Meteor Impacts",
     "target": "流星撞击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Microburn",
+    "target": "欧米伽爆裂驱动器",
     "category": "游戏术语"
   },
   {
@@ -2760,8 +4585,28 @@
     "category": "游戏术语"
   },
   {
+    "source": "Militarized Hegemony Auxiliary",
+    "target": "霸主军事配件",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Militarized Subsystems",
+    "target": "军事化子系统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Military",
+    "target": "军方",
+    "category": "游戏术语"
+  },
+  {
     "source": "Military Base",
     "target": "军事基地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mine Strike",
+    "target": "空雷突袭",
     "category": "游戏术语"
   },
   {
@@ -2770,13 +4615,73 @@
     "category": "游戏术语"
   },
   {
-    "source": "missile",
-    "target": "导弹",
+    "source": "mining station",
+    "target": "采矿站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mining Station",
+    "target": "采矿站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Minor Apparition",
+    "target": "虚影",
+    "category": "游戏术语"
+  },
+  {
+    "source": "minor equipment cache",
+    "target": "小型设备藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Minor Equipment Cache",
+    "target": "小型设备藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "minor supply cache",
+    "target": "小型补给藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Minor Supply Cache",
+    "target": "小型补给藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "minor weapons cache",
+    "target": "小型武器藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Minor Weapons Cache",
+    "target": "小型武器藏匿点",
     "category": "游戏术语"
   },
   {
     "source": "Missile",
     "target": "导弹",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Missile Autoforge",
+    "target": "导弹自动工厂",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Missile Autoloader",
+    "target": "导弹自动装填器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Missile Specialization",
+    "target": "导弹特化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Missions",
+    "target": "任务",
     "category": "游戏术语"
   },
   {
@@ -2790,8 +4695,78 @@
     "category": "游戏术语"
   },
   {
-    "source": "nanoforge",
-    "target": "纳米锻炉",
+    "source": "Monofilament Tow Cable",
+    "target": "牵引线缆",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mote Attractor",
+    "target": "光尘吸引场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mothball",
+    "target": "封存",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Mother",
+    "target": "教母",
+    "category": "游戏术语"
+  },
+  {
+    "source": "mothership",
+    "target": "勘探母舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "nav buoy",
+    "target": "导航浮标",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Nav Buoy",
+    "target": "导航浮标",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Nav Relay",
+    "target": "导航中继器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Navarch",
+    "target": "海军都统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Navigation",
+    "target": "精准导航",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Nebula (Old)",
+    "target": "星云 (古老)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Nebula (Young)",
+    "target": "星云 (年轻)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Neural Integrator",
+    "target": "神经集成器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Neural Interface",
+    "target": "神经接口",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Neural Link",
+    "target": "神经链接",
     "category": "游戏术语"
   },
   {
@@ -2800,18 +4775,93 @@
     "category": "游戏术语"
   },
   {
+    "source": "Neutron Star",
+    "target": "中子星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Never Detaches",
+    "target": "永不分离",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Never mind",
+    "target": "关闭",
+    "category": "游戏术语"
+  },
+  {
+    "source": "New",
+    "target": "新消息",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Nexus",
+    "target": "中枢",
+    "category": "游戏术语"
+  },
+  {
     "source": "No Atmosphere",
     "target": "没有大气层",
     "category": "游戏术语"
   },
   {
-    "source": "officer",
+    "source": "No enemy ships managed to escape.",
+    "target": "没有任何敌舰能够逃脱。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "No Weapon Flux",
+    "target": "零幅能武器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "None of your ships are combat-ready.",
+    "target": "你没有可以作战的船只。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "None of your side's ships managed to escape.",
+    "target": "你方的战舰没有任何一艘成功逃脱。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Nova Burst",
+    "target": "新星爆裂驱动器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Novice",
+    "target": "见习修士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Number of marines in the fleet.",
+    "target": "当前陆战队员总数。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Officer",
     "target": "军官",
     "category": "游戏术语"
   },
   {
-    "source": "OP",
-    "target": "装配点",
+    "source": "Officer (available for hire)",
+    "target": "军官 (可雇佣)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Officer Management",
+    "target": "军官管理",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Officer Training",
+    "target": "军官训练",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Omega EW",
+    "target": "欧米伽级电子战",
     "category": "游戏术语"
   },
   {
@@ -2820,13 +4870,58 @@
     "category": "游戏术语"
   },
   {
-    "source": "Orbital Solar Array",
-    "target": "轨道光照阵列",
+    "source": "Open the crew/cargo screen",
+    "target": "打开人员/船舱界面",
     "category": "游戏术语"
   },
   {
-    "source": "orbital station",
-    "target": "轨道站",
+    "source": "Open the fleet screen",
+    "target": "打开舰队管理界面",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Open the refit screen",
+    "target": "打开改装界面",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Operation Manager",
+    "target": "运营经理",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Operations Center",
+    "target": "作战中心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orange Giant",
+    "target": "橙巨星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orange Star",
+    "target": "橙矮星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Dockyard",
+    "target": "轨道船坞",
+    "category": "游戏术语"
+  },
+  {
+    "source": "orbital habitat",
+    "target": "轨道居住站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Habitat",
+    "target": "轨道居住站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orbital Solar Array",
+    "target": "轨道光照阵列",
     "category": "游戏术语"
   },
   {
@@ -2850,8 +4945,13 @@
     "category": "游戏术语"
   },
   {
-    "source": "ordnance points",
-    "target": "装配点",
+    "source": "Ordnance Expertise",
+    "target": "军械专长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ordo",
+    "target": "秩序",
     "category": "游戏术语"
   },
   {
@@ -2860,8 +4960,53 @@
     "category": "游戏术语"
   },
   {
+    "source": "Orion Device",
+    "target": "猎户座装置",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Orion-Perseus Abyss",
+    "target": "猎户座-英仙座深渊",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Other Damage",
+    "target": "其他伤害",
+    "category": "游戏术语"
+  },
+  {
     "source": "Outpost",
     "target": "前哨站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Outpost Commander",
+    "target": "前哨指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Passenger Convoy",
+    "target": "客运舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pather",
+    "target": "左径",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Patrol",
+    "target": "巡逻队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Patrol Commander",
+    "target": "巡逻队指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Patrol Director",
+    "target": "巡逻主管",
     "category": "游戏术语"
   },
   {
@@ -2870,8 +5015,83 @@
     "category": "游戏术语"
   },
   {
-    "source": "phase",
-    "target": "相位",
+    "source": "Pause",
+    "target": "暂停",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pauses the game.",
+    "target": "暂停游戏。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pensioner",
+    "target": "已退休人员",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Anchor",
+    "target": "相位锚点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Cloak",
+    "target": "相位线圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Coil Instability",
+    "target": "不稳定相位线圈",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Coil Tuning",
+    "target": "相位调谐",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Field",
+    "target": "相位力场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Mastery",
+    "target": "相位精通",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Skimmer",
+    "target": "闪现",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Skimmer (Drone)",
+    "target": "闪现 (无人机)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Phase Teleporter",
+    "target": "相位传送器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pilgrim",
+    "target": "朝圣者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pilgrim's Path",
+    "target": "朝圣者之路",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pilgrimage",
+    "target": "朝圣者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Pilot",
+    "target": "引航员",
     "category": "游戏术语"
   },
   {
@@ -2887,6 +5107,16 @@
   {
     "source": "Planetary Shield",
     "target": "行星护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Plasma Burn",
+    "target": "等离子爆裂驱动器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Plasma Jets",
+    "target": "等离子推进器",
     "category": "游戏术语"
   },
   {
@@ -2907,6 +5137,16 @@
   {
     "source": "Point Defense (Area)",
     "target": "点防御 (范围性)",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Point Defense Drones",
+    "target": "点防无人机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Polarized Armor",
+    "target": "极化装甲",
     "category": "游戏术语"
   },
   {
@@ -2935,6 +5175,21 @@
     "category": "游戏术语"
   },
   {
+    "source": "Portboss",
+    "target": "港口管事",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Portmaster",
+    "target": "港口主管",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Portwatcher",
+    "target": "卫港者",
+    "category": "游戏术语"
+  },
+  {
     "source": "Pressure",
     "target": "压制",
     "category": "游戏术语"
@@ -2945,8 +5200,93 @@
     "category": "游戏术语"
   },
   {
-    "source": "pristine nanoforge",
-    "target": "完好的纳米锻炉",
+    "source": "Prime Demarchon",
+    "target": "大统领",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Prime Navarch",
+    "target": "大海军都统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Private",
+    "target": "列兵",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Privateer",
+    "target": "掠夺者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "probe",
+    "target": "探针",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Probe",
+    "target": "探针",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Proceed with the deployment",
+    "target": "继续部署",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Prospector",
+    "target": "探勘者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Provost",
+    "target": "教务长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Purser",
+    "target": "事务长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "QA Inspector",
+    "target": "QA 巡视员",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Quantum Disruptor",
+    "target": "量子干扰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Quartermaster",
+    "target": "军需官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Raider",
+    "target": "袭击者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Raiders",
+    "target": "掠夺者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ranged Specialization",
+    "target": "远程特化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Ravelin Drones",
+    "target": "三角堡无人机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Recall Device",
+    "target": "召回装置",
     "category": "游戏术语"
   },
   {
@@ -2960,8 +5300,43 @@
     "category": "游戏术语"
   },
   {
+    "source": "Reconsider",
+    "target": "关闭",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Recovery Shuttles",
+    "target": "救援穿梭舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Red Dwarf",
+    "target": "红矮星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Red Giant",
+    "target": "红巨星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Red Supergiant",
+    "target": "红超巨星",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Reduced Explosion",
+    "target": "爆炸减免",
+    "category": "游戏术语"
+  },
+  {
     "source": "Refining",
     "target": "冶炼厂",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Refit",
+    "target": "改装",
     "category": "游戏术语"
   },
   {
@@ -2970,13 +5345,63 @@
     "category": "游戏术语"
   },
   {
+    "source": "Reinforced Bulkheads",
+    "target": "强化舱壁",
+    "category": "游戏术语"
+  },
+  {
+    "source": "relay",
+    "target": "通讯中继站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Reliability Engineering",
+    "target": "可靠工程",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Relief Convoy",
+    "target": "救援舰队",
+    "category": "游戏术语"
+  },
+  {
     "source": "Remote Survey",
     "target": "远程调查",
     "category": "游戏术语"
   },
   {
+    "source": "research station",
+    "target": "研究站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Research Station",
+    "target": "研究站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Reserve Deployment",
+    "target": "后备部署",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Resistant Flux Conduits",
+    "target": "幅散管道扩容",
+    "category": "游戏术语"
+  },
+  {
     "source": "Resource",
     "target": "资源库存",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Retrieval Contractor",
+    "target": "回收承包商",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Revenge Fleet",
+    "target": "复仇舰队",
     "category": "游戏术语"
   },
   {
@@ -3000,8 +5425,33 @@
     "category": "游戏术语"
   },
   {
+    "source": "Righteous Flotilla",
+    "target": "正义舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rocky Ice",
+    "target": "冰岩",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rocky Metallic",
+    "target": "金属-岩质地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rocky Unstable",
+    "target": "不稳定岩质",
+    "category": "游戏术语"
+  },
+  {
     "source": "Rogue AI Core",
     "target": "失控的 AI 核心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Rugged Construction",
+    "target": "坚固结构",
     "category": "游戏术语"
   },
   {
@@ -3010,13 +5460,28 @@
     "category": "游戏术语"
   },
   {
-    "source": "s-mod",
-    "target": "故事改装",
+    "source": "Sacred Protectors",
+    "target": "神圣保卫者",
     "category": "游戏术语"
   },
   {
-    "source": "salvage",
-    "target": "打捞",
+    "source": "Safety Overrides",
+    "target": "安全协议超驰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Salvage Fleet",
+    "target": "打捞队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Salvage Gantry",
+    "target": "打捞起重机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Salvaging",
+    "target": "打捞作业",
     "category": "游戏术语"
   },
   {
@@ -3030,8 +5495,163 @@
     "category": "游戏术语"
   },
   {
-    "source": "shield",
-    "target": "护盾",
+    "source": "Scavenger",
+    "target": "拾荒者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Science",
+    "target": "科研",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Scientist",
+    "target": "科学家",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Scout",
+    "target": "斥候",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Scuttle",
+    "target": "自毁",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Security Contractor",
+    "target": "安保承包商",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Security Flotilla",
+    "target": "安全护卫队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Security Patrol",
+    "target": "安全巡逻队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sell",
+    "target": "出售",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sell this %s for %d credits.",
+    "target": "出售 %s 可获得 %d 星币。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Senior Executive",
+    "target": "高级主管",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Senior Operation Manager",
+    "target": "高级营运经理",
+    "category": "游戏术语"
+  },
+  {
+    "source": "sensor array",
+    "target": "传感器阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sensor Array",
+    "target": "传感器阵列",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sensor Drones",
+    "target": "感应无人机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "sensor ghost",
+    "target": "传感器幽灵",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sensor Jammer",
+    "target": "传感干扰器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sensors",
+    "target": "传感探测",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sergeant",
+    "target": "陆军中士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shady Character",
+    "target": "可疑人物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shard Spawner",
+    "target": "生成碎片",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shared Flux Sink",
+    "target": "共享幅散管道",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shepherd-metropolitan",
+    "target": "牧师-大主教",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shepherd-militant",
+    "target": "牧师-斗士",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shield Always On",
+    "target": "保持开盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shield Conversion - Front",
+    "target": "固化护盾转化器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shield Conversion - Omni",
+    "target": "全角护盾转化器",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shield Modulation",
+    "target": "护盾调制",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shield Shunt",
+    "target": "护盾分流",
+    "category": "游戏术语"
+  },
+  {
+    "source": "shielded cache",
+    "target": "屏蔽式藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Shielded Cargo Holds",
+    "target": "屏蔽货舱",
+    "category": "游戏术语"
+  },
+  {
+    "source": "ship",
+    "target": "舰船",
     "category": "游戏术语"
   },
   {
@@ -3040,18 +5660,23 @@
     "category": "游戏术语"
   },
   {
-    "source": "skill",
-    "target": "技能",
+    "source": "Side Station",
+    "target": "边防站",
     "category": "游戏术语"
   },
   {
-    "source": "Slipstream",
-    "target": "滑流",
+    "source": "Sister",
+    "target": "修女",
     "category": "游戏术语"
   },
   {
-    "source": "small",
-    "target": "小型",
+    "source": "Small-time Criminal",
+    "target": "轻罪犯",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Smuggler",
+    "target": "走私者",
     "category": "游戏术语"
   },
   {
@@ -3060,8 +5685,28 @@
     "category": "游戏术语"
   },
   {
+    "source": "Solar Shielding",
+    "target": "恒星防护层",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Space Marshal",
+    "target": "海军元帅",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Space Operations",
+    "target": "太空行动",
+    "category": "游戏术语"
+  },
+  {
     "source": "Spaceport",
     "target": "太空港",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Spacer",
+    "target": "水手",
     "category": "游戏术语"
   },
   {
@@ -3080,6 +5725,41 @@
     "category": "游戏术语"
   },
   {
+    "source": "Special Affairs Fleet",
+    "target": "特别事务行动小组",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Special Agent",
+    "target": "特工",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Special Modifications",
+    "target": "忠诚改装",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Stabilized Shields",
+    "target": "稳定护盾",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Stable Incursion",
+    "target": "稳固侵进",
+    "category": "游戏术语"
+  },
+  {
+    "source": "stable location",
+    "target": "稳定点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Stable Location",
+    "target": "稳定点",
+    "category": "游戏术语"
+  },
+  {
     "source": "Star Fortress - High Tech",
     "target": "星际要塞 - 扩展纪元",
     "category": "游戏术语"
@@ -3095,8 +5775,28 @@
     "category": "游戏术语"
   },
   {
+    "source": "station",
+    "target": "空间站",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Station Commander",
+    "target": "空间站指挥官",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Station King",
+    "target": "港口王",
+    "category": "游戏术语"
+  },
+  {
     "source": "Steady",
     "target": "沉着",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Stealth Minefield",
+    "target": "感应雷区",
     "category": "游戏术语"
   },
   {
@@ -3105,13 +5805,28 @@
     "category": "游戏术语"
   },
   {
+    "source": "Stellar Mirror",
+    "target": "恒星镜",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Stellar Shade",
+    "target": "恒星罩",
+    "category": "游戏术语"
+  },
+  {
     "source": "Storage",
     "target": "仓库",
     "category": "游戏术语"
   },
   {
-    "source": "story point",
-    "target": "故事点",
+    "source": "Store",
+    "target": "存放",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Story",
+    "target": "故事",
     "category": "游戏术语"
   },
   {
@@ -3120,13 +5835,53 @@
     "category": "游戏术语"
   },
   {
+    "source": "Strike Commander",
+    "target": "打击指挥",
+    "category": "游戏术语"
+  },
+  {
     "source": "Strike Drone",
     "target": "无人轰炸机",
     "category": "游戏术语"
   },
   {
-    "source": "supply",
-    "target": "补给",
+    "source": "Structural Damage",
+    "target": "结构损伤",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sub-Ordo",
+    "target": "次级秩序",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Sub-presbyter Orbis",
+    "target": "从阶行星教督",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Supplicant",
+    "target": "恳求者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "supply cache",
+    "target": "补给藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Supply Cache",
+    "target": "补给藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Supply Fleet",
+    "target": "补给舰队",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Supply Manager",
+    "target": "后勤经理",
     "category": "游戏术语"
   },
   {
@@ -3135,8 +5890,33 @@
     "category": "游戏术语"
   },
   {
+    "source": "Support Doctrine",
+    "target": "辅助学说",
+    "category": "游戏术语"
+  },
+  {
     "source": "Suppression",
     "target": "压制",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Supreme Executor",
+    "target": "最高元首",
+    "category": "游戏术语"
+  },
+  {
+    "source": "survey ship",
+    "target": "勘探舰",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Surveying Equipment",
+    "target": "勘探设备",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Suspend Repairs & Recovery",
+    "target": "暂停维修 & 恢复",
     "category": "游戏术语"
   },
   {
@@ -3145,8 +5925,8 @@
     "category": "游戏术语"
   },
   {
-    "source": "synchrotron core",
-    "target": "同步加速器核心",
+    "source": "Synod Subcurate",
+    "target": "助理祭司",
     "category": "游戏术语"
   },
   {
@@ -3155,8 +5935,73 @@
     "category": "游戏术语"
   },
   {
+    "source": "Systems Expertise",
+    "target": "系统专长",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Tactical Drills",
+    "target": "战术演习",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Take",
+    "target": "获取",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Take this %s.",
+    "target": "获取 %s。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Target Analysis",
+    "target": "目标解析",
+    "category": "游戏术语"
+  },
+  {
+    "source": "target location",
+    "target": "目标位置",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Target Location",
+    "target": "目标位置",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Targeting Feed",
+    "target": "目标馈送系统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Targeting Supercomputer",
+    "target": "目标定位巨型机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Task Force",
+    "target": "特遣队",
+    "category": "游戏术语"
+  },
+  {
     "source": "Tech-Mining",
     "target": "技术挖掘",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Technology",
+    "target": "技术",
+    "category": "游戏术语"
+  },
+  {
+    "source": "technology cache",
+    "target": "科技藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Technology Cache",
+    "target": "科技藏匿点",
     "category": "游戏术语"
   },
   {
@@ -3165,8 +6010,93 @@
     "category": "游戏术语"
   },
   {
+    "source": "Telmun Molecular Cloud",
+    "target": "Telmun Molecular 云",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Temporal Shell",
+    "target": "时流之壳",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Termination Sequence",
+    "target": "终结指令",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Terminator Core",
+    "target": "终结者核心",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Terminator Drone",
+    "target": "终结者无人机",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Terran",
+    "target": "类地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Terran Eccentric",
+    "target": "异常类地",
+    "category": "游戏术语"
+  },
+  {
     "source": "Terran World",
     "target": "宜居地貌",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Terrorist",
+    "target": "恐怖分子",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The $boardingTaskForceShipName is destroyed.",
+    "target": "$boardingTaskForceShipName 已被摧毁。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The $faction $fleetOrShip maneuvers to disengage.",
+    "target": "$faction $fleetOrShip 进行了一轮机动动作后，准备脱离战斗。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The Core Worlds",
+    "target": "核心世界",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The enemy fleet pursues your forces.",
+    "target": "敌方舰队追击你的部队。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The League Worlds",
+    "target": "联盟世界",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The opposing fleet moves in to join battle.",
+    "target": "对方舰队进场参战。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "The Wastes of Zin",
+    "target": "遗弃之地",
+    "category": "游戏术语"
+  },
+  {
+    "source": "There are no marines available.",
+    "target": "没有陆战队可派遣。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "There's no salvage to be had.",
+    "target": "没有值得打捞回收的战利品。",
     "category": "游戏术语"
   },
   {
@@ -3180,8 +6110,18 @@
     "category": "游戏术语"
   },
   {
+    "source": "too large to be able to disengage",
+    "target": "规模太大，无法轻易摆脱交战",
+    "category": "游戏术语"
+  },
+  {
     "source": "Torpedo",
     "target": "鱼雷",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Toxic",
+    "target": "剧毒",
     "category": "游戏术语"
   },
   {
@@ -3200,13 +6140,28 @@
     "category": "游戏术语"
   },
   {
+    "source": "Trade",
+    "target": "贸易",
+    "category": "游戏术语"
+  },
+  {
     "source": "Trade Center",
     "target": "贸易中心",
     "category": "游戏术语"
   },
   {
+    "source": "Trade Convoy",
+    "target": "贸易商队",
+    "category": "游戏术语"
+  },
+  {
     "source": "Trade Disruption",
     "target": "贸易中断",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Trader",
+    "target": "商队",
     "category": "游戏术语"
   },
   {
@@ -3225,13 +6180,18 @@
     "category": "游戏术语"
   },
   {
-    "source": "Tundra World",
-    "target": "苔原地貌",
+    "source": "TriWay Spaceline Flight",
+    "target": "速子空间旅游舰队",
     "category": "游戏术语"
   },
   {
-    "source": "turret",
-    "target": "炮塔",
+    "source": "Tundra",
+    "target": "苔原",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Tundra World",
+    "target": "苔原地貌",
     "category": "游戏术语"
   },
   {
@@ -3250,13 +6210,63 @@
     "category": "游戏术语"
   },
   {
+    "source": "unable to offer pursuit",
+    "target": "无法进行追击",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Underworld",
+    "target": "黑帮",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Unidentified Entity",
+    "target": "不明实体",
+    "category": "游戏术语"
+  },
+  {
     "source": "Uninhabitable World",
     "target": "死寂之地",
     "category": "游戏术语"
   },
   {
+    "source": "Unknown",
+    "target": "身份不明",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Unpause",
+    "target": "继续",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Unpauses the game.",
+    "target": "回到游戏。",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Unreliable Subsystems",
+    "target": "不可靠子系统",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Unstable Injector",
+    "target": "不稳定喷射器",
+    "category": "游戏术语"
+  },
+  {
     "source": "Urbanized Polity",
     "target": "城市化",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Vast Bulk",
+    "target": "庞然大物",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Vast Hangar",
+    "target": "巨型机库",
     "category": "游戏术语"
   },
   {
@@ -3270,8 +6280,38 @@
     "category": "游戏术语"
   },
   {
+    "source": "Volcanic",
+    "target": "火山",
+    "category": "游戏术语"
+  },
+  {
     "source": "Volturnian Lobster Pens",
     "target": "Volturn 蓝龙虾养殖场",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Warboss",
+    "target": "军阀",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Warlord",
+    "target": "军阀",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Warning Beacon",
+    "target": "警告航标",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Watchers",
+    "target": "守护者",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Water",
+    "target": "海洋",
     "category": "游戏术语"
   },
   {
@@ -3290,43 +6330,63 @@
     "category": "游戏术语"
   },
   {
+    "source": "Weapon Drills",
+    "target": "武装演习",
+    "category": "游戏术语"
+  },
+  {
+    "source": "weapons cache",
+    "target": "武器藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "Weapons Cache",
+    "target": "武器藏匿点",
+    "category": "游戏术语"
+  },
+  {
+    "source": "White Dwarf",
+    "target": "白矮星",
+    "category": "游戏术语"
+  },
+  {
     "source": "Widespread Ruins",
     "target": "普遍的废墟",
     "category": "游戏术语"
   },
   {
-    "source": "Askonia",
-    "target": "阿斯科尼亚",
-    "category": "地名"
+    "source": "Wolfpack Tactics",
+    "target": "狼群战术",
+    "category": "游戏术语"
   },
   {
-    "source": "Chicomoztoc",
-    "target": "奇科莫兹托克",
-    "category": "地名"
+    "source": "Yellow Star",
+    "target": "黄矮星",
+    "category": "游戏术语"
   },
   {
-    "source": "Corvus",
-    "target": "乌鸦星系",
-    "category": "地名"
+    "source": "You are unable to use this jump point.",
+    "target": "你无法使用该跳跃点。",
+    "category": "游戏术语"
   },
   {
-    "source": "Jangala",
-    "target": "詹加拉",
-    "category": "地名"
+    "source": "You encounter an ongoing battle.",
+    "target": "你遇到了一场正在进行中的战斗。",
+    "category": "游戏术语"
   },
   {
-    "source": "Mayasura",
-    "target": "玛雅苏拉",
-    "category": "地名"
+    "source": "Your $fleetOrShip approaches $planetName.",
+    "target": "你的$fleetOrShip抵达了 $planetName。",
+    "category": "游戏术语"
   },
   {
-    "source": "Persean Sector",
-    "target": "波斯星区",
-    "category": "地名"
+    "source": "Your $fleetOrShip approaches the jump point.",
+    "target": "你的$fleetOrShip驶向了跳跃点。",
+    "category": "游戏术语"
   },
   {
-    "source": "Sindria",
-    "target": "辛德里亚",
-    "category": "地名"
+    "source": "Your forces engage in pursuit, as ordered.",
+    "target": "你的部队奉命追击。",
+    "category": "游戏术语"
   }
 ]

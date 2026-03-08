@@ -224,8 +224,17 @@
 - 词库文件：`electron/data/default_glossary.json`，首次运行时复制到 `config/builtin_glossary.json` 供用户编辑
 - 词库格式：JSON 数组，每项 `{ source, target, category }`
 - 分类：势力名称、舰船名称、武器名称、物品名称、游戏术语、地名、人名、其他
-- 当前共 666 条词条，来源为游戏原版英文/中文资源文件对照提取（`example/vanilla_en` 与 `example/vanilla_cn`）
-- 提取覆盖范围：ship_data.csv（舰船名称、级别、科技派系）、weapon_data.csv（武器名称、角色描述）、wing_data.csv（联队描述）、commodities.csv（物资名称）、industries.csv（产业名称）、special_items.csv（特殊物品）、abilities.csv（能力名称）、market_conditions.csv（市场状况）、submarkets.csv、sim_opponents.csv、personalities.csv 以及部分 JSON 文件中的字符串对比
+- 当前共 1278 条词条，来源为游戏原版英文/中文资源文件对照提取（`example/vanilla_en` 与 `example/vanilla_cn`）
+- 提取覆盖范围（按优先级）：
+  - `.faction` 文件（势力显示名、舰队类型名、职阶名），提取势力名使用 `forceSet` 确保 `.faction` 文件中的翻译优先于 CSV 中的翻译
+  - `default_ranks.json`、`default_fleet_type_names.json`（军衔、舰队类型）
+  - `ship_data.csv`（舰船名称、级别、科技派系）、`.skin` 文件（变体舰船名、科技派系覆盖）
+  - `weapon_data.csv`（武器名称、角色描述）、`wing_data.csv`（联队描述）
+  - `hull_mods.csv`（船体插件名称及 D-mod 名称）
+  - `ship_systems.csv`（舰船系统名称）、`skill_data.csv`（技能名称）
+  - `commodities.csv`、`industries.csv`、`special_items.csv`、`abilities.csv`、`market_conditions.csv`、`submarkets.csv`、`sim_opponents.csv`、`personalities.csv`
+  - `config/` 目录下的 JSON 文件（行星类型、战斗目标、联络人标签、情报标签等）
+  - `strings/strings.json`、`strings/tooltips.json`（UI 短字符串）
 - 如需更新词库，可参照 `example/` 目录中英文/中文对照文件重新提取
 
 # 作业规范

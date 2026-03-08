@@ -69,6 +69,23 @@ function relaxedJsonToJson(text) {
       continue;
     }
 
+    // Number literals: handle Java/Starsector float suffix (e.g. 1f, 0.5f)
+    if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(next))) {
+      let num = '';
+      let j = i;
+      if (text[j] === '-') { num += '-'; j++; }
+      while (j < text.length && /[0-9]/.test(text[j])) { num += text[j]; j++; }
+      if (j < text.length && text[j] === '.') {
+        num += '.'; j++;
+        while (j < text.length && /[0-9]/.test(text[j])) { num += text[j]; j++; }
+      }
+      // Strip Java float suffix 'f' or 'F'
+      if (j < text.length && (text[j] === 'f' || text[j] === 'F')) { j++; }
+      result += num;
+      i = j;
+      continue;
+    }
+
     // Unquoted key detection: if we see a word-like token before a colon
     if (/[a-zA-Z_$]/.test(ch)) {
       let token = '';

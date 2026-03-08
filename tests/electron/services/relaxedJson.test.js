@@ -79,6 +79,24 @@ describe('parseRelaxedJson', () => {
     });
   });
 
+  it('strips Java float suffix f from number literals', () => {
+    const input = '{ "prob": 1f, "rate": 0.5f, "neg": -2.5f }';
+    const result = parseRelaxedJson(input);
+    expect(result).toEqual({ prob: 1, rate: 0.5, neg: -2.5 });
+  });
+
+  it('handles float suffix in complex Starsector faction data', () => {
+    const input = `{
+      id: "test",
+      "aggression": 2,
+      "officerSkillsShuffleProbability": 1f,
+      "autofitRandomizeProbability": 0.1,
+    }`;
+    const result = parseRelaxedJson(input);
+    expect(result.officerSkillsShuffleProbability).toBe(1);
+    expect(result.autofitRandomizeProbability).toBe(0.1);
+  });
+
   it('throws a descriptive error for invalid JSON', () => {
     expect(() => parseRelaxedJson('{invalid')).toThrow();
   });
