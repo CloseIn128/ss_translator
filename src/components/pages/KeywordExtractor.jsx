@@ -18,6 +18,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   const [translating, setTranslating] = useState(false);
   const [polishing, setPolishing] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const handleSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
   const [enableAI, setEnableAI] = useState(true);
@@ -555,7 +556,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
             <Input
               placeholder="搜索关键词..."
               value={searchText}
-              onChange={e => setSearchText(e.target.value)}
+              onChange={handleSearchChange}
               allowClear
               size="small"
               style={{ width: 200 }}

@@ -218,6 +218,7 @@ function PublicGlossaryTab({ messageApi }) {
   const [editingEntry, setEditingEntry] = useState(null); // { _origIdx, source, target, category }
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const handleSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -330,7 +331,7 @@ function PublicGlossaryTab({ messageApi }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
-        <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)}
+        <Input placeholder="搜索术语..." value={searchText} onChange={handleSearchChange}
           allowClear style={{ width: 220 }} size="small" />
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAdd}>添加</Button>
         <Button size="small" icon={<ImportOutlined />} onClick={handleImport}>导入</Button>

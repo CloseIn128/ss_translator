@@ -39,6 +39,12 @@ function formatDuration(ms) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+function formatResponseRaw(raw) {
+  if (!raw) return '(空)';
+  try { return JSON.stringify(JSON.parse(raw), null, 2); }
+  catch { return raw; }
+}
+
 // ─── Active Requests Panel ──────────────────────────────────────────
 
 function ActiveRequestsPanel({ activeRequests }) {
@@ -186,10 +192,7 @@ function RequestDetailModal({ requestId, open, onClose }) {
                     fontSize: 12, maxHeight: 300, overflow: 'auto',
                     whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                   }}>
-                    {detail.responseRaw ? (() => {
-                      try { return JSON.stringify(JSON.parse(detail.responseRaw), null, 2); }
-                      catch { return detail.responseRaw; }
-                    })() : '(空)'}
+                    {formatResponseRaw(detail.responseRaw)}
                   </pre>
                 ),
               },
@@ -212,6 +215,7 @@ export default function RequestHistory() {
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const refreshTimerRef = useRef(null);
+  const mountedRef = useRef(true);
 
   const fetchData = async () => {
     setLoading(true);
@@ -219,24 +223,31 @@ export default function RequestHistory() {
       api.getRequestHistory(),
       api.getActiveRequests(),
     ]);
+    if (!mountedRef.current) return;
     setHistory((historyData || []).reverse()); // newest first
     setActiveRequests(activeData || []);
     setLoading(false);
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchData();
     // Auto-refresh every 2s for active requests
     refreshTimerRef.current = setInterval(async () => {
       const activeData = await api.getActiveRequests();
+      if (!mountedRef.current) return;
       setActiveRequests(activeData || []);
       // Also refresh history if there were active requests
       if (activeData && activeData.length > 0) {
         const historyData = await api.getRequestHistory();
+        if (!mountedRef.current) return;
         setHistory((historyData || []).reverse());
       }
     }, 2000);
-    return () => { if (refreshTimerRef.current) clearInterval(refreshTimerRef.current); };
+    return () => {
+      mountedRef.current = false;
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    };
   }, []);
 
   const handleClear = async () => {

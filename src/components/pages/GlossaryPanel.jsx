@@ -18,6 +18,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
   const [editingEntry, setEditingEntry] = useState(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const handleProjectSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const glossary = project.glossary || [];
@@ -85,7 +86,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)} allowClear style={{ width: 250 }} size="small" />
+        <Input placeholder="搜索术语..." value={searchText} onChange={handleProjectSearchChange} allowClear style={{ width: 250 }} size="small" />
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAdd}>添加术语</Button>
         <Button size="small" icon={<ImportOutlined />} onClick={handleImport}>导入CSV</Button>
         <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>导出CSV</Button>
@@ -134,6 +135,7 @@ function BuiltinGlossaryTab({ messageApi }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const handleBuiltinSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -165,7 +167,7 @@ function BuiltinGlossaryTab({ messageApi }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)}
+        <Input placeholder="搜索术语..." value={searchText} onChange={handleBuiltinSearchChange}
           allowClear style={{ width: 250 }} size="small" />
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {entries.length} 条（可在"模型配置→公共词库"中管理）</span>
       </div>
