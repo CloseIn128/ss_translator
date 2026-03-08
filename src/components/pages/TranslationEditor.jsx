@@ -161,9 +161,9 @@ export default function TranslationEditor({
 
   // Batch translate all untranslated in current filter
   const handleBatchTranslate = useCallback(async () => {
-    const untranslated = filteredEntries.filter(e => e.status === 'untranslated');
+    const untranslated = filteredEntries.filter(e => e.status === 'untranslated' || e.status === 'error');
     if (untranslated.length === 0) {
-      messageApi.info('当前筛选下没有未翻译的条目');
+      messageApi.info('当前筛选下没有需要翻译的条目');
       return;
     }
 
@@ -174,7 +174,7 @@ export default function TranslationEditor({
 
     Modal.confirm({
       title: '批量翻译',
-      content: `将翻译当前筛选范围内的 ${untranslated.length} 条未翻译文本，是否继续？`,
+      content: `将翻译当前筛选范围内的 ${untranslated.length} 条未翻译/失败文本，是否继续？`,
       okText: '开始翻译',
       cancelText: '取消',
       onOk() {

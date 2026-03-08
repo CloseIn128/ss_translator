@@ -353,7 +353,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
         <Button icon={<FolderOpenOutlined />} onClick={handleSelectFolder} size="small">
           {modPath ? modPath.split(/[\\/]/).pop() : '选择MOD文件夹'}

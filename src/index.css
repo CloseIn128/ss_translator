@@ -181,6 +181,8 @@ body {
   flex: 1;
   overflow: auto;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Keyword table: fill remaining height with fixed pagination at bottom */
@@ -188,9 +190,12 @@ body {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .keyword-table-wrapper .ant-table-wrapper {
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -204,6 +209,19 @@ body {
 .keyword-table-wrapper .ant-table {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.keyword-table-wrapper .ant-table-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.keyword-table-wrapper .ant-table-body {
+  flex: 1;
+  min-height: 0;
+  max-height: none !important;
 }
 .keyword-table-wrapper .ant-table-pagination {
   flex-shrink: 0;
