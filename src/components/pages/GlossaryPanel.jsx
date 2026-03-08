@@ -52,6 +52,8 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
 
   const glossary = project.glossary || [];
   const keywords = project.keywords || [];
+  const keywordsRef = useRef(keywords);
+  useEffect(() => { keywordsRef.current = keywords; }, [keywords]);
 
   // Build unified table data
   const unifiedData = React.useMemo(() => {
@@ -111,7 +113,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
           category: kw.category || '通用',
         }));
         keyCounterRef.current = counter + newItems.length;
-        onUpdateKeywords([...keywords, ...newItems]);
+        onUpdateKeywords([...keywordsRef.current, ...newItems]);
         addLog('debug', `[${data.phase}] 发现 ${newItems.length} 个术语`, '术语管理');
       }
     });
@@ -122,7 +124,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
         batchHandlerRef.current = null;
       }
     };
-  }, [keywords, onUpdateKeywords, addLog]);
+  }, [onUpdateKeywords, addLog]);
 
   useEffect(() => {
     const handler = api.onKeywordLog((data) => {
@@ -546,7 +548,6 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
               open
               style={{ width: '100%', fontSize: 11 }}
               options={allCategories.map(c => ({ value: c, label: c }))}
-              onSelect={(val) => setInlineEditValue(val)}
             />
           );
         }
