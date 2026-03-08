@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain } = require('electron');
 const path = require('path');
 const { parseModFolder } = require('./services/modParser');
 const { GlossaryManager } = require('./services/glossary');
@@ -114,13 +114,20 @@ app.whenReady().then(() => {
   });
 
   // Confirm-before-close: renderer responds with whether to proceed
+  // Safety timeout: force close after 5 seconds if renderer is unresponsive
+  let closeTimer = null;
   mainWindow.on('close', (e) => {
     if (isQuitting) return;
     e.preventDefault();
     mainWindow.webContents.send('app:before-close');
+    closeTimer = setTimeout(() => {
+      isQuitting = true;
+      if (mainWindow) mainWindow.close();
+    }, 5000);
   });
 
   ipcMain.on('app:close-confirmed', () => {
+    if (closeTimer) clearTimeout(closeTimer);
     isQuitting = true;
     if (mainWindow) mainWindow.close();
   });

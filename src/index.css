@@ -193,6 +193,12 @@ body {
   flex-direction: column;
 }
 
+/* Editor layout fills all available space with its own internal padding */
+.app-content:has(.editor-layout) {
+  padding: 0;
+  overflow: hidden;
+}
+
 /* Keyword table: fill remaining height with fixed pagination at bottom */
 .keyword-table-wrapper {
   flex: 1;

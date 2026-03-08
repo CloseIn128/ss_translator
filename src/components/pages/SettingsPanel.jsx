@@ -4,7 +4,7 @@ import {
   Tabs, Table, Space, Modal, Popconfirm,
 } from 'antd';
 import {
-  SaveOutlined, ApiOutlined, ReloadOutlined,
+  ApiOutlined, ReloadOutlined,
   PlusOutlined, DeleteOutlined, ImportOutlined, ExportOutlined, EditOutlined,
   BookOutlined, MessageOutlined,
 } from '@ant-design/icons';

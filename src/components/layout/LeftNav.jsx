@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useCallback } from 'react';
-import { Button, Progress, Tooltip } from 'antd';
+import { Button, Progress } from 'antd';
 import {
   PlusOutlined,
   FolderOpenOutlined,
@@ -10,7 +10,6 @@ import {
   SettingOutlined,
   SearchOutlined,
   GlobalOutlined,
-  DatabaseOutlined,
   InfoCircleOutlined,
   DesktopOutlined,
 } from '@ant-design/icons';

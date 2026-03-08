@@ -85,7 +85,7 @@ function AppInner() {
         // Auto-save then close
         await doAutoSave();
         api.confirmClose();
-      } else if (p && !p.projectFilePath && !p.modPath) {
+      } else if (p) {
         // Unsaved new project with no path – ask user
         Modal.confirm({
           title: '退出确认',
