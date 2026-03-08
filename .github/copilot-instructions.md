@@ -44,10 +44,10 @@
 │       │   └── BottomBar.jsx     # 底部状态栏
 │       └── pages/
 │           ├── WelcomePage.jsx        # 欢迎页
+│           ├── ProjectInfo.jsx        # 项目基本信息页
 │           ├── TranslationEditor.jsx  # 翻译编辑页
 │           ├── GlossaryPanel.jsx      # 词库管理页
 │           ├── KeywordExtractor.jsx   # 关键词提取页
-│           ├── LegacyTranslation.jsx # 老版本汉化辅助页
 │           └── SettingsPanel.jsx      # 模型配置页
 └── tests/                        # 自动化测试（vitest）
     └── electron/services/        # 后端服务单元测试
@@ -127,7 +127,7 @@
 - 批量翻译/润色的确认对话框（`Modal.confirm`）的 `onOk` 不返回 Promise，以确保对话框立即关闭，翻译任务在后台异步执行
 - `ai:translate` 和 `ai:polish` IPC 处理器接受可选的 `modPrompt` 字段，传递给 TranslationService
 
-## 老版本汉化辅助 (LegacyTranslation)
+## 老版本汉化辅助 (LegacyTranslationService)
 
 ### 功能
 
@@ -142,7 +142,6 @@
 
 - IPC 处理器位于 `electron/ipc/legacyHandlers.js`，注册 `legacy:load`、`legacy:getInfo`、`legacy:match`、`legacy:clear`
 - `LegacyTranslationService` 在 `electron/services/legacyTranslation.js`，通过 `ctx.legacyTranslationService` 共享
-- 前端页面 `LegacyTranslation.jsx` 包含两个 Tab：老版本汉化加载/匹配 和 MOD 专属提示词
 - 日志输出 source 为 `'老版本汉化'`
 
 ## MOD 专属提示词
@@ -152,11 +151,11 @@
 - 每个项目可设置独立的 MOD 专属提示词（`project.modPrompt`）
 - 提示词在 AI 翻译和润色时自动注入到上下文中，格式为 `【MOD设定说明】`
 - 提示词随项目一起保存/加载（存储在 `.sst` 项目文件中）
-- 编辑界面位于"老版本汉化"页面的"MOD专属提示词"Tab
+- 编辑界面位于"基本信息"页面（`ProjectInfo.jsx`）
 
 ### 规范
 
-- `modPrompt` 是 project 对象上的字符串字段，由 `App.jsx` 的 `handleModPromptChange` 管理
+- `modPrompt` 是 project 对象上的字符串字段，由 `App.jsx` 的 `handleProjectFieldsChange` 管理
 - `TranslationEditor` 自动从 `project.modPrompt` 读取并传递给 `ai:translate` 和 `ai:polish`
 - `translator.js` 的 `_buildModPromptText(modPrompt)` 负责格式化
 
@@ -165,8 +164,8 @@
 ```
 ┌──────────────────────────────────────────────────────┐
 │  LeftNav  │              app-content                 │
-│  (侧边栏)  │  (TranslationEditor / GlossaryPanel /  │
-│           │   KeywordExtractor / LegacyTranslation / │
+│  (侧边栏)  │  (ProjectInfo / TranslationEditor /     │
+│           │   GlossaryPanel / KeywordExtractor /     │
 │           │   SettingsPanel)                         │
 ├───────────┴──────────────────────────────────────────┤
 │                    LogPanel (日志面板，可切换)           │
