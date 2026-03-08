@@ -36,12 +36,14 @@ export default function TranslationEditor({
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
   const modPrompt = project.modPrompt || '';
 
-  // Merge project glossary with confirmed keywords (keywords with translations are usable as glossary)
+  // Merge project glossary with keywords (keywords with translations are usable as glossary)
   const mergedGlossary = useMemo(() => {
     const glossary = project.glossary || [];
     const keywords = project.keywords || [];
+    // Build set of existing glossary sources to avoid duplicates
+    const existingSources = new Set(glossary.map(g => g.source.toLowerCase()));
     const keywordGlossary = keywords
-      .filter(kw => kw.target && kw.target.trim())
+      .filter(kw => kw.target && kw.target.trim() && !existingSources.has(kw.source.toLowerCase()))
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category || '通用' }));
     return [...glossary, ...keywordGlossary];
   }, [project.glossary, project.keywords]);
@@ -204,8 +206,8 @@ export default function TranslationEditor({
 
   // Batch translate all entries in current filter (re-translate all, not just untranslated)
   const handleBatchTranslate = useCallback(async () => {
-    const toTranslate = filteredEntries;
-    if (toTranslate.length === 0) {
+    const targetEntries = filteredEntries;
+    if (targetEntries.length === 0) {
       messageApi.info('当前筛选下没有条目');
       return;
     }
@@ -217,25 +219,25 @@ export default function TranslationEditor({
 
     Modal.confirm({
       title: '批量翻译',
-      content: `将翻译当前筛选范围内的 ${toTranslate.length} 条文本，是否继续？`,
+      content: `将翻译当前筛选范围内的 ${targetEntries.length} 条文本，是否继续？`,
       okText: '开始翻译',
       cancelText: '取消',
       onOk() {
-        const taskId = startTask(`批量翻译 ${toTranslate.length} 条`);
+        const taskId = startTask(`批量翻译 ${targetEntries.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');
           return;
         }
         setBatchTranslating(true);
-        addLog('info', `开始批量翻译 ${toTranslate.length} 条文本`, '翻译编辑');
+        addLog('info', `开始批量翻译 ${targetEntries.length} 条文本`, '翻译编辑');
         (async () => {
           try {
-            const batchInput = toTranslate.map(e => ({
+            const batchInput = targetEntries.map(e => ({
               id: e.id,
               original: e.original,
               context: e.context,
             }));
-            updateTaskProgress(`0/${toTranslate.length}`);
+            updateTaskProgress(`0/${targetEntries.length}`);
             const result = await api.translate({
               entries: batchInput,
               glossary: mergedGlossary,
@@ -244,7 +246,7 @@ export default function TranslationEditor({
             if (result?.success) {
               onBatchUpdate(result.data);
               const successCount = result.data.filter(r => r.status === 'translated').length;
-              const msg = `批量翻译完成：${successCount}/${toTranslate.length} 成功`;
+              const msg = `批量翻译完成：${successCount}/${targetEntries.length} 成功`;
               addLog('success', msg, '翻译编辑');
               for (const r of result.data.slice(0, 5)) {
                 if (r.status === 'translated') {
