@@ -14,6 +14,15 @@ function register(ctx) {
     }
   });
 
+  ipcMain.handle('project:createEmpty', async () => {
+    try {
+      const project = ctx.projectManager.createEmptyProject();
+      return { success: true, data: project };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   ipcMain.handle('project:create', async (_, modPath) => {
     try {
       const project = await ctx.projectManager.createProject(modPath);
@@ -25,8 +34,18 @@ function register(ctx) {
 
   ipcMain.handle('project:save', async (_, projectData) => {
     try {
-      await ctx.projectManager.saveProject(projectData);
-      return { success: true };
+      // When there is no save path and no mod path, ask user where to save
+      if (!projectData.projectFilePath && !projectData.modPath) {
+        const result = await dialog.showSaveDialog(ctx.getMainWindow(), {
+          filters: [{ name: '翻译项目', extensions: ['sst'] }],
+          title: '保存翻译项目',
+          defaultPath: 'new_project.sst',
+        });
+        if (result.canceled) return null;
+        projectData.projectFilePath = result.filePath;
+      }
+      const saved = await ctx.projectManager.saveProject(projectData);
+      return { success: true, data: { projectFilePath: saved.projectFilePath } };
     } catch (err) {
       return { success: false, error: err.message };
     }

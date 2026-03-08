@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   parseMod: (modPath) => ipcRenderer.invoke('mod:parse', modPath),
 
   // Project
+  createEmptyProject: () => ipcRenderer.invoke('project:createEmpty'),
   createProject: (modPath) => ipcRenderer.invoke('project:create', modPath),
   saveProject: (projectData) => ipcRenderer.invoke('project:save', projectData),
   loadProject: () => ipcRenderer.invoke('project:load'),

@@ -88,3 +88,73 @@ describe('ProjectManager – keywords persistence', () => {
     expect(loaded.keywords).toBeUndefined();
   });
 });
+
+describe('ProjectManager – createEmptyProject', () => {
+  let pm;
+  let tmpDir;
+
+  beforeEach(() => {
+    pm = new ProjectManager();
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ss-proj-empty-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('creates an empty project with correct structure', () => {
+    const project = pm.createEmptyProject();
+
+    expect(project.id).toBeDefined();
+    expect(typeof project.id).toBe('string');
+    expect(project.version).toBe('1.0');
+    expect(project.modPath).toBe('');
+    expect(project.modInfo).toEqual({});
+    expect(project.entries).toEqual([]);
+    expect(project.glossary).toEqual([]);
+    expect(project.keywords).toEqual([]);
+    expect(project.legacyModPath).toBe('');
+    expect(project.outputDir).toBe('');
+    expect(project.modPrompt).toBe('');
+    expect(project.stats).toEqual({ total: 0, translated: 0, polished: 0, byFile: {}, byType: {} });
+    expect(project.projectFilePath).toBeNull();
+    expect(project.createdAt).toBeDefined();
+    expect(project.updatedAt).toBeDefined();
+  });
+
+  it('sets currentProject reference', () => {
+    const project = pm.createEmptyProject();
+    expect(pm.currentProject).toBe(project);
+  });
+
+  it('empty project can be saved and reloaded when projectFilePath is set', async () => {
+    const project = pm.createEmptyProject();
+    project.projectFilePath = path.join(tmpDir, 'empty_project.sst');
+
+    await pm.saveProject(project);
+    expect(fs.existsSync(project.projectFilePath)).toBe(true);
+
+    const loaded = await pm.loadProject(project.projectFilePath);
+    expect(loaded.id).toBe(project.id);
+    expect(loaded.entries).toEqual([]);
+    expect(loaded.modPath).toBe('');
+    expect(loaded.legacyModPath).toBe('');
+    expect(loaded.outputDir).toBe('');
+    expect(loaded.modPrompt).toBe('');
+  });
+
+  it('createProject includes new fields', async () => {
+    const modDir = path.join(tmpDir, 'test_mod');
+    fs.mkdirSync(modDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(modDir, 'mod_info.json'),
+      JSON.stringify({ id: 'test', name: 'Test Mod', version: '1.0' }),
+      'utf-8',
+    );
+
+    const project = await pm.createProject(modDir);
+    expect(project.legacyModPath).toBe('');
+    expect(project.outputDir).toBe('');
+    expect(project.modPrompt).toBe('');
+  });
+});

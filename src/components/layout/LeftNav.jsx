@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { Button, Progress, Tooltip } from 'antd';
 import {
+  PlusOutlined,
   FolderOpenOutlined,
   FileTextOutlined,
   SaveOutlined,
@@ -10,7 +11,7 @@ import {
   SearchOutlined,
   GlobalOutlined,
   DatabaseOutlined,
-  HistoryOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 
 const MIN_NAV_WIDTH = 160;
@@ -21,7 +22,7 @@ export default function LeftNav({
   project,
   activeTab,
   onTabChange,
-  onOpenMod,
+  onNewProject,
   onLoadProject,
   onSaveProject,
   onExport,
@@ -61,10 +62,10 @@ export default function LeftNav({
     document.addEventListener('mouseup', handleMouseUp);
   }, [navWidth]);
   const navItems = [
+    { key: 'info', icon: <InfoCircleOutlined />, label: '基本信息', requiresProject: true },
     { key: 'editor', icon: <FileTextOutlined />, label: '翻译编辑', requiresProject: true },
     { key: 'glossary', icon: <BookOutlined />, label: '词库管理', requiresProject: true },
     { key: 'keywords', icon: <SearchOutlined />, label: '关键词提取' },
-    { key: 'legacy', icon: <HistoryOutlined />, label: '老版本汉化' },
     { key: 'settings', icon: <SettingOutlined />, label: '模型配置' },
   ];
 
@@ -117,11 +118,11 @@ export default function LeftNav({
 
       {/* File actions */}
       <div className="left-nav-actions">
-        <Button block size="small" icon={<FolderOpenOutlined />} onClick={onOpenMod}>
-          打开MOD
+        <Button block size="small" icon={<PlusOutlined />} onClick={onNewProject}>
+          新建项目
         </Button>
-        <Button block size="small" icon={<FileTextOutlined />} onClick={onLoadProject}>
-          加载项目
+        <Button block size="small" icon={<FolderOpenOutlined />} onClick={onLoadProject}>
+          打开项目
         </Button>
         {project && (
           <>
@@ -207,8 +208,10 @@ export default function LeftNav({
       {/* Project name at bottom */}
       {project && (
         <div className="left-nav-project-info">
-          <span>{project.modInfo.name}</span>
-          <span style={{ color: 'var(--text-secondary)' }}>v{project.modInfo.version}</span>
+          <span>{project.modInfo?.name || '新项目'}</span>
+          {project.modInfo?.version && (
+            <span style={{ color: 'var(--text-secondary)' }}>v{project.modInfo.version}</span>
+          )}
         </div>
       )}
     </div>

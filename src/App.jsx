@@ -5,11 +5,11 @@ import LeftNav from './components/layout/LeftNav';
 import LogPanel from './components/layout/LogPanel';
 import BottomBar from './components/layout/BottomBar';
 import WelcomePage from './components/pages/WelcomePage';
+import ProjectInfo from './components/pages/ProjectInfo';
 import TranslationEditor from './components/pages/TranslationEditor';
 import GlossaryPanel from './components/pages/GlossaryPanel';
 import KeywordExtractor from './components/pages/KeywordExtractor';
 import SettingsPanel from './components/pages/SettingsPanel';
-import LegacyTranslation from './components/pages/LegacyTranslation';
 import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
@@ -47,19 +47,15 @@ function AppInner() {
     localStorage.setItem('ss_translator_log_font_size', String(logFontSize));
   }, [logFontSize]);
 
-  const handleOpenMod = useCallback(async () => {
-    const modPath = await api.selectModFolder();
-    if (!modPath) return;
-    messageApi.loading({ content: '正在解析MOD文件...', key: 'parse', duration: 0 });
-    const result = await api.createProject(modPath);
-    messageApi.destroy('parse');
+  const handleNewProject = useCallback(async () => {
+    const result = await api.createEmptyProject();
     if (result?.success) {
       setProject(result.data);
       setSelectedFile(null);
-      setActiveTab('editor');
-      messageApi.success(`成功加载 ${result.data.entries.length} 条可翻译文本`);
+      setActiveTab('info');
+      messageApi.success('已创建新项目，请在基本信息页设置MOD文件夹路径');
     } else {
-      messageApi.error(result?.error || '解析MOD失败');
+      messageApi.error(result?.error || '创建项目失败');
     }
   }, [messageApi]);
 
@@ -80,10 +76,15 @@ function AppInner() {
     if (!project) return;
     const result = await api.saveProject(project);
     if (result?.success) {
+      // Update projectFilePath if the backend assigned one (e.g. via save dialog)
+      if (result.data?.projectFilePath) {
+        setProject(prev => prev ? { ...prev, projectFilePath: result.data.projectFilePath } : prev);
+      }
       messageApi.success('项目保存成功');
-    } else {
+    } else if (result) {
       messageApi.error(result?.error || '保存失败');
     }
+    // result is null when user cancels save dialog
   }, [project, messageApi]);
 
   const handleExport = useCallback(async () => {
@@ -126,15 +127,26 @@ function AppInner() {
     setProject(prev => prev ? { ...prev, keywords } : prev);
   }, []);
 
-  const handleModPromptChange = useCallback((modPrompt) => {
-    setProject(prev => prev ? { ...prev, modPrompt } : prev);
+  const handleProjectFieldsChange = useCallback((fields) => {
+    setProject(prev => prev ? { ...prev, ...fields } : prev);
   }, []);
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'info':
+        if (!project) {
+          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
+        }
+        return (
+          <ProjectInfo
+            project={project}
+            onProjectFieldsChange={handleProjectFieldsChange}
+            messageApi={messageApi}
+          />
+        );
       case 'editor':
         if (!project) {
-          return <WelcomePage onOpenMod={handleOpenMod} onLoadProject={handleLoadProject} />;
+          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
         }
         return (
           <TranslationEditor
@@ -147,7 +159,7 @@ function AppInner() {
         );
       case 'glossary':
         if (!project) {
-          return <WelcomePage onOpenMod={handleOpenMod} onLoadProject={handleLoadProject} />;
+          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
         }
         return (
           <GlossaryPanel
@@ -162,16 +174,6 @@ function AppInner() {
             project={project}
             onUpdateKeywords={handleUpdateKeywords}
             onUpdateGlossary={handleUpdateGlossary}
-            messageApi={messageApi}
-          />
-        );
-      case 'legacy':
-        return (
-          <LegacyTranslation
-            project={project}
-            modPrompt={project?.modPrompt || ''}
-            onModPromptChange={handleModPromptChange}
-            onBatchUpdate={handleBatchUpdate}
             messageApi={messageApi}
           />
         );
@@ -199,7 +201,7 @@ function AppInner() {
             project={project}
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            onOpenMod={handleOpenMod}
+            onNewProject={handleNewProject}
             onLoadProject={handleLoadProject}
             onSaveProject={handleSaveProject}
             onExport={handleExport}
