@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // Dialog
@@ -77,5 +77,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeListener('app:before-close', handler);
   },
   confirmClose: () => ipcRenderer.send('app:close-confirmed'),
+
+  // Zoom
+  setZoomFactor: (factor) => webFrame.setZoomFactor(factor),
 });
 

@@ -215,7 +215,7 @@ function PublicGlossaryTab({ messageApi }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null);
+  const [editingEntry, setEditingEntry] = useState(null); // { _origIdx, source, target, category }
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
 
@@ -228,12 +228,18 @@ function PublicGlossaryTab({ messageApi }) {
     })();
   }, []);
 
-  const filtered = searchText.trim()
-    ? entries.filter(e =>
-        e.source.toLowerCase().includes(searchText.toLowerCase()) ||
-        e.target.toLowerCase().includes(searchText.toLowerCase())
-      )
-    : entries;
+  // Attach original index for stable edit/delete across search & pagination
+  const filtered = (() => {
+    const base = searchText.trim()
+      ? entries
+          .map((e, i) => ({ ...e, _origIdx: i }))
+          .filter(e =>
+            e.source.toLowerCase().includes(searchText.toLowerCase()) ||
+            e.target.toLowerCase().includes(searchText.toLowerCase())
+          )
+      : entries.map((e, i) => ({ ...e, _origIdx: i }));
+    return base;
+  })();
 
   const handleAdd = () => {
     setEditingEntry(null);
@@ -244,7 +250,7 @@ function PublicGlossaryTab({ messageApi }) {
 
   const handleEdit = (record) => {
     setEditingEntry(record);
-    form.setFieldsValue(record);
+    form.setFieldsValue({ source: record.source, target: record.target, category: record.category });
     setIsModalOpen(true);
   };
 
@@ -253,7 +259,7 @@ function PublicGlossaryTab({ messageApi }) {
       const values = await form.validateFields();
       let newEntries;
       if (editingEntry !== null) {
-        newEntries = entries.map((e, i) => i === editingEntry._idx ? { ...e, ...values } : e);
+        newEntries = entries.map((e, i) => i === editingEntry._origIdx ? { ...e, ...values } : e);
       } else {
         newEntries = [...entries, values];
       }
@@ -264,8 +270,8 @@ function PublicGlossaryTab({ messageApi }) {
     } catch {}
   };
 
-  const handleDelete = async (idx) => {
-    const newEntries = entries.filter((_, i) => i !== idx);
+  const handleDelete = async (origIdx) => {
+    const newEntries = entries.filter((_, i) => i !== origIdx);
     await api.saveBuiltinGlossary(newEntries);
     setEntries(newEntries);
     messageApi.success('术语已删除');
@@ -308,11 +314,11 @@ function PublicGlossaryTab({ messageApi }) {
       filters: CATEGORIES.map(c => ({ text: c, value: c })),
       onFilter: (value, record) => record.category === value },
     { title: '操作', key: 'actions', width: '20%',
-      render: (_, record, idx) => (
+      render: (_, record) => (
         <Space size={4}>
           <Button size="small" type="text" icon={<EditOutlined />}
-            onClick={() => handleEdit({ ...record, _idx: idx })} />
-          <Popconfirm title="确认删除?" onConfirm={() => handleDelete(idx)} okText="确认" cancelText="取消">
+            onClick={() => handleEdit(record)} />
+          <Popconfirm title="确认删除?" onConfirm={() => handleDelete(record._origIdx)} okText="确认" cancelText="取消">
             <Button size="small" type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -334,7 +340,7 @@ function PublicGlossaryTab({ messageApi }) {
         公共词库中的术语在 AI 翻译时会自动注入到所有项目的提示词中。
         用户可自行维护，并通过 JSON 或 CSV 格式导入/导出。
       </div>
-      <Table dataSource={filtered} columns={columns} rowKey={(_, i) => i} size="small"
+      <Table dataSource={filtered} columns={columns} rowKey={(r) => `${r._origIdx}_${r.source}`} size="small"
         loading={loading}
         pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }} />
       <Modal title={editingEntry !== null ? '编辑术语' : '添加术语'} open={isModalOpen}

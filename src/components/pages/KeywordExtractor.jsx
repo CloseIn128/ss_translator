@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal, Switch } from 'antd';
 import {
-  FolderOpenOutlined,
   PlusOutlined,
   SearchOutlined,
   RobotOutlined,
@@ -18,7 +17,6 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   const [translating, setTranslating] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [modPath, setModPath] = useState(project?.modPath || '');
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
   const [enableAI, setEnableAI] = useState(true);
   const keyCounterRef = useRef(project?.keywords?.length || 0);
@@ -31,7 +29,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     }
   }, [keywords, onUpdateKeywords]);
 
-  // Reset keywords when the project changes (e.g. loading a different project)
+  // Reset keywords when a different project is loaded
   useEffect(() => {
     const loaded = project?.keywords || [];
     setKeywords(loaded);
@@ -73,14 +71,9 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     };
   }, []);
 
-  const handleSelectFolder = async () => {
-    const path = await api.selectModFolder();
-    if (path) setModPath(path);
-  };
-
   // Unified extraction: structural first, then AI (incremental)
   const doExtract = async () => {
-    const targetPath = modPath || project?.modPath;
+    const targetPath = project?.modPath;
 
     if (isTaskRunning) {
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
@@ -129,9 +122,9 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   };
 
   const handleExtractAll = async () => {
-    const targetPath = modPath || project?.modPath;
+    const targetPath = project?.modPath;
     if (!targetPath) {
-      messageApi.warning('请先选择MOD文件夹');
+      messageApi.warning('请先在基本信息页设置MOD文件夹路径');
       return;
     }
 
@@ -202,13 +195,18 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
           }
         }
         // Update keywords with translations
-        setKeywords(prev => prev.map(kw => {
+        const updatedKeywords = toTranslate.map(kw => {
           const translation = translationMap.get(kw.source.toLowerCase());
-          if (translation) {
-            return { ...kw, target: translation };
-          }
-          return kw;
-        }));
+          return translation ? { ...kw, target: translation } : kw;
+        });
+        // Build a full updated list (merge translations into all keywords)
+        const fullMap = new Map(updatedKeywords.map(kw => [kw.key, kw]));
+        setKeywords(prev => {
+          const merged = prev.map(kw => fullMap.get(kw.key) || kw);
+          // Directly persist to parent so translations survive tab switches
+          if (onUpdateKeywords) onUpdateKeywords(merged);
+          return merged;
+        });
         const translated = result.data.filter(d => d.target).length;
         const msg = `已翻译 ${translated} 个关键词`;
         addLog('success', msg, '关键词提取');
@@ -273,6 +271,45 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     }
     messageApi.success(`已添加 ${added} 个关键词到词库`);
     setSelectedRowKeys([]);
+  };
+
+  const handleAddAllToGlossary = async () => {
+    if (!project) {
+      messageApi.warning('请先加载翻译项目，再添加到词库');
+      return;
+    }
+    if (keywords.length === 0) {
+      messageApi.warning('没有可添加的关键词');
+      return;
+    }
+
+    const existing = new Set((project.glossary || []).map(g => g.source));
+    const toAdd = keywords.filter(kw => kw && !existing.has(kw.source));
+
+    if (toAdd.length === 0) {
+      messageApi.info('所有关键词已全部存在于词库中');
+      return;
+    }
+
+    let added = 0;
+    const newEntries = [];
+    for (const kw of toAdd) {
+      const result = await api.addGlossaryEntry({
+        projectId: project.id,
+        source: kw.source,
+        target: kw.target || '',
+        category: kw.category || '通用',
+      });
+      if (result) {
+        newEntries.push(result);
+        added++;
+      }
+    }
+
+    if (added > 0 && onUpdateGlossary) {
+      onUpdateGlossary([...(project.glossary || []), ...newEntries]);
+    }
+    messageApi.success(`已添加 ${added} 个关键词到词库`);
   };
 
   const filteredKeywords = searchText.trim()
@@ -357,9 +394,6 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
       <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
-        <Button icon={<FolderOpenOutlined />} onClick={handleSelectFolder} size="small">
-          {modPath ? modPath.split(/[\\/]/).pop() : '选择MOD文件夹'}
-        </Button>
         <Tooltip title="开启后提取关键词时同时使用AI智能提取">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8c8c8c' }}>
             <RobotOutlined />
@@ -409,10 +443,18 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
             <Button
               size="small"
               icon={<PlusOutlined />}
+              onClick={handleAddAllToGlossary}
+              disabled={extracting || isTaskRunning}
+            >
+              全部加入术语库
+            </Button>
+            <Button
+              size="small"
+              icon={<PlusOutlined />}
               onClick={handleAddToGlossary}
               disabled={selectedRowKeys.length === 0 || extracting || isTaskRunning}
             >
-              添加到词库 ({selectedRowKeys.length})
+              选中加入术语库 ({selectedRowKeys.length})
             </Button>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>
               共 {filteredKeywords.length} 个关键词
@@ -434,7 +476,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       {keywords.length === 0 && !extracting && (
         <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
           <SearchOutlined style={{ fontSize: 32, marginBottom: 12 }} />
-          <div style={{ marginBottom: 8 }}>选择MOD文件夹后提取关键词</div>
+          <div style={{ marginBottom: 8 }}>在基本信息页设置MOD文件夹后提取关键词</div>
           <div style={{ fontSize: 12, color: '#8c8c8c' }}>
             点击"提取关键词"将执行<b>结构提取</b>，开启AI提取开关时同时执行<b>AI智能提取</b>
           </div>

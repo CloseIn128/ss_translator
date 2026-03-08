@@ -125,10 +125,12 @@ function BuiltinGlossaryTab({ messageApi }) {
   }, []);
 
   const filtered = searchText.trim()
-    ? entries.filter(e =>
-        e.source.toLowerCase().includes(searchText.toLowerCase()) ||
-        e.target.toLowerCase().includes(searchText.toLowerCase()))
-    : entries;
+    ? entries
+        .map((e, i) => ({ ...e, _origIdx: i }))
+        .filter(e =>
+          e.source.toLowerCase().includes(searchText.toLowerCase()) ||
+          e.target.toLowerCase().includes(searchText.toLowerCase()))
+    : entries.map((e, i) => ({ ...e, _origIdx: i }));
 
   const columns = [
     { title: '原文', dataIndex: 'source', key: 'source', width: '35%', sorter: (a, b) => a.source.localeCompare(b.source) },
@@ -149,7 +151,7 @@ function BuiltinGlossaryTab({ messageApi }) {
       <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8 }}>
         公共词库在 AI 翻译时自动注入到所有项目，可在"模型配置 → 公共词库"中添加/编辑。
       </div>
-      <Table dataSource={filtered} columns={columns} rowKey={(_, i) => i} size="small"
+      <Table dataSource={filtered} columns={columns} rowKey={(r) => `${r._origIdx}_${r.source}`} size="small"
         loading={loading}
         pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }} />
     </div>

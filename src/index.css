@@ -18,14 +18,6 @@ body {
   font-size: var(--app-font-size);
 }
 
-/* Ensure Ant Design components inherit the app font size */
-.ant-btn, .ant-input, .ant-select, .ant-select-selector,
-.ant-table, .ant-tabs, .ant-form, .ant-form-item,
-.ant-modal, .ant-card, .ant-descriptions, .ant-tag,
-.ant-tooltip, .ant-popover, .ant-alert {
-  font-size: inherit;
-}
-
 #root {
   height: 100vh;
   overflow: hidden;
@@ -303,9 +295,24 @@ body {
 
 .editor-main {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-header {
+  flex-shrink: 0;
+  padding: 16px 16px 0 16px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-entries {
+  flex: 1;
   overflow: auto;
   padding: 0 16px 16px 16px;
-  min-width: 0;
 }
 
 .translation-table {

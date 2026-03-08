@@ -15,8 +15,7 @@ import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
 
-const DEFAULT_APP_FONT_SIZE = 13;
-const DEFAULT_LOG_FONT_SIZE = 12;
+const DEFAULT_ZOOM_LEVEL = 100;
 const AUTO_SAVE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
 function AppInner() {
@@ -32,28 +31,21 @@ function AppInner() {
     projectRef.current = project;
   }, [project]);
 
-  // Font size settings (persisted in localStorage)
-  const [appFontSize, setAppFontSize] = useState(() => {
-    const saved = localStorage.getItem('ss_translator_app_font_size');
+  // Zoom level setting (persisted in localStorage)
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    const saved = localStorage.getItem('ss_translator_zoom_level');
     const num = Number(saved);
-    return Number.isFinite(num) && num >= 10 && num <= 24 ? num : DEFAULT_APP_FONT_SIZE;
-  });
-  const [logFontSize, setLogFontSize] = useState(() => {
-    const saved = localStorage.getItem('ss_translator_log_font_size');
-    const num = Number(saved);
-    return Number.isFinite(num) && num >= 8 && num <= 20 ? num : DEFAULT_LOG_FONT_SIZE;
+    return Number.isFinite(num) && num >= 50 && num <= 200 ? num : DEFAULT_ZOOM_LEVEL;
   });
 
-  // Apply font sizes to CSS custom properties
+  // Apply zoom via Electron webFrame API
   useEffect(() => {
-    document.documentElement.style.setProperty('--app-font-size', `${appFontSize}px`);
-    localStorage.setItem('ss_translator_app_font_size', String(appFontSize));
-  }, [appFontSize]);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty('--log-font-size', `${logFontSize}px`);
-    localStorage.setItem('ss_translator_log_font_size', String(logFontSize));
-  }, [logFontSize]);
+    const factor = zoomLevel / 100;
+    if (window.electronAPI?.setZoomFactor) {
+      window.electronAPI.setZoomFactor(factor);
+    }
+    localStorage.setItem('ss_translator_zoom_level', String(zoomLevel));
+  }, [zoomLevel]);
 
   // Auto-save helper (silent, no dialogs)
   const doAutoSave = useCallback(async () => {
@@ -243,10 +235,8 @@ function AppInner() {
       case 'appSettings':
         return (
           <AppSettingsPanel
-            appFontSize={appFontSize}
-            onAppFontSizeChange={setAppFontSize}
-            logFontSize={logFontSize}
-            onLogFontSizeChange={setLogFontSize}
+            zoomLevel={zoomLevel}
+            onZoomLevelChange={setZoomLevel}
           />
         );
       default:
