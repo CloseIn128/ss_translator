@@ -18,6 +18,14 @@ body {
   font-size: var(--app-font-size);
 }
 
+/* Ensure Ant Design components inherit the app font size */
+.ant-btn, .ant-input, .ant-select, .ant-select-selector,
+.ant-table, .ant-tabs, .ant-form, .ant-form-item,
+.ant-modal, .ant-card, .ant-descriptions, .ant-tag,
+.ant-tooltip, .ant-popover, .ant-alert {
+  font-size: inherit;
+}
+
 #root {
   height: 100vh;
   overflow: hidden;
@@ -268,6 +276,32 @@ body {
 }
 
 /* Translation Editor */
+.editor-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-file-sidebar {
+  width: 200px;
+  min-width: 160px;
+  max-width: 280px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.editor-main {
+  flex: 1;
+  overflow: auto;
+  padding: 0 16px 16px 16px;
+  min-width: 0;
+}
+
 .translation-table {
   width: 100%;
 }
@@ -609,14 +643,33 @@ body {
   min-width: 0;
 }
 
+/* Override Ant Design Tag colors inside the bottom bar for better contrast */
+.bottom-bar-task .ant-tag-processing {
+  color: #69b1ff !important;
+  background: rgba(24, 144, 255, 0.15) !important;
+  border-color: rgba(24, 144, 255, 0.3) !important;
+}
+
+.bottom-bar-task .ant-tag-success {
+  color: #95de64 !important;
+  background: rgba(82, 196, 26, 0.15) !important;
+  border-color: rgba(82, 196, 26, 0.3) !important;
+}
+
+.bottom-bar-task .ant-tag-error {
+  color: #ff7875 !important;
+  background: rgba(255, 77, 79, 0.15) !important;
+  border-color: rgba(255, 77, 79, 0.3) !important;
+}
+
 .bottom-bar-progress {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 11px;
   white-space: nowrap;
 }
 
 .bottom-bar-message {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;

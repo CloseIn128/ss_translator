@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ConfigProvider, theme, message } from 'antd';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { ConfigProvider, theme, message, Modal } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/layout/LeftNav';
 import LogPanel from './components/layout/LogPanel';
@@ -10,12 +10,14 @@ import TranslationEditor from './components/pages/TranslationEditor';
 import GlossaryPanel from './components/pages/GlossaryPanel';
 import KeywordExtractor from './components/pages/KeywordExtractor';
 import SettingsPanel from './components/pages/SettingsPanel';
+import AppSettingsPanel from './components/pages/AppSettingsPanel';
 import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
 
 const DEFAULT_APP_FONT_SIZE = 13;
 const DEFAULT_LOG_FONT_SIZE = 12;
+const AUTO_SAVE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
 function AppInner() {
   const [project, setProject] = useState(null);
@@ -23,6 +25,12 @@ function AppInner() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [logVisible, setLogVisible] = useState(false);
+  const projectRef = useRef(null);
+
+  // Keep ref in sync with state for use in async callbacks
+  useEffect(() => {
+    projectRef.current = project;
+  }, [project]);
 
   // Font size settings (persisted in localStorage)
   const [appFontSize, setAppFontSize] = useState(() => {
@@ -46,6 +54,54 @@ function AppInner() {
     document.documentElement.style.setProperty('--log-font-size', `${logFontSize}px`);
     localStorage.setItem('ss_translator_log_font_size', String(logFontSize));
   }, [logFontSize]);
+
+  // Auto-save helper (silent, no dialogs)
+  const doAutoSave = useCallback(async () => {
+    const p = projectRef.current;
+    if (!p) return;
+    // Only auto-save when there's a known save path
+    if (!p.projectFilePath && !p.modPath) return;
+    try {
+      const result = await api.autoSaveProject(p);
+      if (result?.success && result.data?.projectFilePath) {
+        setProject(prev => prev ? { ...prev, projectFilePath: result.data.projectFilePath } : prev);
+      }
+    } catch {
+      // silent failure for auto-save
+    }
+  }, []);
+
+  // Periodic auto-save timer
+  useEffect(() => {
+    const timer = setInterval(doAutoSave, AUTO_SAVE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [doAutoSave]);
+
+  // Confirm-before-close handler
+  useEffect(() => {
+    const handler = api.onBeforeClose(async () => {
+      const p = projectRef.current;
+      if (p && (p.projectFilePath || p.modPath)) {
+        // Auto-save then close
+        await doAutoSave();
+        api.confirmClose();
+      } else if (p && !p.projectFilePath && !p.modPath) {
+        // Unsaved new project with no path – ask user
+        Modal.confirm({
+          title: '退出确认',
+          content: '当前项目尚未保存，是否直接退出？',
+          okText: '退出',
+          cancelText: '取消',
+          okButtonProps: { danger: true },
+          onOk: () => api.confirmClose(),
+        });
+      } else {
+        // No project loaded, just close
+        api.confirmClose();
+      }
+    });
+    return () => api.removeBeforeCloseListener(handler);
+  }, [doAutoSave]);
 
   const handleNewProject = useCallback(async () => {
     const result = await api.createEmptyProject();
@@ -152,6 +208,7 @@ function AppInner() {
           <TranslationEditor
             project={project}
             selectedFile={selectedFile}
+            onSelectFile={setSelectedFile}
             onUpdateEntry={handleUpdateEntry}
             onBatchUpdate={handleBatchUpdate}
             messageApi={messageApi}
@@ -181,6 +238,11 @@ function AppInner() {
         return (
           <SettingsPanel
             messageApi={messageApi}
+          />
+        );
+      case 'appSettings':
+        return (
+          <AppSettingsPanel
             appFontSize={appFontSize}
             onAppFontSizeChange={setAppFontSize}
             logFontSize={logFontSize}
@@ -205,8 +267,6 @@ function AppInner() {
             onLoadProject={handleLoadProject}
             onSaveProject={handleSaveProject}
             onExport={handleExport}
-            selectedFile={selectedFile}
-            onSelectFile={setSelectedFile}
           />
           <div className="app-content">
             {renderContent()}

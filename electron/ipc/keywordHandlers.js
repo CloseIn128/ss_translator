@@ -18,7 +18,7 @@ const safeTermLower = (item) =>
 function register(ctx) {
   // ─── Unified keyword extraction (structural + AI with incremental updates) ───
 
-  ipcMain.handle('keywords:extractAll', async (_, { modPath, glossary }) => {
+  ipcMain.handle('keywords:extractAll', async (_, { modPath, glossary, skipAI }) => {
     try {
       const parsed = await ctx.parseModFolder(modPath);
 
@@ -57,51 +57,54 @@ function register(ctx) {
         });
       }
 
-      // Phase 2: AI extraction with incremental batch updates
-      const textSamples = [];
-      const seenText = new Set();
-      for (const entry of parsed.entries) {
-        if (entry.original && entry.original.length >= 10 && !seenText.has(entry.original)) {
-          seenText.add(entry.original);
-          textSamples.push({
-            text: entry.original,
-            context: entry.context || entry.file,
-          });
-        }
-      }
-
-      const MAX_AI_SAMPLES = 200;
-      const sampled = textSamples.length > MAX_AI_SAMPLES
-        ? textSamples.slice(0, MAX_AI_SAMPLES)
-        : textSamples;
-
-      // Build dedup set from structural results + existing glossaries
-      const existingTerms = new Set([...seen, ...builtinTerms, ...projectTerms]);
-
       let aiCount = 0;
-      await ctx.translationService.extractKeywords(sampled, {}, (batchKeywords) => {
-        // Filter against structural results and glossaries
-        const newKeywords = batchKeywords
-          .filter(kw => !existingTerms.has(kw.source.toLowerCase()))
-          .map(kw => ({
-            ...kw,
-            target: '',
-            extractType: 'ai',
-          }));
 
-        // Add to dedup set for future batches
-        for (const kw of newKeywords) {
-          existingTerms.add(kw.source.toLowerCase());
+      // Phase 2: AI extraction (skip if user chose structure-only mode)
+      if (!skipAI) {
+        const textSamples = [];
+        const seenText = new Set();
+        for (const entry of parsed.entries) {
+          if (entry.original && entry.original.length >= 10 && !seenText.has(entry.original)) {
+            seenText.add(entry.original);
+            textSamples.push({
+              text: entry.original,
+              context: entry.context || entry.file,
+            });
+          }
         }
 
-        if (newKeywords.length > 0) {
-          aiCount += newKeywords.length;
-          mainWindow.webContents.send('keywords:batch', {
-            keywords: newKeywords,
-            phase: 'ai',
-          });
-        }
-      });
+        const MAX_AI_SAMPLES = 200;
+        const sampled = textSamples.length > MAX_AI_SAMPLES
+          ? textSamples.slice(0, MAX_AI_SAMPLES)
+          : textSamples;
+
+        // Build dedup set from structural results + existing glossaries
+        const existingTerms = new Set([...seen, ...builtinTerms, ...projectTerms]);
+
+        await ctx.translationService.extractKeywords(sampled, {}, (batchKeywords) => {
+          // Filter against structural results and glossaries
+          const newKeywords = batchKeywords
+            .filter(kw => !existingTerms.has(kw.source.toLowerCase()))
+            .map(kw => ({
+              ...kw,
+              target: '',
+              extractType: 'ai',
+            }));
+
+          // Add to dedup set for future batches
+          for (const kw of newKeywords) {
+            existingTerms.add(kw.source.toLowerCase());
+          }
+
+          if (newKeywords.length > 0) {
+            aiCount += newKeywords.length;
+            mainWindow.webContents.send('keywords:batch', {
+              keywords: newKeywords,
+              phase: 'ai',
+            });
+          }
+        });
+      }
 
       // Signal completion
       mainWindow.webContents.send('keywords:batch', {

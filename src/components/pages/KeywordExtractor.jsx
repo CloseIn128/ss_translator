@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal } from 'antd';
+import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal, Switch } from 'antd';
 import {
   FolderOpenOutlined,
   PlusOutlined,
@@ -20,6 +20,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [modPath, setModPath] = useState(project?.modPath || '');
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
+  const [enableAI, setEnableAI] = useState(true);
   const keyCounterRef = useRef(project?.keywords?.length || 0);
   const batchHandlerRef = useRef(null);
 
@@ -104,6 +105,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       const result = await api.extractAllKeywords({
         modPath: targetPath,
         glossary: project?.glossary || [],
+        skipAI: !enableAI,
       });
       if (result?.success) {
         const msg = `提取完成：结构提取 ${result.total.structure} 个，AI提取 ${result.total.ai} 个`;
@@ -358,6 +360,13 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
         <Button icon={<FolderOpenOutlined />} onClick={handleSelectFolder} size="small">
           {modPath ? modPath.split(/[\\/]/).pop() : '选择MOD文件夹'}
         </Button>
+        <Tooltip title="开启后提取关键词时同时使用AI智能提取">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8c8c8c' }}>
+            <RobotOutlined />
+            AI提取
+            <Switch size="small" checked={enableAI} onChange={setEnableAI} disabled={extracting} />
+          </span>
+        </Tooltip>
         <Button
           type="primary"
           size="small"
@@ -427,7 +436,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
           <SearchOutlined style={{ fontSize: 32, marginBottom: 12 }} />
           <div style={{ marginBottom: 8 }}>选择MOD文件夹后提取关键词</div>
           <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-            点击"提取关键词"将同时执行<b>结构提取</b>和<b>AI智能提取</b>
+            点击"提取关键词"将执行<b>结构提取</b>，开启AI提取开关时同时执行<b>AI智能提取</b>
           </div>
           <div style={{ fontSize: 12, color: '#8c8c8c' }}>
             结构提取基于MOD文件结构快速识别舰船名、武器名、势力名等字段

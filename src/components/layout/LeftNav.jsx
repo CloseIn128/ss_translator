@@ -12,6 +12,7 @@ import {
   GlobalOutlined,
   DatabaseOutlined,
   InfoCircleOutlined,
+  DesktopOutlined,
 } from '@ant-design/icons';
 
 const MIN_NAV_WIDTH = 160;
@@ -26,8 +27,6 @@ export default function LeftNav({
   onLoadProject,
   onSaveProject,
   onExport,
-  selectedFile,
-  onSelectFile,
 }) {
   const [navWidth, setNavWidth] = useState(DEFAULT_NAV_WIDTH);
   const dragging = useRef(false);
@@ -67,26 +66,8 @@ export default function LeftNav({
     { key: 'glossary', icon: <BookOutlined />, label: '词库管理', requiresProject: true },
     { key: 'keywords', icon: <SearchOutlined />, label: '关键词提取' },
     { key: 'settings', icon: <SettingOutlined />, label: '模型配置' },
+    { key: 'appSettings', icon: <DesktopOutlined />, label: '程序设置' },
   ];
-
-  const fileStats = useMemo(() => {
-    if (!project) return [];
-    const map = {};
-    for (const entry of project.entries) {
-      if (!map[entry.file]) map[entry.file] = { total: 0, translated: 0 };
-      map[entry.file].total++;
-      if (entry.status !== 'untranslated' && entry.status !== 'error') {
-        map[entry.file].translated++;
-      }
-    }
-    return Object.entries(map)
-      .map(([file, stats]) => ({
-        file,
-        ...stats,
-        percent: stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0,
-      }))
-      .sort((a, b) => a.file.localeCompare(b.file));
-  }, [project]);
 
   const totalStats = useMemo(() => {
     if (!project) return { total: 0, translated: 0 };
@@ -153,10 +134,9 @@ export default function LeftNav({
         })}
       </div>
 
-      {/* Project info + file tree (only in editor tab with project) */}
-      {project && activeTab === 'editor' && (
+      {/* Overall progress (when project loaded) */}
+      {project && (
         <div className="left-nav-filetree">
-          {/* Overall progress */}
           <div className="sidebar-section">
             <div className="sidebar-section-title">
               <GlobalOutlined /> 总体进度
@@ -165,42 +145,6 @@ export default function LeftNav({
             <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 4 }}>
               {totalStats.translated}/{totalStats.total} 已翻译
             </div>
-          </div>
-
-          {/* File list */}
-          <div className="sidebar-section" style={{ flex: 1, overflow: 'auto', borderBottom: 'none' }}>
-            <div className="sidebar-section-title">
-              <DatabaseOutlined /> 文件列表
-            </div>
-            <div
-              className={`file-tree-item${selectedFile === null ? ' active' : ''}`}
-              onClick={() => onSelectFile(null)}
-            >
-              <FileTextOutlined />
-              <span>全部文件</span>
-              <span className="file-tree-progress">{totalStats.total}</span>
-            </div>
-            {fileStats.map(({ file, total, translated, percent }) => (
-              <Tooltip key={file} title={file} placement="right" mouseEnterDelay={0.5}>
-                <div
-                  className={`file-tree-item${selectedFile === file ? ' active' : ''}`}
-                  onClick={() => onSelectFile(file)}
-                >
-                  <FileTextOutlined style={{ fontSize: 12, flexShrink: 0 }} />
-                  <span style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    flex: 1,
-                  }}>
-                    {file.split('/').pop()}
-                  </span>
-                  <span className="file-tree-progress">
-                    {percent === 100 ? '✓' : `${translated}/${total}`}
-                  </span>
-                </div>
-              </Tooltip>
-            ))}
           </div>
         </div>
       )}

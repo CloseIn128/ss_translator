@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Form, Input, Select, Button, InputNumber, Divider, Card, Alert,
   Tabs, Table, Space, Modal, Popconfirm,
@@ -6,7 +6,7 @@ import {
 import {
   SaveOutlined, ApiOutlined, ReloadOutlined,
   PlusOutlined, DeleteOutlined, ImportOutlined, ExportOutlined, EditOutlined,
-  BookOutlined, MessageOutlined, ControlOutlined,
+  BookOutlined, MessageOutlined,
 } from '@ant-design/icons';
 
 const api = window.electronAPI;
@@ -38,6 +38,8 @@ function ModelConfigTab({ messageApi }) {
   const [loading, setLoading] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const saveTimerRef = useRef(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -55,7 +57,21 @@ function ModelConfigTab({ messageApi }) {
           rateLimitMs: config.rateLimitMs || 500,
         });
       }
+      initializedRef.current = true;
     })();
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [form]);
+
+  const debouncedSave = useCallback(() => {
+    if (!initializedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const values = await form.validateFields();
+        const result = await api.configureAI(values);
+        if (result?.success && values.apiKey) setHasApiKey(true);
+      } catch { /* validation error */ }
+    }, 800);
   }, [form]);
 
   const handleProviderChange = (provider) => {
@@ -63,24 +79,7 @@ function ModelConfigTab({ messageApi }) {
       apiUrl: DEFAULT_URLS[provider] || '',
       model: DEFAULT_MODELS[provider] || '',
     });
-  };
-
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      setLoading(true);
-      const result = await api.configureAI(values);
-      if (result?.success) {
-        if (values.apiKey) setHasApiKey(true);
-        messageApi.success('AI配置已保存');
-      } else {
-        messageApi.error('配置保存失败');
-      }
-    } catch (err) {
-      // validation error
-    } finally {
-      setLoading(false);
-    }
+    debouncedSave();
   };
 
   const handleTest = async () => {
@@ -129,7 +128,7 @@ function ModelConfigTab({ messageApi }) {
   return (
     <div className="settings-tab-content">
       <div className="settings-form-grid">
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onValuesChange={debouncedSave}>
           <div className="settings-row-2">
             <Form.Item label="AI 服务商" name="provider">
               <Select options={PROVIDERS} onChange={handleProviderChange} />
@@ -173,9 +172,6 @@ function ModelConfigTab({ messageApi }) {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={loading}>
-              保存配置
-            </Button>
             <Button onClick={handleTest} loading={loading}>
               测试连接
             </Button>
@@ -206,6 +202,7 @@ function ModelConfigTab({ messageApi }) {
           <li>名词库中的术语会自动注入到 AI 翻译提示词中</li>
           <li>润色功能会基于原文和现有翻译进行二次优化</li>
           <li>配置文件保存在程序目录下的 config/ 文件夹中</li>
+          <li>所有配置修改后自动保存，无需手动点击保存</li>
         </ul>
       </Card>
     </div>
@@ -364,6 +361,8 @@ function PromptConfigTab({ messageApi }) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [defaults, setDefaults] = useState({ systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
+  const saveTimerRef = useRef(null);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -377,25 +376,21 @@ function PromptConfigTab({ messageApi }) {
         polishPrompt: config?.polishPrompt || '',
         keywordPrompt: config?.keywordPrompt || '',
       });
+      initializedRef.current = true;
     })();
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
   }, [form]);
 
-  const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      setLoading(true);
-      const result = await api.configureAI(values);
-      if (result?.success) {
-        messageApi.success('提示词配置已保存');
-      } else {
-        messageApi.error('提示词保存失败');
-      }
-    } catch (err) {
-      // validation error
-    } finally {
-      setLoading(false);
-    }
-  };
+  const debouncedSave = useCallback(() => {
+    if (!initializedRef.current) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const values = await form.validateFields();
+        await api.configureAI(values);
+      } catch { /* validation error */ }
+    }, 1000);
+  }, [form]);
 
   const handleResetSystem = () => {
     form.setFieldsValue({ systemPrompt: defaults.systemPrompt });
@@ -412,7 +407,7 @@ function PromptConfigTab({ messageApi }) {
   return (
     <div className="settings-tab-content">
       <div className="settings-form-grid">
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onValuesChange={debouncedSave}>
           <Form.Item
             label={
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -468,9 +463,6 @@ function PromptConfigTab({ messageApi }) {
           </Form.Item>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={loading}>
-              保存提示词
-            </Button>
             <Button danger icon={<ReloadOutlined />} onClick={() => {
               Modal.confirm({
                 title: '重置提示词',
@@ -478,11 +470,18 @@ function PromptConfigTab({ messageApi }) {
                 okText: '确认重置',
                 cancelText: '取消',
                 okButtonProps: { danger: true },
-                onOk: () => {
+                onOk: async () => {
                   handleResetSystem();
                   handleResetPolish();
                   handleResetKeyword();
-                  messageApi.info('已重置为默认提示词，请点击保存以生效');
+                  // Save after reset
+                  setTimeout(async () => {
+                    try {
+                      const values = await form.validateFields();
+                      await api.configureAI(values);
+                      messageApi.success('提示词已重置并保存');
+                    } catch { /* ignore */ }
+                  }, 100);
                 },
               });
             }}>
@@ -499,50 +498,7 @@ function PromptConfigTab({ messageApi }) {
           <li><b>关键词提取提示词</b>：用于AI智能关键词提取时的系统级指令，控制提取的范围和格式</li>
           <li>所有提示词在初始化时已自动填入默认模板，可直接在此基础上修改</li>
           <li>名词对照表会自动注入到用户消息中，无需在提示词中手动添加</li>
-          <li>提示词修改后需点击"保存提示词"按钮才能生效</li>
-        </ul>
-      </Card>
-    </div>
-  );
-}
-
-// ─── Appearance Config Tab ─────────────────────────────────────────────
-
-function AppearanceTab({ appFontSize, onAppFontSizeChange, logFontSize, onLogFontSizeChange }) {
-  return (
-    <div className="settings-tab-content">
-      <div className="settings-form-grid">
-        <Form layout="vertical">
-          <div className="settings-row-2">
-            <Form.Item label="程序字体大小">
-              <InputNumber
-                min={10}
-                max={24}
-                value={appFontSize}
-                onChange={v => onAppFontSizeChange(v ?? 13)}
-                style={{ width: '100%' }}
-                addonAfter="px"
-              />
-            </Form.Item>
-            <Form.Item label="日志字体大小">
-              <InputNumber
-                min={8}
-                max={20}
-                value={logFontSize}
-                onChange={v => onLogFontSizeChange(v ?? 12)}
-                style={{ width: '100%' }}
-                addonAfter="px"
-              />
-            </Form.Item>
-          </div>
-        </Form>
-      </div>
-
-      <Card size="small" title="说明" style={{ marginTop: 16 }}>
-        <ul style={{ fontSize: 13, color: '#8c8c8c', paddingLeft: 16, margin: 0 }}>
-          <li><b>程序字体大小</b>：控制主界面（翻译编辑、词库管理等）的基础字体大小</li>
-          <li><b>日志字体大小</b>：控制底部日志面板的字体大小，独立于程序字体</li>
-          <li>字体大小修改立即生效并自动保存</li>
+          <li>提示词修改后自动保存，无需手动点击保存</li>
         </ul>
       </Card>
     </div>
@@ -553,10 +509,6 @@ function AppearanceTab({ appFontSize, onAppFontSizeChange, logFontSize, onLogFon
 
 export default function SettingsPanel({
   messageApi,
-  appFontSize,
-  onAppFontSizeChange,
-  logFontSize,
-  onLogFontSizeChange,
 }) {
   const tabItems = [
     {
@@ -573,18 +525,6 @@ export default function SettingsPanel({
       key: 'glossary',
       label: <><BookOutlined /> 公共词库</>,
       children: <PublicGlossaryTab messageApi={messageApi} />,
-    },
-    {
-      key: 'appearance',
-      label: <><ControlOutlined /> 界面设置</>,
-      children: (
-        <AppearanceTab
-          appFontSize={appFontSize}
-          onAppFontSizeChange={onAppFontSizeChange}
-          logFontSize={logFontSize}
-          onLogFontSizeChange={onLogFontSizeChange}
-        />
-      ),
     },
   ];
 

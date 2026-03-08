@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { parseModFolder } = require('./services/modParser');
 const { GlossaryManager } = require('./services/glossary');
@@ -24,6 +24,7 @@ let translationService;
 let projectManager;
 let configManager;
 let legacyTranslationService;
+let isQuitting = false;
 
 /** Returns the directory where user config files are persisted. */
 function getConfigDir() {
@@ -98,6 +99,31 @@ app.whenReady().then(() => {
   keywordHandlers.register(ctx);
   notificationHandlers.register(ctx);
   legacyHandlers.register(ctx);
+
+  // Auto-save project data sent from renderer
+  ipcMain.handle('project:autoSave', async (_, projectData) => {
+    try {
+      if (!projectData || (!projectData.projectFilePath && !projectData.modPath)) {
+        return { success: false, error: 'no_path' };
+      }
+      const saved = await projectManager.saveProject(projectData);
+      return { success: true, data: { projectFilePath: saved.projectFilePath } };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Confirm-before-close: renderer responds with whether to proceed
+  mainWindow.on('close', (e) => {
+    if (isQuitting) return;
+    e.preventDefault();
+    mainWindow.webContents.send('app:before-close');
+  });
+
+  ipcMain.on('app:close-confirmed', () => {
+    isQuitting = true;
+    if (mainWindow) mainWindow.close();
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

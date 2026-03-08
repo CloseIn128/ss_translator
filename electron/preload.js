@@ -63,5 +63,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeKeywordBatchListener: (handler) => {
     ipcRenderer.removeListener('keywords:batch', handler);
   },
+
+  // Auto-save (used by timer and close handler)
+  autoSaveProject: (projectData) => ipcRenderer.invoke('project:autoSave', projectData),
+
+  // Close confirmation
+  onBeforeClose: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('app:before-close', handler);
+    return handler;
+  },
+  removeBeforeCloseListener: (handler) => {
+    ipcRenderer.removeListener('app:before-close', handler);
+  },
+  confirmClose: () => ipcRenderer.send('app:close-confirmed'),
 });
 
