@@ -340,7 +340,7 @@ function PublicGlossaryTab({ messageApi }) {
         公共词库中的术语在 AI 翻译时会自动注入到所有项目的提示词中。
         用户可自行维护，并通过 JSON 或 CSV 格式导入/导出。
       </div>
-      <Table dataSource={filtered} columns={columns} rowKey={(r) => `${r._origIdx}_${r.source}`} size="small"
+      <Table dataSource={filtered} columns={columns} rowKey={(r) => r._origIdx} size="small"
         loading={loading}
         pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }} />
       <Modal title={editingEntry !== null ? '编辑术语' : '添加术语'} open={isModalOpen}
