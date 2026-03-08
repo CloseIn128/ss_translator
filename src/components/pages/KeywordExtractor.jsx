@@ -353,7 +353,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     const confirmedGlossary = keywords
       .filter(kw => kw.confirmed && kw.target && kw.target.trim())
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
-    await doPolish(unconfirmed, confirmedGlossary);
+    await doPolish(translated, confirmedGlossary);
   };
 
   // Shared polish implementation
@@ -417,7 +417,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   };
 
   // Shared logic for adding keywords to glossary with overwrite support
-  const doAddToGlossary = async (kwList) => {
+  const doAddToGlossary = async (kwList, onDone) => {
     const glossary = project.glossary || [];
     const existingMap = new Map(glossary.map(g => [g.source, g]));
 
@@ -472,6 +472,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       if (added > 0) parts.push(`新增 ${added} 个`);
       if (updated > 0) parts.push(`覆盖 ${updated} 个`);
       messageApi.success(`已${parts.join('，')}术语到词库`);
+      if (onDone) onDone();
     };
 
     if (overlapKws.length > 0) {
@@ -501,8 +502,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     const kwList = selectedRowKeys.map(k => keywordMap.get(k)).filter(Boolean);
 
     if (kwList.length === 0) return;
-    await doAddToGlossary(kwList);
-    setSelectedRowKeys([]);
+    await doAddToGlossary(kwList, () => setSelectedRowKeys([]));
   };
 
   const handleAddAllToGlossary = async () => {
@@ -552,6 +552,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
               onChange={(e) => setEditingValue(e.target.value)}
               onPressEnter={saveEdit}
               onBlur={saveEdit}
+              onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
               autoFocus
               style={{ fontSize: 12, width: '100%' }}
             />
@@ -593,22 +594,12 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
               value={editingValue}
               onChange={(val) => { setEditingValue(val); }}
               onBlur={saveEdit}
+              onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
               autoFocus
               open
               style={{ width: '100%', fontSize: 11 }}
               options={CATEGORY_OPTIONS.map(c => ({ value: c, label: c }))}
-              onSelect={(val) => {
-                setKeywords(prev => {
-                  const updated = prev.map(kw =>
-                    kw.key === record.key ? { ...kw, category: val } : kw
-                  );
-                  if (onUpdateKeywords) onUpdateKeywords(updated);
-                  return updated;
-                });
-                setEditingKey(null);
-                setEditingField(null);
-                setEditingValue('');
-              }}
+              onSelect={(val) => { setEditingValue(val); }}
             />
           );
         }
