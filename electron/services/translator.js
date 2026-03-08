@@ -5,6 +5,13 @@
  * for translating and polishing Starsector mod text.
  */
 
+const LOG_SYSTEM_PROMPT_LEN = 80;
+const LOG_USER_MSG_LEN = 200;
+const LOG_RESPONSE_LEN = 300;
+const MAX_REQUEST_HISTORY = 200;
+
+let _requestIdCounter = 0;
+
 class TranslationService {
   constructor() {
     this._defaultSystemPrompt = this.getDefaultSystemPrompt();
@@ -21,6 +28,9 @@ class TranslationService {
       systemPrompt: this._defaultSystemPrompt,
       polishPrompt: this._defaultPolishPrompt,
     };
+    // Request history tracking
+    this._requestHistory = [];  // Array of request records
+    this._activeRequests = new Map(); // id → request record (in-progress)
   }
 
   getDefaultSystemPrompt() {
@@ -157,7 +167,7 @@ class TranslationService {
 ${textsFormatted}`;
 
     const systemPrompt = cfg.keywordPrompt || this.getDefaultKeywordPrompt();
-    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+    const response = await this._callAPI(systemPrompt, userMessage, cfg, 'keyword-extract');
     return this._parseKeywordResponse(response);
   }
 
@@ -216,7 +226,15 @@ ${textsFormatted}`;
    * @param {object} config - Optional config override
    * @returns {Array} - Array of { source, target }
    */
-  async translateKeywords(keywords, glossary = [], config = {}) {
+  /**
+   * Translate a batch of keywords (separate from extraction)
+   * @param {Array} keywords - Array of { source, category }
+   * @param {Array} glossary - Optional glossary entries for context
+   * @param {object} config - Optional config override
+   * @param {Function} onLog - Optional callback(level, message) for logging
+   * @returns {Array} - Array of { source, target }
+   */
+  async translateKeywords(keywords, glossary = [], config = {}, onLog = null) {
     const cfg = { ...this.config, ...config };
     const results = [];
 
@@ -232,13 +250,33 @@ ${textsFormatted}`;
       }
     }
 
+    if (onLog && keywords.length !== toTranslate.length) {
+      onLog('info', `跳过 ${keywords.length - toTranslate.length} 个人名/星球名（保留原文）`);
+    }
+
+    const totalBatches = Math.ceil(toTranslate.length / cfg.batchSize);
+
     for (let i = 0; i < toTranslate.length; i += cfg.batchSize) {
       const batch = toTranslate.slice(i, i + cfg.batchSize);
+      const batchNum = Math.floor(i / cfg.batchSize) + 1;
+      if (onLog) {
+        onLog('info', `翻译批次 ${batchNum}/${totalBatches}：${batch.map(kw => kw.source).join(', ')}`);
+      }
       try {
-        const batchResults = await this._translateKeywordsBatch(batch, glossary, cfg);
+        const batchResults = await this._translateKeywordsBatch(batch, glossary, cfg, onLog);
         results.push(...batchResults);
+        if (onLog) {
+          for (const r of batchResults) {
+            if (r.target) {
+              onLog('info', `  "${r.source}" → "${r.target}"`);
+            }
+          }
+        }
       } catch (err) {
         console.error('Keyword translation batch error:', err.message);
+        if (onLog) {
+          onLog('error', `批次 ${batchNum} 翻译失败: ${err.message}`);
+        }
         results.push(...batch.map(kw => ({ source: kw.source, target: '' })));
       }
 
@@ -250,7 +288,128 @@ ${textsFormatted}`;
     return results;
   }
 
-  async _translateKeywordsBatch(keywords, glossary, cfg) {
+  /**
+   * Polish/refine keyword translations for consistency
+   * @param {Array} keywords - Array of { source, target, category }
+   * @param {Array} glossary - Optional glossary entries for context
+   * @param {object} config - Optional config override
+   * @param {Function} onLog - Optional callback(level, message) for logging
+   * @returns {Array} - Array of { source, target }
+   */
+  async polishKeywords(keywords, glossary = [], config = {}, onLog = null) {
+    const cfg = { ...this.config, ...config };
+    const results = [];
+
+    // Only polish keywords that have translations
+    const toPolish = keywords.filter(kw => kw.target && kw.target.trim());
+    const noTarget = keywords.filter(kw => !kw.target || !kw.target.trim());
+
+    // Pass through untranslated keywords unchanged
+    results.push(...noTarget.map(kw => ({ source: kw.source, target: kw.target || '' })));
+
+    if (toPolish.length === 0) {
+      if (onLog) onLog('info', '没有已翻译的术语需要润色');
+      return results;
+    }
+
+    const totalBatches = Math.ceil(toPolish.length / cfg.batchSize);
+
+    for (let i = 0; i < toPolish.length; i += cfg.batchSize) {
+      const batch = toPolish.slice(i, i + cfg.batchSize);
+      const batchNum = Math.floor(i / cfg.batchSize) + 1;
+      if (onLog) {
+        onLog('info', `润色批次 ${batchNum}/${totalBatches}：${batch.map(kw => `${kw.source}→${kw.target}`).join(', ')}`);
+      }
+      try {
+        const batchResults = await this._polishKeywordsBatch(batch, glossary, cfg, onLog);
+        results.push(...batchResults);
+        if (onLog) {
+          for (let j = 0; j < batchResults.length; j++) {
+            const orig = batch[j];
+            const polished = batchResults[j];
+            if (polished.target !== orig.target) {
+              onLog('info', `  "${orig.source}": "${orig.target}" → "${polished.target}"`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Keyword polish batch error:', err.message);
+        if (onLog) {
+          onLog('error', `批次 ${batchNum} 润色失败: ${err.message}`);
+        }
+        results.push(...batch.map(kw => ({ source: kw.source, target: kw.target })));
+      }
+
+      if (i + cfg.batchSize < toPolish.length) {
+        await sleep(cfg.rateLimitMs);
+      }
+    }
+
+    return results;
+  }
+
+  async _polishKeywordsBatch(keywords, glossary, cfg, onLog = null) {
+    const glossaryText = glossary && glossary.length > 0
+      ? this._buildGlossaryPrompt(glossary) + '\n\n'
+      : '';
+
+    const keywordsText = keywords.map(kw =>
+      `- "${kw.source}" → "${kw.target}"${kw.category ? ` (${kw.category})` : ''}`
+    ).join('\n');
+
+    const userMessage = `${glossaryText}请对以下${keywords.length}个游戏术语的翻译进行润色和一致性检查。
+
+当前翻译：
+${keywordsText}
+
+润色要求：
+- 确保同类术语的翻译风格和措辞保持一致
+- 改善翻译的准确性和流畅度
+- 确保符合太空科幻游戏的术语风格
+- 如果名词对照表中有对应翻译，请确保一致
+- 人名和星球/星系名保留英文原文不翻译
+
+直接返回JSON数组格式，不要添加任何说明文字：
+[{"source":"Hegemony","target":"霸主"}]`;
+
+    const systemPrompt = `你是一位专业的游戏本地化润色专家。请对已翻译的太空策略游戏"远行星号"(Starsector)MOD术语进行润色优化，确保术语之间的翻译风格和用词保持一致。`;
+
+    if (onLog) {
+      onLog('debug', `[润色请求] system: ${systemPrompt.substring(0, LOG_SYSTEM_PROMPT_LEN)}...`);
+      onLog('debug', `[润色请求] user: ${userMessage.substring(0, LOG_USER_MSG_LEN)}...`);
+    }
+
+    const response = await this._callAPI(systemPrompt, userMessage, cfg, 'keyword-polish');
+
+    if (onLog) {
+      onLog('debug', `[润色响应] ${response.substring(0, LOG_RESPONSE_LEN)}...`);
+    }
+
+    try {
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed)) {
+          const polishMap = new Map();
+          for (const item of parsed) {
+            if (item.source && item.target) {
+              polishMap.set(item.source.trim().toLowerCase(), item.target.trim());
+            }
+          }
+          return keywords.map(kw => ({
+            source: kw.source,
+            target: polishMap.get(kw.source.toLowerCase()) || kw.target,
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse keyword polish response:', err.message);
+    }
+
+    return keywords.map(kw => ({ source: kw.source, target: kw.target }));
+  }
+
+  async _translateKeywordsBatch(keywords, glossary, cfg, onLog = null) {
     const glossaryText = glossary && glossary.length > 0
       ? this._buildGlossaryPrompt(glossary) + '\n\n'
       : '';
@@ -275,7 +434,16 @@ ${keywordsText}
 
     const systemPrompt = `你是一位专业的游戏本地化翻译专家。请为提供的太空策略游戏"远行星号"(Starsector)的MOD术语提供准确的中文翻译。翻译应当符合太空科幻设定的措辞风格。人名和星球/星系名保留英文原文不翻译。`;
 
-    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+    if (onLog) {
+      onLog('debug', `[翻译请求] system: ${systemPrompt.substring(0, LOG_SYSTEM_PROMPT_LEN)}...`);
+      onLog('debug', `[翻译请求] user: ${userMessage.substring(0, LOG_USER_MSG_LEN)}...`);
+    }
+
+    const response = await this._callAPI(systemPrompt, userMessage, cfg, 'keyword-translate');
+
+    if (onLog) {
+      onLog('debug', `[翻译响应] ${response.substring(0, LOG_RESPONSE_LEN)}...`);
+    }
 
     try {
       const jsonMatch = response.match(/\[[\s\S]*\]/);
@@ -343,7 +511,7 @@ ${keywordsText}
 ${textsToTranslate}`;
 
     try {
-      const response = await this._callAPI(cfg.systemPrompt, userMessage, cfg);
+      const response = await this._callAPI(cfg.systemPrompt, userMessage, cfg, 'batch-translate');
       const translations = this._parseBatchResponse(response, entries.length);
 
       return entries.map((entry, i) => ({
@@ -379,7 +547,7 @@ ${entry.translated}
 请对上述翻译进行润色优化，直接返回润色后的文本，不要添加任何说明。`;
 
     try {
-      const response = await this._callAPI(cfg.polishPrompt, userMessage, cfg);
+      const response = await this._callAPI(cfg.polishPrompt, userMessage, cfg, 'entry-polish');
       return {
         id: entry.id,
         translated: response.trim(),
@@ -412,7 +580,66 @@ ${entry.translated}
     return `【MOD设定说明】\n${modPrompt.trim()}\n\n`;
   }
 
-  async _callAPI(systemPrompt, userMessage, cfg) {
+  // ── Request history API ─────────────────────────────────────────────
+
+  getRequestHistory() {
+    return this._requestHistory.map(r => ({
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      startTime: r.startTime,
+      endTime: r.endTime,
+      durationMs: r.durationMs,
+      model: r.model,
+      error: r.error || null,
+      promptPreview: r.systemPrompt ? r.systemPrompt.substring(0, 60) + '...' : '',
+      responsePreview: r.responseContent ? r.responseContent.substring(0, 80) + '...' : '',
+      tokenUsage: r.tokenUsage || null,
+    }));
+  }
+
+  getRequestDetail(id) {
+    return this._requestHistory.find(r => r.id === id) ||
+           this._activeRequests.get(id) || null;
+  }
+
+  getActiveRequests() {
+    return Array.from(this._activeRequests.values()).map(r => ({
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      startTime: r.startTime,
+      model: r.model,
+      promptPreview: r.systemPrompt ? r.systemPrompt.substring(0, 60) + '...' : '',
+    }));
+  }
+
+  clearRequestHistory() {
+    this._requestHistory = [];
+  }
+
+  async _callAPI(systemPrompt, userMessage, cfg, requestType = 'unknown') {
+    const reqId = ++_requestIdCounter;
+    const record = {
+      id: reqId,
+      type: requestType,
+      status: 'pending',
+      startTime: new Date().toISOString(),
+      endTime: null,
+      durationMs: null,
+      model: cfg.model,
+      apiUrl: cfg.apiUrl,
+      systemPrompt,
+      userMessage,
+      responseContent: null,
+      responseRaw: null,
+      tokenUsage: null,
+      error: null,
+    };
+
+    this._activeRequests.set(reqId, record);
+    const startMs = Date.now();
+
     const body = {
       model: cfg.model,
       messages: [
@@ -423,22 +650,61 @@ ${entry.translated}
       temperature: cfg.temperature,
     };
 
-    const response = await fetch(cfg.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cfg.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    try {
+      const response = await fetch(cfg.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cfg.apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API请求失败 (${response.status}): ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        const err = new Error(`API请求失败 (${response.status}): ${errorText}`);
+        record.status = 'error';
+        record.error = err.message;
+        record.endTime = new Date().toISOString();
+        record.durationMs = Date.now() - startMs;
+        record.responseRaw = errorText;
+        this._activeRequests.delete(reqId);
+        this._addToHistory(record);
+        throw err;
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || '';
+
+      record.status = 'success';
+      record.endTime = new Date().toISOString();
+      record.durationMs = Date.now() - startMs;
+      record.responseContent = content;
+      record.responseRaw = JSON.stringify(data);
+      record.tokenUsage = data.usage || null;
+
+      this._activeRequests.delete(reqId);
+      this._addToHistory(record);
+
+      return content;
+    } catch (err) {
+      if (record.status !== 'error') {
+        record.status = 'error';
+        record.error = err.message;
+        record.endTime = new Date().toISOString();
+        record.durationMs = Date.now() - startMs;
+        this._activeRequests.delete(reqId);
+        this._addToHistory(record);
+      }
+      throw err;
     }
+  }
 
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+  _addToHistory(record) {
+    this._requestHistory.push(record);
+    if (this._requestHistory.length > MAX_REQUEST_HISTORY) {
+      this._requestHistory = this._requestHistory.slice(-MAX_REQUEST_HISTORY);
+    }
   }
 
   _parseBatchResponse(text, expectedCount) {

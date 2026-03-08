@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Input, Select, Button, Tag, Tooltip, Space, Modal, Spin } from 'antd';
+import { Input, Select, Button, Tag, Tooltip, Space, Modal, Spin, Progress } from 'antd';
 import {
   TranslationOutlined,
   HighlightOutlined,
   SearchOutlined,
   RobotOutlined,
   CheckCircleOutlined,
+  FileTextOutlined,
+  DatabaseOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
@@ -24,6 +27,7 @@ const PAGE_SIZE = 50;
 export default function TranslationEditor({
   project,
   selectedFile,
+  onSelectFile,
   onUpdateEntry,
   onBatchUpdate,
   messageApi,
@@ -296,117 +300,205 @@ export default function TranslationEditor({
     });
   }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
 
+  // File stats for sidebar
+  const fileStats = useMemo(() => {
+    const map = {};
+    for (const entry of project.entries) {
+      if (!map[entry.file]) map[entry.file] = { total: 0, translated: 0 };
+      map[entry.file].total++;
+      if (entry.status !== 'untranslated' && entry.status !== 'error') {
+        map[entry.file].translated++;
+      }
+    }
+    return Object.entries(map)
+      .map(([file, stats]) => ({
+        file,
+        ...stats,
+        percent: stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0,
+      }))
+      .sort((a, b) => a.file.localeCompare(b.file));
+  }, [project.entries]);
+
+  const totalStats = useMemo(() => {
+    let total = project.entries.length;
+    let translated = 0;
+    for (const e of project.entries) {
+      if (e.status !== 'untranslated' && e.status !== 'error') translated++;
+    }
+    return { total, translated };
+  }, [project.entries]);
+
+  const overallPercent = totalStats.total > 0
+    ? Math.round((totalStats.translated / totalStats.total) * 100)
+    : 0;
+
   return (
-    <div>
-      {/* Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-value">{stats.total}</div>
-          <div className="stat-label">当前条目数</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.translated}</div>
-          <div className="stat-label">已翻译</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">
-            {stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0}%
+    <div className="editor-layout">
+      {/* File sidebar */}
+      <div className="editor-file-sidebar">
+        <div className="sidebar-section">
+          <div className="sidebar-section-title">
+            <GlobalOutlined /> 总体进度
           </div>
-          <div className="stat-label">翻译进度</div>
+          <Progress percent={overallPercent} size="small" />
+          <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 4 }}>
+            {totalStats.translated}/{totalStats.total} 已翻译
+          </div>
+        </div>
+        <div className="sidebar-section" style={{ flex: 1, overflow: 'auto', borderBottom: 'none' }}>
+          <div className="sidebar-section-title">
+            <DatabaseOutlined /> 文件列表
+          </div>
+          <div
+            className={`file-tree-item${selectedFile === null ? ' active' : ''}`}
+            onClick={() => onSelectFile(null)}
+          >
+            <FileTextOutlined />
+            <span>全部文件</span>
+            <span className="file-tree-progress">{totalStats.total}</span>
+          </div>
+          {fileStats.map(({ file, total, translated, percent }) => (
+            <Tooltip key={file} title={file} placement="right" mouseEnterDelay={0.5}>
+              <div
+                className={`file-tree-item${selectedFile === file ? ' active' : ''}`}
+                onClick={() => onSelectFile(file)}
+              >
+                <FileTextOutlined style={{ fontSize: 12, flexShrink: 0 }} />
+                <span style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                }}>
+                  {file.split('/').pop()}
+                </span>
+                <span className="file-tree-progress">
+                  {percent === 100 ? '✓' : `${translated}/${total}`}
+                </span>
+              </div>
+            </Tooltip>
+          ))}
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div className="filter-bar">
-        <Input
-          prefix={<SearchOutlined />}
-          placeholder="搜索原文、译文、上下文..."
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          allowClear
-          style={{ width: 280 }}
-          size="small"
-        />
-        <Select
-          value={categoryFilter}
-          onChange={setCategoryFilter}
-          style={{ width: 140 }}
-          size="small"
-          options={categories.map(c => ({
-            value: c,
-            label: c === 'all' ? '全部分类' : c,
-          }))}
-        />
-        <Select
-          value={statusFilter}
-          onChange={setStatusFilter}
-          style={{ width: 120 }}
-          size="small"
-          options={[
-            { value: 'all', label: '全部状态' },
-            { value: 'untranslated', label: '未翻译' },
-            { value: 'translated', label: '已翻译' },
-            { value: 'polished', label: '已润色' },
-            { value: 'reviewed', label: '已审核' },
-            { value: 'error', label: '错误' },
-          ]}
-        />
-        <Button
-          type="primary"
-          size="small"
-          icon={<RobotOutlined />}
-          onClick={handleBatchTranslate}
-          loading={batchTranslating}
-          disabled={isTaskRunning && !batchTranslating}
-        >
-          批量翻译
-        </Button>
-        <Button
-          size="small"
-          icon={<HighlightOutlined />}
-          onClick={handleBatchPolish}
-          loading={batchTranslating}
-          disabled={isTaskRunning && !batchTranslating}
-        >
-          批量润色
-        </Button>
-        <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
-          共 {filteredEntries.length} 条
-        </span>
+      {/* Main editor content */}
+      <div className="editor-main">
+      {/* Pinned header: stats + filter bar */}
+      <div className="editor-header">
+        {/* Stats */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-value">{stats.total}</div>
+            <div className="stat-label">当前条目数</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{stats.translated}</div>
+            <div className="stat-label">已翻译</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">
+              {stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0}%
+            </div>
+            <div className="stat-label">翻译进度</div>
+          </div>
+        </div>
+
+        {/* Filter bar */}
+        <div className="filter-bar">
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="搜索原文、译文、上下文..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            allowClear
+            style={{ width: 280 }}
+            size="small"
+          />
+          <Select
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            style={{ width: 140 }}
+            size="small"
+            options={categories.map(c => ({
+              value: c,
+              label: c === 'all' ? '全部分类' : c,
+            }))}
+          />
+          <Select
+            value={statusFilter}
+            onChange={setStatusFilter}
+            style={{ width: 120 }}
+            size="small"
+            options={[
+              { value: 'all', label: '全部状态' },
+              { value: 'untranslated', label: '未翻译' },
+              { value: 'translated', label: '已翻译' },
+              { value: 'polished', label: '已润色' },
+              { value: 'reviewed', label: '已审核' },
+              { value: 'error', label: '错误' },
+            ]}
+          />
+          <Button
+            type="primary"
+            size="small"
+            icon={<RobotOutlined />}
+            onClick={handleBatchTranslate}
+            loading={batchTranslating}
+            disabled={isTaskRunning && !batchTranslating}
+          >
+            批量翻译
+          </Button>
+          <Button
+            size="small"
+            icon={<HighlightOutlined />}
+            onClick={handleBatchPolish}
+            loading={batchTranslating}
+            disabled={isTaskRunning && !batchTranslating}
+          >
+            批量润色
+          </Button>
+          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
+            共 {filteredEntries.length} 条
+          </span>
+        </div>
       </div>
 
-      {/* Entries */}
-      <div className="translation-table">
-        {pageEntries.map(entry => (
-          <EntryRow
-            key={entry.id}
-            entry={entry}
-            isTranslating={translatingIds.has(entry.id)}
-            onUpdateEntry={onUpdateEntry}
-            onTranslate={handleTranslate}
-            onPolish={handlePolish}
-          />
-        ))}
+      {/* Scrollable entries area */}
+      <div className="editor-entries">
+        {/* Entries */}
+        <div className="translation-table">
+          {pageEntries.map(entry => (
+            <EntryRow
+              key={entry.id}
+              entry={entry}
+              isTranslating={translatingIds.has(entry.id)}
+              onUpdateEntry={onUpdateEntry}
+              onTranslate={handleTranslate}
+              onPolish={handlePolish}
+            />
+          ))}
 
-        {pageEntries.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 40, color: '#8c8c8c' }}>
-            没有匹配的条目
+          {pageEntries.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8c8c8c' }}>
+              没有匹配的条目
+            </div>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
+            <Button size="small" disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => p - 1)}>上一页</Button>
+            <span style={{ fontSize: 13, lineHeight: '24px', color: '#8c8c8c' }}>
+              {currentPage} / {totalPages}
+            </span>
+            <Button size="small" disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => p + 1)}>下一页</Button>
           </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
-          <Button size="small" disabled={currentPage === 1}
-            onClick={() => setCurrentPage(p => p - 1)}>上一页</Button>
-          <span style={{ fontSize: 13, lineHeight: '24px', color: '#8c8c8c' }}>
-            {currentPage} / {totalPages}
-          </span>
-          <Button size="small" disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(p => p + 1)}>下一页</Button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

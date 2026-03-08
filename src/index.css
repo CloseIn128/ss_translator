@@ -185,7 +185,13 @@ body {
   flex-direction: column;
 }
 
-/* Keyword table: fill remaining height with fixed pagination at bottom */
+/* Editor layout fills all available space with its own internal padding */
+.app-content:has(.editor-layout) {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Table wrapper: fill remaining height with fixed pagination at bottom */
 .keyword-table-wrapper {
   flex: 1;
   min-height: 0;
@@ -193,38 +199,27 @@ body {
   display: flex;
   flex-direction: column;
 }
-.keyword-table-wrapper .ant-table-wrapper {
+
+/* Ensure Ant Design Tabs content fills available space for glossary panels */
+.ant-tabs {
+  min-height: 0;
+}
+.ant-tabs-content-holder {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ant-tabs-content {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
-.keyword-table-wrapper .ant-spin-nested-loading,
-.keyword-table-wrapper .ant-spin-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-.keyword-table-wrapper .ant-table {
+.ant-tabs-tabpane-active {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-}
-.keyword-table-wrapper .ant-table-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.keyword-table-wrapper .ant-table-body {
-  flex: 1;
-  min-height: 0;
-  max-height: none !important;
-}
-.keyword-table-wrapper .ant-table-pagination {
-  flex-shrink: 0;
 }
 
 /* Sidebar */
@@ -268,6 +263,47 @@ body {
 }
 
 /* Translation Editor */
+.editor-layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-file-sidebar {
+  width: 200px;
+  min-width: 160px;
+  max-width: 280px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.editor-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-header {
+  flex-shrink: 0;
+  padding: 16px 16px 0 16px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-entries {
+  flex: 1;
+  overflow: auto;
+  padding: 0 16px 16px 16px;
+}
+
 .translation-table {
   width: 100%;
 }
@@ -609,14 +645,33 @@ body {
   min-width: 0;
 }
 
+/* Override Ant Design Tag colors inside the bottom bar for better contrast */
+.bottom-bar-task .ant-tag-processing {
+  color: #69b1ff !important;
+  background: rgba(24, 144, 255, 0.15) !important;
+  border-color: rgba(24, 144, 255, 0.3) !important;
+}
+
+.bottom-bar-task .ant-tag-success {
+  color: #95de64 !important;
+  background: rgba(82, 196, 26, 0.15) !important;
+  border-color: rgba(82, 196, 26, 0.3) !important;
+}
+
+.bottom-bar-task .ant-tag-error {
+  color: #ff7875 !important;
+  background: rgba(255, 77, 79, 0.15) !important;
+  border-color: rgba(255, 77, 79, 0.3) !important;
+}
+
 .bottom-bar-progress {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 11px;
   white-space: nowrap;
 }
 
 .bottom-bar-message {
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;

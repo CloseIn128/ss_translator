@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Descriptions, Input, Button, Typography, Alert, Space, Modal } from 'antd';
 import {
   FolderOpenOutlined,
-  SaveOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
 
@@ -78,11 +77,6 @@ export default function ProjectInfo({ project, onProjectFieldsChange, messageApi
   const handleSelectOutputDir = async () => {
     const selectedPath = await api.selectModFolder();
     if (selectedPath) onProjectFieldsChange({ outputDir: selectedPath });
-  };
-
-  const handleSavePrompt = () => {
-    onProjectFieldsChange({ modPrompt: localPrompt });
-    messageApi.success('MOD专属提示词已保存');
   };
 
   const formatDate = (ts) => {
@@ -162,16 +156,16 @@ export default function ProjectInfo({ project, onProjectFieldsChange, messageApi
       />
       <Input.TextArea
         value={localPrompt}
-        onChange={e => setLocalPrompt(e.target.value)}
+        onChange={e => {
+          setLocalPrompt(e.target.value);
+          onProjectFieldsChange({ modPrompt: e.target.value });
+        }}
         placeholder={`示例：\n这是一个以银河战争为背景的MOD，主要讲述"星际联盟"与"暗影帝国"之间的对抗。\n翻译风格偏硬科幻军事风格，使用正式、简洁的军事用语。`}
         rows={6}
         style={{ fontFamily: 'monospace', fontSize: 12, marginBottom: 12 }}
       />
-      <Button type="primary" icon={<SaveOutlined />} onClick={handleSavePrompt}>
-        保存提示词
-      </Button>
       <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
-        提示词保存后，所有AI翻译和润色操作都会自动包含这些信息。保存项目时会一起保存。
+        提示词修改后自动保存到项目中，所有AI翻译和润色操作都会自动包含这些信息。
       </div>
     </div>
   );

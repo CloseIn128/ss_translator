@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Tabs, Tag } from 'antd';
+import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Tabs, Tag, Pagination } from 'antd';
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -18,6 +18,9 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
   const [editingEntry, setEditingEntry] = useState(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const handleProjectSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
   const glossary = project.glossary || [];
   const filteredGlossary = searchText.trim()
     ? glossary.filter(g =>
@@ -81,16 +84,33 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
       ) },
   ];
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)} allowClear style={{ width: 250 }} size="small" />
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <Input placeholder="搜索术语..." value={searchText} onChange={handleProjectSearchChange} allowClear style={{ width: 250 }} size="small" />
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAdd}>添加术语</Button>
         <Button size="small" icon={<ImportOutlined />} onClick={handleImport}>导入CSV</Button>
         <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>导出CSV</Button>
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {glossary.length} 条术语</span>
       </div>
-      <Table dataSource={filteredGlossary} columns={columns} rowKey="id" size="small"
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => '共 ' + t + ' 条' }} />
+      <div className="keyword-table-wrapper">
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table dataSource={filteredGlossary.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+            columns={columns} rowKey="id" size="small" pagination={false} />
+        </div>
+        <div style={{ flexShrink: 0, padding: '8px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={filteredGlossary.length}
+            onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }}
+            onShowSizeChange={(_, size) => { setPageSize(size); setCurrentPage(1); }}
+            showSizeChanger
+            pageSizeOptions={['10', '20', '50', '100']}
+            showTotal={t => '共 ' + t + ' 条'}
+            size="small"
+          />
+        </div>
+      </div>
       <Modal title={editingEntry ? '编辑术语' : '添加术语'} open={isModalOpen} onOk={handleModalOk}
         onCancel={() => setIsModalOpen(false)} okText="确认" cancelText="取消" width={480}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
@@ -115,6 +135,9 @@ function BuiltinGlossaryTab({ messageApi }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const handleBuiltinSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
+  const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setLoading(true);
@@ -125,10 +148,12 @@ function BuiltinGlossaryTab({ messageApi }) {
   }, []);
 
   const filtered = searchText.trim()
-    ? entries.filter(e =>
-        e.source.toLowerCase().includes(searchText.toLowerCase()) ||
-        e.target.toLowerCase().includes(searchText.toLowerCase()))
-    : entries;
+    ? entries
+        .map((e, i) => ({ ...e, _origIdx: i }))
+        .filter(e =>
+          e.source.toLowerCase().includes(searchText.toLowerCase()) ||
+          e.target.toLowerCase().includes(searchText.toLowerCase()))
+    : entries.map((e, i) => ({ ...e, _origIdx: i }));
 
   const columns = [
     { title: '原文', dataIndex: 'source', key: 'source', width: '35%', sorter: (a, b) => a.source.localeCompare(b.source) },
@@ -140,18 +165,35 @@ function BuiltinGlossaryTab({ messageApi }) {
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)}
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <Input placeholder="搜索术语..." value={searchText} onChange={handleBuiltinSearchChange}
           allowClear style={{ width: 250 }} size="small" />
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {entries.length} 条（可在"模型配置→公共词库"中管理）</span>
       </div>
-      <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8 }}>
+      <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8, flexShrink: 0 }}>
         公共词库在 AI 翻译时自动注入到所有项目，可在"模型配置 → 公共词库"中添加/编辑。
       </div>
-      <Table dataSource={filtered} columns={columns} rowKey={(_, i) => i} size="small"
-        loading={loading}
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }} />
+      <div className="keyword-table-wrapper">
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table dataSource={filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+            columns={columns} rowKey={(r) => r._origIdx} size="small"
+            loading={loading} pagination={false} />
+        </div>
+        <div style={{ flexShrink: 0, padding: '8px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={filtered.length}
+            onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }}
+            onShowSizeChange={(_, size) => { setPageSize(size); setCurrentPage(1); }}
+            showSizeChanger
+            pageSizeOptions={['10', '20', '50', '100']}
+            showTotal={t => `共 ${t} 条`}
+            size="small"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -173,8 +215,8 @@ export default function GlossaryPanel({ project, onUpdateGlossary, messageApi })
   ];
 
   return (
-    <div style={{ height: '100%' }}>
-      <Tabs items={tabItems} size="small" />
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <Tabs items={tabItems} size="small" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // Dialog
@@ -36,6 +36,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   translate: (data) => ipcRenderer.invoke('ai:translate', data),
   polish: (data) => ipcRenderer.invoke('ai:polish', data),
 
+  // Request History (AI debugging)
+  getRequestHistory: () => ipcRenderer.invoke('ai:getRequestHistory'),
+  getRequestDetail: (id) => ipcRenderer.invoke('ai:getRequestDetail', id),
+  getActiveRequests: () => ipcRenderer.invoke('ai:getActiveRequests'),
+  clearRequestHistory: () => ipcRenderer.invoke('ai:clearRequestHistory'),
+
   // Export
   exportMod: (data) => ipcRenderer.invoke('export:mod', data),
 
@@ -55,6 +61,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Unified keyword extraction (structural + AI with incremental updates)
   extractAllKeywords: (data) => ipcRenderer.invoke('keywords:extractAll', data),
   translateKeywords: (data) => ipcRenderer.invoke('keywords:translate', data),
+  polishKeywords: (data) => ipcRenderer.invoke('keywords:polish', data),
   onKeywordBatch: (callback) => {
     const handler = (_, data) => callback(data);
     ipcRenderer.on('keywords:batch', handler);
@@ -63,5 +70,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
   removeKeywordBatchListener: (handler) => {
     ipcRenderer.removeListener('keywords:batch', handler);
   },
+  onKeywordLog: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('keywords:log', handler);
+    return handler;
+  },
+  removeKeywordLogListener: (handler) => {
+    ipcRenderer.removeListener('keywords:log', handler);
+  },
+
+  // Auto-save (used by timer and close handler)
+  autoSaveProject: (projectData) => ipcRenderer.invoke('project:autoSave', projectData),
+
+  // Close confirmation
+  onBeforeClose: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('app:before-close', handler);
+    return handler;
+  },
+  removeBeforeCloseListener: (handler) => {
+    ipcRenderer.removeListener('app:before-close', handler);
+  },
+  confirmClose: () => ipcRenderer.send('app:close-confirmed'),
+
+  // Zoom
+  setZoomFactor: (factor) => webFrame.setZoomFactor(factor),
 });
 

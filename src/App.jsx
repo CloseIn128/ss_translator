@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ConfigProvider, theme, message } from 'antd';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { ConfigProvider, theme, message, Modal } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/layout/LeftNav';
 import LogPanel from './components/layout/LogPanel';
@@ -10,12 +10,14 @@ import TranslationEditor from './components/pages/TranslationEditor';
 import GlossaryPanel from './components/pages/GlossaryPanel';
 import KeywordExtractor from './components/pages/KeywordExtractor';
 import SettingsPanel from './components/pages/SettingsPanel';
+import AppSettingsPanel from './components/pages/AppSettingsPanel';
+import RequestHistory from './components/pages/RequestHistory';
 import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
 
-const DEFAULT_APP_FONT_SIZE = 13;
-const DEFAULT_LOG_FONT_SIZE = 12;
+const DEFAULT_ZOOM_LEVEL = 100;
+const AUTO_SAVE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
 function AppInner() {
   const [project, setProject] = useState(null);
@@ -23,29 +25,76 @@ function AppInner() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [logVisible, setLogVisible] = useState(false);
+  const projectRef = useRef(null);
 
-  // Font size settings (persisted in localStorage)
-  const [appFontSize, setAppFontSize] = useState(() => {
-    const saved = localStorage.getItem('ss_translator_app_font_size');
-    const num = Number(saved);
-    return Number.isFinite(num) && num >= 10 && num <= 24 ? num : DEFAULT_APP_FONT_SIZE;
-  });
-  const [logFontSize, setLogFontSize] = useState(() => {
-    const saved = localStorage.getItem('ss_translator_log_font_size');
-    const num = Number(saved);
-    return Number.isFinite(num) && num >= 8 && num <= 20 ? num : DEFAULT_LOG_FONT_SIZE;
-  });
-
-  // Apply font sizes to CSS custom properties
+  // Keep ref in sync with state for use in async callbacks
   useEffect(() => {
-    document.documentElement.style.setProperty('--app-font-size', `${appFontSize}px`);
-    localStorage.setItem('ss_translator_app_font_size', String(appFontSize));
-  }, [appFontSize]);
+    projectRef.current = project;
+  }, [project]);
 
+  // Zoom level setting (persisted in localStorage)
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    const saved = localStorage.getItem('ss_translator_zoom_level');
+    const num = Number(saved);
+    return Number.isFinite(num) && num >= 50 && num <= 200 ? num : DEFAULT_ZOOM_LEVEL;
+  });
+
+  // Apply zoom via Electron webFrame API
   useEffect(() => {
-    document.documentElement.style.setProperty('--log-font-size', `${logFontSize}px`);
-    localStorage.setItem('ss_translator_log_font_size', String(logFontSize));
-  }, [logFontSize]);
+    const factor = zoomLevel / 100;
+    if (window.electronAPI?.setZoomFactor) {
+      window.electronAPI.setZoomFactor(factor);
+    }
+    localStorage.setItem('ss_translator_zoom_level', String(zoomLevel));
+  }, [zoomLevel]);
+
+  // Auto-save helper (silent, no dialogs)
+  const doAutoSave = useCallback(async () => {
+    const p = projectRef.current;
+    if (!p) return;
+    // Only auto-save when there's a known save path
+    if (!p.projectFilePath && !p.modPath) return;
+    try {
+      const result = await api.autoSaveProject(p);
+      if (result?.success && result.data?.projectFilePath) {
+        setProject(prev => prev ? { ...prev, projectFilePath: result.data.projectFilePath } : prev);
+      }
+    } catch {
+      // silent failure for auto-save
+    }
+  }, []);
+
+  // Periodic auto-save timer
+  useEffect(() => {
+    const timer = setInterval(doAutoSave, AUTO_SAVE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [doAutoSave]);
+
+  // Confirm-before-close handler
+  useEffect(() => {
+    const handler = api.onBeforeClose(async () => {
+      const p = projectRef.current;
+      if (p && (p.projectFilePath || p.modPath)) {
+        // Auto-save then close
+        await doAutoSave();
+        api.confirmClose();
+      } else if (p) {
+        // Unsaved new project with no path – ask user
+        Modal.confirm({
+          title: '退出确认',
+          content: '当前项目尚未保存，是否直接退出？',
+          okText: '退出',
+          cancelText: '取消',
+          okButtonProps: { danger: true },
+          onOk: () => api.confirmClose(),
+        });
+      } else {
+        // No project loaded, just close
+        api.confirmClose();
+      }
+    });
+    return () => api.removeBeforeCloseListener(handler);
+  }, [doAutoSave]);
 
   const handleNewProject = useCallback(async () => {
     const result = await api.createEmptyProject();
@@ -152,6 +201,7 @@ function AppInner() {
           <TranslationEditor
             project={project}
             selectedFile={selectedFile}
+            onSelectFile={setSelectedFile}
             onUpdateEntry={handleUpdateEntry}
             onBatchUpdate={handleBatchUpdate}
             messageApi={messageApi}
@@ -181,12 +231,17 @@ function AppInner() {
         return (
           <SettingsPanel
             messageApi={messageApi}
-            appFontSize={appFontSize}
-            onAppFontSizeChange={setAppFontSize}
-            logFontSize={logFontSize}
-            onLogFontSizeChange={setLogFontSize}
           />
         );
+      case 'appSettings':
+        return (
+          <AppSettingsPanel
+            zoomLevel={zoomLevel}
+            onZoomLevelChange={setZoomLevel}
+          />
+        );
+      case 'requestHistory':
+        return <RequestHistory />;
       default:
         return null;
     }
@@ -205,8 +260,6 @@ function AppInner() {
             onLoadProject={handleLoadProject}
             onSaveProject={handleSaveProject}
             onExport={handleExport}
-            selectedFile={selectedFile}
-            onSelectFile={setSelectedFile}
           />
           <div className="app-content">
             {renderContent()}

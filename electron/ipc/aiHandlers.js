@@ -67,6 +67,25 @@ function register(ctx) {
   ipcMain.handle('ai:getDefaultPrompts', async () => {
     return ctx.translationService.getDefaultPrompts();
   });
+
+  // ── Request History ───────────────────────────────────────────────────
+
+  ipcMain.handle('ai:getRequestHistory', async () => {
+    return ctx.translationService.getRequestHistory();
+  });
+
+  ipcMain.handle('ai:getRequestDetail', async (_, id) => {
+    return ctx.translationService.getRequestDetail(id);
+  });
+
+  ipcMain.handle('ai:getActiveRequests', async () => {
+    return ctx.translationService.getActiveRequests();
+  });
+
+  ipcMain.handle('ai:clearRequestHistory', async () => {
+    ctx.translationService.clearRequestHistory();
+    return { success: true };
+  });
 }
 
 module.exports = { register };
