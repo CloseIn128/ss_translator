@@ -83,8 +83,8 @@ describe('ProjectManager – keywords persistence', () => {
     fs.writeFileSync(filePath, JSON.stringify(projectData), 'utf-8');
 
     const loaded = await pm.loadProject(filePath);
-    // keywords field may be undefined for old projects – consumers use (project.keywords || [])
-    // but the save round-trip should still work
+    // keywords field is undefined for old projects – consumers use (project.keywords || [])
     expect(loaded.id).toBe('old-project');
+    expect(loaded.keywords).toBeUndefined();
   });
 });
