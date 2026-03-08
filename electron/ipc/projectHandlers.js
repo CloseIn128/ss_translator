@@ -34,7 +34,7 @@ function register(ctx) {
 
   ipcMain.handle('project:save', async (_, projectData) => {
     try {
-      // When there is no save path and no mod path, ask user where to save
+      // New empty project: no save path and no MOD configured – prompt for save location
       if (!projectData.projectFilePath && !projectData.modPath) {
         const result = await dialog.showSaveDialog(ctx.getMainWindow(), {
           filters: [{ name: '翻译项目', extensions: ['sst'] }],
