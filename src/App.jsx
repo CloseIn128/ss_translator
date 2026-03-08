@@ -8,7 +8,6 @@ import WelcomePage from './components/pages/WelcomePage';
 import ProjectInfo from './components/pages/ProjectInfo';
 import TranslationEditor from './components/pages/TranslationEditor';
 import GlossaryPanel from './components/pages/GlossaryPanel';
-import KeywordExtractor from './components/pages/KeywordExtractor';
 import SettingsPanel from './components/pages/SettingsPanel';
 import AppSettingsPanel from './components/pages/AppSettingsPanel';
 import RequestHistory from './components/pages/RequestHistory';
@@ -246,14 +245,6 @@ function AppInner() {
                 />
               </div>
             )}
-            <div style={tabStyle('keywords')}>
-              <KeywordExtractor
-                project={project}
-                onUpdateKeywords={handleUpdateKeywords}
-                onUpdateGlossary={handleUpdateGlossary}
-                messageApi={messageApi}
-              />
-            </div>
             <div style={tabStyle('settings')}>
               <SettingsPanel
                 messageApi={messageApi}

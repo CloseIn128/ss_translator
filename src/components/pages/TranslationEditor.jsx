@@ -35,6 +35,17 @@ export default function TranslationEditor({
 }) {
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
   const modPrompt = project.modPrompt || '';
+
+  // Merge project glossary with confirmed keywords (keywords with translations are usable as glossary)
+  const mergedGlossary = useMemo(() => {
+    const glossary = project.glossary || [];
+    const keywords = project.keywords || [];
+    const keywordGlossary = keywords
+      .filter(kw => kw.target && kw.target.trim())
+      .map(kw => ({ source: kw.source, target: kw.target, category: kw.category || '通用' }));
+    return [...glossary, ...keywordGlossary];
+  }, [project.glossary, project.keywords]);
+
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -103,7 +114,7 @@ export default function TranslationEditor({
     try {
       const result = await api.translate({
         entries: [{ id: entry.id, original: entry.original, context: entry.context }],
-        glossary: project.glossary || [],
+        glossary: mergedGlossary,
         modPrompt,
       });
       if (result?.success && result.data?.length > 0) {
@@ -129,7 +140,7 @@ export default function TranslationEditor({
         return s;
       });
     }
-  }, [project.glossary, modPrompt, onUpdateEntry, messageApi, addLog]);
+  }, [mergedGlossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
   // Polish single entry
   const handlePolish = useCallback(async (entry) => {
@@ -142,7 +153,7 @@ export default function TranslationEditor({
     try {
       const result = await api.polish({
         entry: { id: entry.id, original: entry.original, translated: entry.translated },
-        glossary: project.glossary || [],
+        glossary: mergedGlossary,
         modPrompt,
       });
       if (result?.success) {
@@ -162,7 +173,7 @@ export default function TranslationEditor({
         return s;
       });
     }
-  }, [project.glossary, modPrompt, onUpdateEntry, messageApi, addLog]);
+  }, [mergedGlossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
   // Clear all translations in current scope
   const handleClearTranslations = useCallback(() => {
@@ -227,7 +238,7 @@ export default function TranslationEditor({
             updateTaskProgress(`0/${toTranslate.length}`);
             const result = await api.translate({
               entries: batchInput,
-              glossary: project.glossary || [],
+              glossary: mergedGlossary,
               modPrompt,
             });
             if (result?.success) {
@@ -258,7 +269,7 @@ export default function TranslationEditor({
         })();
       },
     });
-  }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
 
   // Batch polish all translated
   const handleBatchPolish = useCallback(async () => {
@@ -297,7 +308,7 @@ export default function TranslationEditor({
             updateTaskProgress(`0/${translated.length}`);
             const result = await api.polishBatch({
               entries: batchInput,
-              glossary: project.glossary || [],
+              glossary: mergedGlossary,
               modPrompt,
             });
             if (result?.success) {
@@ -323,7 +334,7 @@ export default function TranslationEditor({
         })();
       },
     });
-  }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
 
   // File stats for sidebar
   const fileStats = useMemo(() => {

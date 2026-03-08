@@ -7,7 +7,9 @@ import {
   ExportOutlined,
   EditOutlined,
   BookOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
+import KeywordExtractor from './KeywordExtractor';
 const api = window.electronAPI;
 const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '战舰系统', '游戏术语', '人名/地名', '其他'];
 
@@ -200,12 +202,24 @@ function BuiltinGlossaryTab({ messageApi }) {
 
 // ─── Main Panel ───────────────────────────────────────────────────────
 
-export default function GlossaryPanel({ project, onUpdateGlossary, messageApi }) {
+export default function GlossaryPanel({ project, onUpdateGlossary, onUpdateKeywords, messageApi }) {
   const tabItems = [
     {
       key: 'project',
       label: '项目词库',
       children: <ProjectGlossaryTab project={project} onUpdateGlossary={onUpdateGlossary} messageApi={messageApi} />,
+    },
+    {
+      key: 'keywords',
+      label: <><SearchOutlined /> 术语提取</>,
+      children: (
+        <KeywordExtractor
+          project={project}
+          onUpdateKeywords={onUpdateKeywords}
+          onUpdateGlossary={onUpdateGlossary}
+          messageApi={messageApi}
+        />
+      ),
     },
     {
       key: 'builtin',
@@ -216,6 +230,9 @@ export default function GlossaryPanel({ project, onUpdateGlossary, messageApi })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ fontSize: 12, color: '#8c8c8c', padding: '4px 0', flexShrink: 0 }}>
+        提取的术语（已翻译）在翻译时自动作为术语表使用，无需手动导入词库
+      </div>
       <Tabs items={tabItems} size="small" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }} />
     </div>
   );
