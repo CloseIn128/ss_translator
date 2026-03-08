@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Form, Input, Select, Button, InputNumber, Divider, Card, Alert,
-  Tabs, Table, Space, Modal, Popconfirm,
+  Tabs, Table, Space, Modal, Popconfirm, Pagination,
 } from 'antd';
 import {
   ApiOutlined, ReloadOutlined,
@@ -219,6 +219,7 @@ function PublicGlossaryTab({ messageApi }) {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     (async () => {
@@ -327,8 +328,8 @@ function PublicGlossaryTab({ messageApi }) {
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
         <Input placeholder="搜索术语..." value={searchText} onChange={e => setSearchText(e.target.value)}
           allowClear style={{ width: 220 }} size="small" />
         <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAdd}>添加</Button>
@@ -337,19 +338,30 @@ function PublicGlossaryTab({ messageApi }) {
         <Button size="small" danger icon={<ReloadOutlined />} onClick={handleReset}>重置默认</Button>
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {entries.length} 条</span>
       </div>
-      <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8 }}>
+      <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8, flexShrink: 0 }}>
         公共词库中的术语在 AI 翻译时会自动注入到所有项目的提示词中。
         用户可自行维护，并通过 JSON 或 CSV 格式导入/导出。
       </div>
-      <Table dataSource={filtered} columns={columns} rowKey={(r) => r._origIdx} size="small"
-        loading={loading}
-        pagination={{
-          pageSize,
-          onShowSizeChange: (_, size) => setPageSize(size),
-          showSizeChanger: true,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          showTotal: t => `共 ${t} 条`,
-        }} />
+      <div className="keyword-table-wrapper">
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table dataSource={filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+            columns={columns} rowKey={(r) => r._origIdx} size="small"
+            loading={loading} pagination={false} />
+        </div>
+        <div style={{ flexShrink: 0, padding: '8px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={filtered.length}
+            onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }}
+            onShowSizeChange={(_, size) => { setPageSize(size); setCurrentPage(1); }}
+            showSizeChanger
+            pageSizeOptions={['10', '20', '50', '100']}
+            showTotal={t => `共 ${t} 条`}
+            size="small"
+          />
+        </div>
+      </div>
       <Modal title={editingEntry !== null ? '编辑术语' : '添加术语'} open={isModalOpen}
         onOk={handleModalOk} onCancel={() => setIsModalOpen(false)} okText="确认" cancelText="取消" width={480}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
@@ -542,8 +554,8 @@ export default function SettingsPanel({
   ];
 
   return (
-    <div className="settings-panel-full">
-      <Tabs items={tabItems} size="small" />
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <Tabs items={tabItems} size="small" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }} />
     </div>
   );
 }

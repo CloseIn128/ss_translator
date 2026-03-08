@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal, Switch } from 'antd';
+import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal, Switch, Pagination } from 'antd';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -22,6 +22,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
   const [enableAI, setEnableAI] = useState(true);
   const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
   const keyCounterRef = useRef(project?.keywords?.length || 0);
   const batchHandlerRef = useRef(null);
   const logHandlerRef = useRef(null);
@@ -613,24 +614,33 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
 
       {(keywords.length > 0 || extracting) && (
         <div className="keyword-table-wrapper">
-          <Table
-            dataSource={filteredKeywords}
-            columns={columns}
-            rowKey="key"
-            size="small"
-            rowSelection={{
-              selectedRowKeys,
-              onChange: setSelectedRowKeys,
-              preserveSelectedRowKeys: true,
-            }}
-            pagination={{
-              pageSize,
-              onShowSizeChange: (_, size) => setPageSize(size),
-              showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
-              showTotal: t => `共 ${t} 条`,
-            }}
-          />
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+            <Table
+              dataSource={filteredKeywords.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+              columns={columns}
+              rowKey="key"
+              size="small"
+              rowSelection={{
+                selectedRowKeys,
+                onChange: setSelectedRowKeys,
+                preserveSelectedRowKeys: true,
+              }}
+              pagination={false}
+            />
+          </div>
+          <div style={{ flexShrink: 0, padding: '8px 0', display: 'flex', justifyContent: 'flex-end' }}>
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={filteredKeywords.length}
+              onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }}
+              onShowSizeChange={(_, size) => { setPageSize(size); setCurrentPage(1); }}
+              showSizeChanger
+              pageSizeOptions={['10', '20', '50', '100']}
+              showTotal={t => `共 ${t} 条`}
+              size="small"
+            />
+          </div>
         </div>
       )}
     </div>

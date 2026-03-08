@@ -11,6 +11,7 @@ import GlossaryPanel from './components/pages/GlossaryPanel';
 import KeywordExtractor from './components/pages/KeywordExtractor';
 import SettingsPanel from './components/pages/SettingsPanel';
 import AppSettingsPanel from './components/pages/AppSettingsPanel';
+import RequestHistory from './components/pages/RequestHistory';
 import { TaskProvider } from './components/context/TaskContext';
 
 const api = window.electronAPI;
@@ -239,6 +240,8 @@ function AppInner() {
             onZoomLevelChange={setZoomLevel}
           />
         );
+      case 'requestHistory':
+        return <RequestHistory />;
       default:
         return null;
     }

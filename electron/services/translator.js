@@ -8,6 +8,9 @@
 const LOG_SYSTEM_PROMPT_LEN = 80;
 const LOG_USER_MSG_LEN = 200;
 const LOG_RESPONSE_LEN = 300;
+const MAX_REQUEST_HISTORY = 200;
+
+let _requestIdCounter = 0;
 
 class TranslationService {
   constructor() {
@@ -25,6 +28,9 @@ class TranslationService {
       systemPrompt: this._defaultSystemPrompt,
       polishPrompt: this._defaultPolishPrompt,
     };
+    // Request history tracking
+    this._requestHistory = [];  // Array of request records
+    this._activeRequests = new Map(); // id → request record (in-progress)
   }
 
   getDefaultSystemPrompt() {
@@ -161,7 +167,7 @@ class TranslationService {
 ${textsFormatted}`;
 
     const systemPrompt = cfg.keywordPrompt || this.getDefaultKeywordPrompt();
-    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+    const response = await this._callAPI(systemPrompt, userMessage, cfg, 'keyword-extract');
     return this._parseKeywordResponse(response);
   }
 
@@ -373,7 +379,7 @@ ${keywordsText}
       onLog('debug', `[润色请求] user: ${userMessage.substring(0, LOG_USER_MSG_LEN)}...`);
     }
 
-    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+    const response = await this._callAPI(systemPrompt, userMessage, cfg, 'keyword-polish');
 
     if (onLog) {
       onLog('debug', `[润色响应] ${response.substring(0, LOG_RESPONSE_LEN)}...`);
@@ -433,7 +439,7 @@ ${keywordsText}
       onLog('debug', `[翻译请求] user: ${userMessage.substring(0, LOG_USER_MSG_LEN)}...`);
     }
 
-    const response = await this._callAPI(systemPrompt, userMessage, cfg);
+    const response = await this._callAPI(systemPrompt, userMessage, cfg, 'keyword-translate');
 
     if (onLog) {
       onLog('debug', `[翻译响应] ${response.substring(0, LOG_RESPONSE_LEN)}...`);
@@ -505,7 +511,7 @@ ${keywordsText}
 ${textsToTranslate}`;
 
     try {
-      const response = await this._callAPI(cfg.systemPrompt, userMessage, cfg);
+      const response = await this._callAPI(cfg.systemPrompt, userMessage, cfg, 'batch-translate');
       const translations = this._parseBatchResponse(response, entries.length);
 
       return entries.map((entry, i) => ({
@@ -541,7 +547,7 @@ ${entry.translated}
 请对上述翻译进行润色优化，直接返回润色后的文本，不要添加任何说明。`;
 
     try {
-      const response = await this._callAPI(cfg.polishPrompt, userMessage, cfg);
+      const response = await this._callAPI(cfg.polishPrompt, userMessage, cfg, 'entry-polish');
       return {
         id: entry.id,
         translated: response.trim(),
@@ -574,7 +580,66 @@ ${entry.translated}
     return `【MOD设定说明】\n${modPrompt.trim()}\n\n`;
   }
 
-  async _callAPI(systemPrompt, userMessage, cfg) {
+  // ── Request history API ─────────────────────────────────────────────
+
+  getRequestHistory() {
+    return this._requestHistory.map(r => ({
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      startTime: r.startTime,
+      endTime: r.endTime,
+      durationMs: r.durationMs,
+      model: r.model,
+      error: r.error || null,
+      promptPreview: r.systemPrompt ? r.systemPrompt.substring(0, 60) + '...' : '',
+      responsePreview: r.responseContent ? r.responseContent.substring(0, 80) + '...' : '',
+      tokenUsage: r.tokenUsage || null,
+    }));
+  }
+
+  getRequestDetail(id) {
+    return this._requestHistory.find(r => r.id === id) ||
+           this._activeRequests.get(id) || null;
+  }
+
+  getActiveRequests() {
+    return Array.from(this._activeRequests.values()).map(r => ({
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      startTime: r.startTime,
+      model: r.model,
+      promptPreview: r.systemPrompt ? r.systemPrompt.substring(0, 60) + '...' : '',
+    }));
+  }
+
+  clearRequestHistory() {
+    this._requestHistory = [];
+  }
+
+  async _callAPI(systemPrompt, userMessage, cfg, requestType = 'unknown') {
+    const reqId = ++_requestIdCounter;
+    const record = {
+      id: reqId,
+      type: requestType,
+      status: 'pending',
+      startTime: new Date().toISOString(),
+      endTime: null,
+      durationMs: null,
+      model: cfg.model,
+      apiUrl: cfg.apiUrl,
+      systemPrompt,
+      userMessage,
+      responseContent: null,
+      responseRaw: null,
+      tokenUsage: null,
+      error: null,
+    };
+
+    this._activeRequests.set(reqId, record);
+    const startMs = Date.now();
+
     const body = {
       model: cfg.model,
       messages: [
@@ -585,22 +650,61 @@ ${entry.translated}
       temperature: cfg.temperature,
     };
 
-    const response = await fetch(cfg.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cfg.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
+    try {
+      const response = await fetch(cfg.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${cfg.apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`API请求失败 (${response.status}): ${errorText}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        const err = new Error(`API请求失败 (${response.status}): ${errorText}`);
+        record.status = 'error';
+        record.error = err.message;
+        record.endTime = new Date().toISOString();
+        record.durationMs = Date.now() - startMs;
+        record.responseRaw = errorText;
+        this._activeRequests.delete(reqId);
+        this._addToHistory(record);
+        throw err;
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || '';
+
+      record.status = 'success';
+      record.endTime = new Date().toISOString();
+      record.durationMs = Date.now() - startMs;
+      record.responseContent = content;
+      record.responseRaw = JSON.stringify(data);
+      record.tokenUsage = data.usage || null;
+
+      this._activeRequests.delete(reqId);
+      this._addToHistory(record);
+
+      return content;
+    } catch (err) {
+      if (record.status !== 'error') {
+        record.status = 'error';
+        record.error = err.message;
+        record.endTime = new Date().toISOString();
+        record.durationMs = Date.now() - startMs;
+        this._activeRequests.delete(reqId);
+        this._addToHistory(record);
+      }
+      throw err;
     }
+  }
 
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
+  _addToHistory(record) {
+    this._requestHistory.push(record);
+    if (this._requestHistory.length > MAX_REQUEST_HISTORY) {
+      this._requestHistory = this._requestHistory.slice(-MAX_REQUEST_HISTORY);
+    }
   }
 
   _parseBatchResponse(text, expectedCount) {

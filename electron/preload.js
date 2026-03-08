@@ -36,6 +36,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   translate: (data) => ipcRenderer.invoke('ai:translate', data),
   polish: (data) => ipcRenderer.invoke('ai:polish', data),
 
+  // Request History (AI debugging)
+  getRequestHistory: () => ipcRenderer.invoke('ai:getRequestHistory'),
+  getRequestDetail: (id) => ipcRenderer.invoke('ai:getRequestDetail', id),
+  getActiveRequests: () => ipcRenderer.invoke('ai:getActiveRequests'),
+  clearRequestHistory: () => ipcRenderer.invoke('ai:clearRequestHistory'),
+
   // Export
   exportMod: (data) => ipcRenderer.invoke('export:mod', data),
 

@@ -252,4 +252,101 @@ describe('TranslationService', () => {
       expect(infoLogs.some(l => l.message.includes('润色'))).toBe(true);
     });
   });
+
+  describe('request history tracking', () => {
+    it('starts with empty history and no active requests', () => {
+      expect(ts.getRequestHistory()).toEqual([]);
+      expect(ts.getActiveRequests()).toEqual([]);
+    });
+
+    it('records successful API calls in history', async () => {
+      // Mock _callAPI to bypass actual fetch but still use the history mechanism
+      const originalCallAPI = ts._callAPI.bind(ts);
+      // We need to mock fetch instead since _callAPI uses fetch internally
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'test response' } }],
+          usage: { prompt_tokens: 10, completion_tokens: 5 },
+        }),
+      });
+
+      ts.configure({ apiKey: 'test-key' });
+      const result = await ts._callAPI('system', 'user msg', ts.config, 'batch-translate');
+      expect(result).toBe('test response');
+
+      const history = ts.getRequestHistory();
+      expect(history.length).toBe(1);
+      expect(history[0].type).toBe('batch-translate');
+      expect(history[0].status).toBe('success');
+      expect(history[0].durationMs).toBeGreaterThanOrEqual(0);
+      expect(history[0].tokenUsage).toEqual({ prompt_tokens: 10, completion_tokens: 5 });
+
+      delete global.fetch;
+    });
+
+    it('records failed API calls in history', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: async () => 'Bad Request',
+      });
+
+      ts.configure({ apiKey: 'test-key' });
+      await expect(ts._callAPI('system', 'user', ts.config, 'keyword-translate'))
+        .rejects.toThrow('API请求失败');
+
+      const history = ts.getRequestHistory();
+      expect(history.length).toBe(1);
+      expect(history[0].status).toBe('error');
+      expect(history[0].type).toBe('keyword-translate');
+      expect(history[0].error).toContain('400');
+
+      delete global.fetch;
+    });
+
+    it('getRequestDetail returns full record', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'detail test' } }],
+        }),
+      });
+
+      ts.configure({ apiKey: 'test-key' });
+      await ts._callAPI('sys prompt', 'user message', ts.config, 'entry-polish');
+
+      const history = ts.getRequestHistory();
+      const detail = ts.getRequestDetail(history[0].id);
+      expect(detail).not.toBeNull();
+      expect(detail.systemPrompt).toBe('sys prompt');
+      expect(detail.userMessage).toBe('user message');
+      expect(detail.responseContent).toBe('detail test');
+      expect(detail.type).toBe('entry-polish');
+
+      delete global.fetch;
+    });
+
+    it('clearRequestHistory empties history', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'test' } }],
+        }),
+      });
+
+      ts.configure({ apiKey: 'test-key' });
+      await ts._callAPI('sys', 'user', ts.config, 'batch-translate');
+      expect(ts.getRequestHistory().length).toBe(1);
+
+      ts.clearRequestHistory();
+      expect(ts.getRequestHistory()).toEqual([]);
+
+      delete global.fetch;
+    });
+
+    it('getRequestDetail returns null for unknown id', () => {
+      expect(ts.getRequestDetail(99999)).toBeNull();
+    });
+  });
 });

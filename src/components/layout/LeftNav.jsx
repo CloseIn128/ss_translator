@@ -12,6 +12,7 @@ import {
   GlobalOutlined,
   InfoCircleOutlined,
   DesktopOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 
 const MIN_NAV_WIDTH = 160;
@@ -66,6 +67,7 @@ export default function LeftNav({
     { key: 'keywords', icon: <SearchOutlined />, label: '关键词提取' },
     { key: 'settings', icon: <SettingOutlined />, label: '模型配置' },
     { key: 'appSettings', icon: <DesktopOutlined />, label: '程序设置' },
+    { key: 'requestHistory', icon: <HistoryOutlined />, label: '请求历史' },
   ];
 
   const totalStats = useMemo(() => {

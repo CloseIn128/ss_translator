@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Tabs, Tag } from 'antd';
+import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Tabs, Tag, Pagination } from 'antd';
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -19,6 +19,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
   const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
   const glossary = project.glossary || [];
   const filteredGlossary = searchText.trim()
     ? glossary.filter(g =>
@@ -91,14 +92,23 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, messageApi }) {
         <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {glossary.length} 条术语</span>
       </div>
       <div className="keyword-table-wrapper">
-        <Table dataSource={filteredGlossary} columns={columns} rowKey="id" size="small"
-          pagination={{
-            pageSize,
-            onShowSizeChange: (_, size) => setPageSize(size),
-            showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50', '100'],
-            showTotal: t => '共 ' + t + ' 条',
-          }} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table dataSource={filteredGlossary.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+            columns={columns} rowKey="id" size="small" pagination={false} />
+        </div>
+        <div style={{ flexShrink: 0, padding: '8px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={filteredGlossary.length}
+            onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }}
+            onShowSizeChange={(_, size) => { setPageSize(size); setCurrentPage(1); }}
+            showSizeChanger
+            pageSizeOptions={['10', '20', '50', '100']}
+            showTotal={t => '共 ' + t + ' 条'}
+            size="small"
+          />
+        </div>
       </div>
       <Modal title={editingEntry ? '编辑术语' : '添加术语'} open={isModalOpen} onOk={handleModalOk}
         onCancel={() => setIsModalOpen(false)} okText="确认" cancelText="取消" width={480}>
@@ -125,6 +135,7 @@ function BuiltinGlossaryTab({ messageApi }) {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [pageSize, setPageSize] = useState(20);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setLoading(true);
@@ -162,15 +173,24 @@ function BuiltinGlossaryTab({ messageApi }) {
         公共词库在 AI 翻译时自动注入到所有项目，可在"模型配置 → 公共词库"中添加/编辑。
       </div>
       <div className="keyword-table-wrapper">
-        <Table dataSource={filtered} columns={columns} rowKey={(r) => r._origIdx} size="small"
-          loading={loading}
-          pagination={{
-            pageSize,
-            onShowSizeChange: (_, size) => setPageSize(size),
-            showSizeChanger: true,
-            pageSizeOptions: ['10', '20', '50', '100'],
-            showTotal: t => `共 ${t} 条`,
-          }} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <Table dataSource={filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
+            columns={columns} rowKey={(r) => r._origIdx} size="small"
+            loading={loading} pagination={false} />
+        </div>
+        <div style={{ flexShrink: 0, padding: '8px 0', display: 'flex', justifyContent: 'flex-end' }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={filtered.length}
+            onChange={(page, size) => { setCurrentPage(page); setPageSize(size); }}
+            onShowSizeChange={(_, size) => { setPageSize(size); setCurrentPage(1); }}
+            showSizeChanger
+            pageSizeOptions={['10', '20', '50', '100']}
+            showTotal={t => `共 ${t} 条`}
+            size="small"
+          />
+        </div>
       </div>
     </div>
   );
