@@ -54,6 +54,7 @@ function ModelConfigTab({ messageApi }) {
           maxTokens: config.maxTokens || 4096,
           temperature: config.temperature || 0.3,
           batchSize: config.batchSize || 5,
+          concurrentRequests: config.concurrentRequests || 1,
           rateLimitMs: config.rateLimitMs || 500,
         });
       }
@@ -166,6 +167,12 @@ function ModelConfigTab({ messageApi }) {
             <Form.Item label="批量翻译条数（每批）" name="batchSize">
               <InputNumber min={1} max={20} style={{ width: '100%' }} />
             </Form.Item>
+            <Form.Item label="并发请求数" name="concurrentRequests">
+              <InputNumber min={1} max={10} style={{ width: '100%' }} />
+            </Form.Item>
+          </div>
+
+          <div className="settings-row-2">
             <Form.Item label="请求间隔（毫秒）" name="rateLimitMs">
               <InputNumber min={0} max={10000} step={100} style={{ width: '100%' }} />
             </Form.Item>

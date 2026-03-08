@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal, Switch, Pagination } from 'antd';
+import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal, Switch, Pagination, Select } from 'antd';
 import {
   PlusOutlined,
   SearchOutlined,
   RobotOutlined,
   TranslationOutlined,
   HighlightOutlined,
+  CheckOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
@@ -24,6 +26,9 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   const [enableAI, setEnableAI] = useState(true);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingKey, setEditingKey] = useState(null); // key of row being edited
+  const [editingField, setEditingField] = useState(null); // 'target' or 'category'
+  const [editingValue, setEditingValue] = useState('');
   const keyCounterRef = useRef(project?.keywords?.length || 0);
   const batchHandlerRef = useRef(null);
   const logHandlerRef = useRef(null);
@@ -117,6 +122,59 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     };
   }, []);
 
+  // ─── Inline editing helpers ────────────────────────────────────────
+  const CATEGORY_OPTIONS = ['通用', '势力名称', '舰船名称', '武器名称', '人名', '星球/星系名', '游戏术语', '物品名称', '其他'];
+
+  const startEdit = (record, field) => {
+    setEditingKey(record.key);
+    setEditingField(field);
+    setEditingValue(field === 'target' ? (record.target || '') : (record.category || '通用'));
+  };
+
+  const saveEdit = () => {
+    if (editingKey == null || !editingField) return;
+    setKeywords(prev => {
+      const updated = prev.map(kw =>
+        kw.key === editingKey ? { ...kw, [editingField]: editingValue } : kw
+      );
+      if (onUpdateKeywords) onUpdateKeywords(updated);
+      return updated;
+    });
+    setEditingKey(null);
+    setEditingField(null);
+    setEditingValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingKey(null);
+    setEditingField(null);
+    setEditingValue('');
+  };
+
+  // ─── Confirmed status toggle ──────────────────────────────────────
+  const toggleConfirmed = (key) => {
+    setKeywords(prev => {
+      const updated = prev.map(kw =>
+        kw.key === key ? { ...kw, confirmed: !kw.confirmed } : kw
+      );
+      if (onUpdateKeywords) onUpdateKeywords(updated);
+      return updated;
+    });
+  };
+
+  const handleConfirmSelected = () => {
+    if (selectedRowKeys.length === 0) return;
+    const selectedSet = new Set(selectedRowKeys);
+    setKeywords(prev => {
+      const updated = prev.map(kw =>
+        selectedSet.has(kw.key) ? { ...kw, confirmed: true } : kw
+      );
+      if (onUpdateKeywords) onUpdateKeywords(updated);
+      return updated;
+    });
+    messageApi.success(`已确认 ${selectedRowKeys.length} 个关键词`);
+  };
+
   // Unified extraction: structural first, then AI (incremental)
   const doExtract = async () => {
     const targetPath = project?.modPath;
@@ -207,14 +265,23 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     await doTranslate(toTranslate);
   };
 
-  // Translate all keywords
+  // Translate all keywords (exclude confirmed, use confirmed as glossary)
   const handleTranslateAll = async () => {
     if (keywords.length === 0) return;
-    await doTranslate(keywords);
+    const unconfirmed = keywords.filter(kw => !kw.confirmed);
+    if (unconfirmed.length === 0) {
+      messageApi.info('所有关键词已确认，无需翻译');
+      return;
+    }
+    // Confirmed keywords with translations serve as glossary context
+    const confirmedGlossary = keywords
+      .filter(kw => kw.confirmed && kw.target && kw.target.trim())
+      .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
+    await doTranslate(unconfirmed, confirmedGlossary);
   };
 
   // Shared translate implementation
-  const doTranslate = async (toTranslate) => {
+  const doTranslate = async (toTranslate, extraGlossary = []) => {
     if (isTaskRunning) {
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
@@ -231,6 +298,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     try {
       const result = await api.translateKeywords({
         keywords: toTranslate.map(kw => ({ source: kw.source, category: kw.category })),
+        extraGlossary: extraGlossary,
       });
       if (result?.success) {
         // Build translation lookup
@@ -273,18 +341,23 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     }
   };
 
-  // Polish all keywords for consistency
+  // Polish all keywords for consistency (exclude confirmed, use confirmed as glossary)
   const handlePolishAll = async () => {
-    const translated = keywords.filter(kw => kw.target && kw.target.trim());
+    const unconfirmed = keywords.filter(kw => !kw.confirmed);
+    const translated = unconfirmed.filter(kw => kw.target && kw.target.trim());
     if (translated.length === 0) {
-      messageApi.warning('没有已翻译的术语可润色，请先翻译');
+      messageApi.warning('没有未确认的已翻译术语可润色');
       return;
     }
-    await doPolish(keywords);
+    // Confirmed keywords with translations serve as glossary context
+    const confirmedGlossary = keywords
+      .filter(kw => kw.confirmed && kw.target && kw.target.trim())
+      .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
+    await doPolish(translated, confirmedGlossary);
   };
 
   // Shared polish implementation
-  const doPolish = async (toPolish) => {
+  const doPolish = async (toPolish, extraGlossary = []) => {
     if (isTaskRunning) {
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
@@ -301,6 +374,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     try {
       const result = await api.polishKeywords({
         keywords: toPolish.map(kw => ({ source: kw.source, target: kw.target || '', category: kw.category })),
+        extraGlossary: extraGlossary,
       });
       if (result?.success) {
         const polishMap = new Map();
@@ -342,6 +416,78 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     }
   };
 
+  // Shared logic for adding keywords to glossary with overwrite support
+  const doAddToGlossary = async (kwList, onDone) => {
+    const glossary = project.glossary || [];
+    const existingMap = new Map(glossary.map(g => [g.source, g]));
+
+    const newKws = kwList.filter(kw => kw && !existingMap.has(kw.source));
+    const overlapKws = kwList.filter(kw => kw && existingMap.has(kw.source));
+
+    const doAdd = async () => {
+      let added = 0;
+      let updated = 0;
+      const newEntries = [];
+      const updatedGlossary = [...glossary];
+
+      // Add new entries
+      for (const kw of newKws) {
+        const result = await api.addGlossaryEntry({
+          projectId: project.id,
+          source: kw.source,
+          target: kw.target || '',
+          category: kw.category || '通用',
+        });
+        if (result) {
+          newEntries.push(result);
+          added++;
+        }
+      }
+
+      // Update existing entries (overwrite)
+      for (const kw of overlapKws) {
+        const existing = existingMap.get(kw.source);
+        if (existing) {
+          const result = await api.updateGlossaryEntry({
+            projectId: project.id,
+            id: existing.id,
+            source: kw.source,
+            target: kw.target || '',
+            category: kw.category || '通用',
+          });
+          if (result) {
+            const idx = updatedGlossary.findIndex(g => g.id === existing.id);
+            if (idx >= 0) {
+              updatedGlossary[idx] = { ...updatedGlossary[idx], target: kw.target || '', category: kw.category || '通用' };
+            }
+            updated++;
+          }
+        }
+      }
+
+      if ((added > 0 || updated > 0) && onUpdateGlossary) {
+        onUpdateGlossary([...updatedGlossary, ...newEntries]);
+      }
+      const parts = [];
+      if (added > 0) parts.push(`新增 ${added} 个`);
+      if (updated > 0) parts.push(`覆盖 ${updated} 个`);
+      messageApi.success(`已${parts.join('，')}术语到词库`);
+      if (onDone) onDone();
+    };
+
+    if (overlapKws.length > 0) {
+      Modal.confirm({
+        title: '覆盖确认',
+        content: `${newKws.length > 0 ? `将新增 ${newKws.length} 个术语。` : ''}术语库中已存在 ${overlapKws.length} 个同名条目，覆盖将更新它们的译文和分类。是否继续？`,
+        okText: '确认覆盖',
+        cancelText: '取消',
+        onOk: doAdd,
+      });
+    } else {
+      await doAdd();
+    }
+  };
+
   const handleAddToGlossary = async () => {
     if (!project) {
       messageApi.warning('请先加载翻译项目，再添加到词库');
@@ -352,37 +498,11 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       return;
     }
 
-    const existing = new Set((project.glossary || []).map(g => g.source));
     const keywordMap = new Map(keywords.map(kw => [kw.key, kw]));
-    const toAdd = selectedRowKeys
-      .map(k => keywordMap.get(k))
-      .filter(kw => kw && !existing.has(kw.source));
+    const kwList = selectedRowKeys.map(k => keywordMap.get(k)).filter(Boolean);
 
-    if (toAdd.length === 0) {
-      messageApi.info('所选关键词已全部存在于词库中');
-      return;
-    }
-
-    let added = 0;
-    const newEntries = [];
-    for (const kw of toAdd) {
-      const result = await api.addGlossaryEntry({
-        projectId: project.id,
-        source: kw.source,
-        target: kw.target || '',
-        category: kw.category || '通用',
-      });
-      if (result) {
-        newEntries.push(result);
-        added++;
-      }
-    }
-
-    if (added > 0 && onUpdateGlossary) {
-      onUpdateGlossary([...(project.glossary || []), ...newEntries]);
-    }
-    messageApi.success(`已添加 ${added} 个关键词到词库`);
-    setSelectedRowKeys([]);
+    if (kwList.length === 0) return;
+    await doAddToGlossary(kwList, () => setSelectedRowKeys([]));
   };
 
   const handleAddAllToGlossary = async () => {
@@ -395,33 +515,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       return;
     }
 
-    const existing = new Set((project.glossary || []).map(g => g.source));
-    const toAdd = keywords.filter(kw => kw && !existing.has(kw.source));
-
-    if (toAdd.length === 0) {
-      messageApi.info('所有关键词已全部存在于词库中');
-      return;
-    }
-
-    let added = 0;
-    const newEntries = [];
-    for (const kw of toAdd) {
-      const result = await api.addGlossaryEntry({
-        projectId: project.id,
-        source: kw.source,
-        target: kw.target || '',
-        category: kw.category || '通用',
-      });
-      if (result) {
-        newEntries.push(result);
-        added++;
-      }
-    }
-
-    if (added > 0 && onUpdateGlossary) {
-      onUpdateGlossary([...(project.glossary || []), ...newEntries]);
-    }
-    messageApi.success(`已添加 ${added} 个关键词到词库`);
+    await doAddToGlossary(keywords);
   };
 
   const filteredKeywords = searchText.trim()
@@ -438,21 +532,48 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       dataIndex: 'source',
       key: 'source',
       sorter: (a, b) => a.source.localeCompare(b.source),
+      render: (text, record) => (
+        <span style={{ fontSize: 12 }}>
+          {record.confirmed && <CheckOutlined style={{ color: '#52c41a', marginRight: 4, fontSize: 10 }} />}
+          {text}
+        </span>
+      ),
     },
     {
       title: '译文',
       dataIndex: 'target',
       key: 'target',
-      render: (text) => text ? (
-        <span style={{ color: '#52c41a', fontSize: 12 }}>{text}</span>
-      ) : (
-        <span style={{ color: '#555', fontSize: 12 }}>—</span>
-      ),
+      render: (text, record) => {
+        if (editingKey === record.key && editingField === 'target') {
+          return (
+            <Input
+              size="small"
+              value={editingValue}
+              onChange={(e) => setEditingValue(e.target.value)}
+              onPressEnter={saveEdit}
+              onBlur={saveEdit}
+              onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
+              autoFocus
+              style={{ fontSize: 12, width: '100%' }}
+            />
+          );
+        }
+        return (
+          <span
+            style={{ color: text ? '#52c41a' : '#555', fontSize: 12, cursor: 'pointer' }}
+            onClick={() => startEdit(record, 'target')}
+          >
+            {text || '—'}
+            <EditOutlined style={{ marginLeft: 4, fontSize: 10, color: '#8c8c8c', opacity: 0.6 }} />
+          </span>
+        );
+      },
     },
     {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
+      width: 120,
       filters: [
         { text: '通用', value: '通用' },
         { text: '势力名称', value: '势力名称' },
@@ -465,7 +586,53 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
         { text: '其他', value: '其他' },
       ],
       onFilter: (value, record) => record.category === value,
-      render: (text) => <Tag style={{ fontSize: 11 }}>{text || '通用'}</Tag>,
+      render: (text, record) => {
+        if (editingKey === record.key && editingField === 'category') {
+          return (
+            <Select
+              size="small"
+              value={editingValue}
+              onChange={(val) => { setEditingValue(val); }}
+              onBlur={saveEdit}
+              onKeyDown={(e) => { if (e.key === 'Escape') cancelEdit(); }}
+              autoFocus
+              open
+              style={{ width: '100%', fontSize: 11 }}
+              options={CATEGORY_OPTIONS.map(c => ({ value: c, label: c }))}
+              onSelect={(val) => { setEditingValue(val); }}
+            />
+          );
+        }
+        return (
+          <Tag
+            style={{ fontSize: 11, cursor: 'pointer' }}
+            onClick={() => startEdit(record, 'category')}
+          >
+            {text || '通用'}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: '状态',
+      key: 'confirmed',
+      width: 70,
+      filters: [
+        { text: '已确认', value: true },
+        { text: '未确认', value: false },
+      ],
+      onFilter: (value, record) => !!record.confirmed === value,
+      render: (_, record) => (
+        <Tooltip title={record.confirmed ? '点击取消确认' : '点击标记为已确认'}>
+          <Tag
+            color={record.confirmed ? 'success' : 'default'}
+            style={{ fontSize: 11, cursor: 'pointer' }}
+            onClick={() => toggleConfirmed(record.key)}
+          >
+            {record.confirmed ? '已确认' : '未确认'}
+          </Tag>
+        </Tooltip>
+      ),
     },
     {
       title: '来源',
@@ -552,6 +719,14 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
             >
               润色全部
             </Button>
+            <Button
+              size="small"
+              icon={<CheckOutlined />}
+              onClick={handleConfirmSelected}
+              disabled={selectedRowKeys.length === 0 || extracting}
+            >
+              确认选中 ({selectedRowKeys.length})
+            </Button>
             <Divider type="vertical" />
             <Input
               placeholder="搜索关键词..."
@@ -579,6 +754,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
             </Button>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>
               共 {filteredKeywords.length} 个关键词
+              {keywords.some(kw => kw.confirmed) && ` | 已确认 ${keywords.filter(kw => kw.confirmed).length}`}
             </span>
           </>
         )}
