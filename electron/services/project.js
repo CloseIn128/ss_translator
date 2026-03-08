@@ -17,6 +17,35 @@ class ProjectManager {
   }
 
   /**
+   * Create a new empty project (no mod folder yet).
+   * The user can later set modPath via the project info page.
+   */
+  createEmptyProject() {
+    const project = {
+      id: uuidv4(),
+      version: '1.0',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      modInfo: {},
+      modPath: '',
+      sourceLanguage: 'en',
+      targetLanguage: 'zh-CN',
+      entries: [],
+      glossary: [],
+      keywords: [],
+      aiConfig: {},
+      stats: { total: 0, translated: 0, polished: 0, byFile: {}, byType: {} },
+      projectFilePath: null,
+      legacyModPath: '',
+      outputDir: '',
+      modPrompt: '',
+    };
+
+    this.currentProject = project;
+    return project;
+  }
+
+  /**
    * Create a new project from a mod folder
    */
   async createProject(modPath) {
@@ -33,9 +62,13 @@ class ProjectManager {
       targetLanguage: 'zh-CN',
       entries: parsed.entries,
       glossary: [],
+      keywords: [],
       aiConfig: {},
       stats: parsed.stats,
-      projectFilePath: null, // Will be set when saved
+      projectFilePath: null,
+      legacyModPath: '',
+      outputDir: '',
+      modPrompt: '',
     };
 
     this.currentProject = project;

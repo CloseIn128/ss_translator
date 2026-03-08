@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Table, Input, Tag, Space, Tooltip, Divider } from 'antd';
+import { Button, Table, Input, Tag, Space, Tooltip, Divider, Modal } from 'antd';
 import {
   FolderOpenOutlined,
   PlusOutlined,
@@ -11,17 +11,32 @@ import { useTask } from '../context/TaskContext';
 
 const api = window.electronAPI;
 
-export default function KeywordExtractor({ project, onUpdateGlossary, messageApi }) {
+export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGlossary, messageApi }) {
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
-  const [keywords, setKeywords] = useState([]);
+  const [keywords, setKeywords] = useState(() => project?.keywords || []);
   const [extracting, setExtracting] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [modPath, setModPath] = useState(project?.modPath || '');
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
-  const keyCounterRef = useRef(0);
+  const keyCounterRef = useRef(project?.keywords?.length || 0);
   const batchHandlerRef = useRef(null);
+
+  // Sync keywords back to project whenever they change
+  useEffect(() => {
+    if (onUpdateKeywords) {
+      onUpdateKeywords(keywords);
+    }
+  }, [keywords, onUpdateKeywords]);
+
+  // Reset keywords when the project changes (e.g. loading a different project)
+  useEffect(() => {
+    const loaded = project?.keywords || [];
+    setKeywords(loaded);
+    keyCounterRef.current = loaded.length;
+    setSelectedRowKeys([]);
+  }, [project?.id]);
 
   // Register / cleanup the keywords:batch event listener
   useEffect(() => {
@@ -63,12 +78,8 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
   };
 
   // Unified extraction: structural first, then AI (incremental)
-  const handleExtractAll = async () => {
+  const doExtract = async () => {
     const targetPath = modPath || project?.modPath;
-    if (!targetPath) {
-      messageApi.warning('请先选择MOD文件夹');
-      return;
-    }
 
     if (isTaskRunning) {
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
@@ -115,15 +126,34 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
     }
   };
 
+  const handleExtractAll = async () => {
+    const targetPath = modPath || project?.modPath;
+    if (!targetPath) {
+      messageApi.warning('请先选择MOD文件夹');
+      return;
+    }
+
+    // Confirm overwrite when keywords already exist
+    if (keywords.length > 0) {
+      Modal.confirm({
+        title: '重新提取关键词',
+        content: `当前已有 ${keywords.length} 个关键词，重新提取将覆盖现有结果。是否继续？`,
+        okText: '确认提取',
+        cancelText: '取消',
+        onOk() {
+          ;(async () => { await doExtract(); })();
+        },
+      });
+      return;
+    }
+
+    await doExtract();
+  };
+
   // Translate selected keywords
   const handleTranslate = async () => {
     if (selectedRowKeys.length === 0) {
       messageApi.warning('请先勾选要翻译的关键词');
-      return;
-    }
-
-    if (isTaskRunning) {
-      messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
     }
 
@@ -133,6 +163,21 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       .filter(Boolean);
 
     if (toTranslate.length === 0) return;
+    await doTranslate(toTranslate);
+  };
+
+  // Translate all keywords
+  const handleTranslateAll = async () => {
+    if (keywords.length === 0) return;
+    await doTranslate(keywords);
+  };
+
+  // Shared translate implementation
+  const doTranslate = async (toTranslate) => {
+    if (isTaskRunning) {
+      messageApi.warning('已有任务正在执行，请等待完成后再操作');
+      return;
+    }
 
     const taskId = startTask(`翻译 ${toTranslate.length} 个关键词`);
     if (!taskId) {
@@ -308,8 +353,8 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
         <Button icon={<FolderOpenOutlined />} onClick={handleSelectFolder} size="small">
           {modPath ? modPath.split(/[\\/]/).pop() : '选择MOD文件夹'}
         </Button>
@@ -328,11 +373,20 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
             <Button
               size="small"
               icon={<TranslationOutlined />}
+              onClick={handleTranslateAll}
+              loading={translating}
+              disabled={extracting || (isTaskRunning && !translating)}
+            >
+              翻译全部
+            </Button>
+            <Button
+              size="small"
+              icon={<TranslationOutlined />}
               onClick={handleTranslate}
               loading={translating}
               disabled={selectedRowKeys.length === 0 || extracting || (isTaskRunning && !translating)}
             >
-              翻译关键词 ({selectedRowKeys.length})
+              翻译选中 ({selectedRowKeys.length})
             </Button>
             <Divider type="vertical" />
             <Input
@@ -359,7 +413,7 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       </div>
 
       {extracting && (
-        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <RobotOutlined spin style={{ color: '#1677ff' }} />
           <span style={{ fontSize: 13, color: '#8c8c8c' }}>
             {extractPhase === 'structure' && '正在进行结构化提取...'}
@@ -388,17 +442,21 @@ export default function KeywordExtractor({ project, onUpdateGlossary, messageApi
       )}
 
       {(keywords.length > 0 || extracting) && (
-        <Table
-          dataSource={filteredKeywords}
-          columns={columns}
-          rowKey="key"
-          size="small"
-          rowSelection={{
-            selectedRowKeys,
-            onChange: setSelectedRowKeys,
-          }}
-          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
-        />
+        <div className="keyword-table-wrapper">
+          <Table
+            dataSource={filteredKeywords}
+            columns={columns}
+            rowKey="key"
+            size="small"
+            rowSelection={{
+              selectedRowKeys,
+              onChange: setSelectedRowKeys,
+              preserveSelectedRowKeys: true,
+            }}
+            scroll={{ y: 'calc(100vh - 310px)' }}
+            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
+          />
+        </div>
       )}
     </div>
   );

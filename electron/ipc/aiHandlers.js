@@ -17,7 +17,7 @@ function register(ctx) {
     return { success: true };
   });
 
-  ipcMain.handle('ai:translate', async (_, { entries, glossary, config }) => {
+  ipcMain.handle('ai:translate', async (_, { entries, glossary, config, modPrompt }) => {
     try {
       // Merge project glossary with built-in public glossary
       const builtinGlossary = ctx.configManager.getBuiltinGlossary().map(e => ({
@@ -26,14 +26,14 @@ function register(ctx) {
         category: e.category,
       }));
       const mergedGlossary = [...builtinGlossary, ...(glossary || [])];
-      const results = await ctx.translationService.translateBatch(entries, mergedGlossary, config);
+      const results = await ctx.translationService.translateBatch(entries, mergedGlossary, config, modPrompt || '');
       return { success: true, data: results };
     } catch (err) {
       return { success: false, error: err.message };
     }
   });
 
-  ipcMain.handle('ai:polish', async (_, { entry, glossary, config }) => {
+  ipcMain.handle('ai:polish', async (_, { entry, glossary, config, modPrompt }) => {
     try {
       const builtinGlossary = ctx.configManager.getBuiltinGlossary().map(e => ({
         source: e.source,
@@ -41,7 +41,7 @@ function register(ctx) {
         category: e.category,
       }));
       const mergedGlossary = [...builtinGlossary, ...(glossary || [])];
-      const result = await ctx.translationService.polish(entry, mergedGlossary, config);
+      const result = await ctx.translationService.polish(entry, mergedGlossary, config, modPrompt || '');
       return { success: true, data: result };
     } catch (err) {
       return { success: false, error: err.message };

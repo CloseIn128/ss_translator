@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   parseMod: (modPath) => ipcRenderer.invoke('mod:parse', modPath),
 
   // Project
+  createEmptyProject: () => ipcRenderer.invoke('project:createEmpty'),
   createProject: (modPath) => ipcRenderer.invoke('project:create', modPath),
   saveProject: (projectData) => ipcRenderer.invoke('project:save', projectData),
   loadProject: () => ipcRenderer.invoke('project:load'),
@@ -40,6 +41,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // System notification
   sendNotification: (title, body) => ipcRenderer.invoke('app:notify', { title, body }),
+
+  // Legacy translation (old version Chinese mod support)
+  loadLegacyMod: () => ipcRenderer.invoke('legacy:load'),
+  getLegacyInfo: () => ipcRenderer.invoke('legacy:getInfo'),
+  matchLegacy: (data) => ipcRenderer.invoke('legacy:match', data),
+  clearLegacy: () => ipcRenderer.invoke('legacy:clear'),
 
   // Keyword extraction
   extractKeywords: (modPath) => ipcRenderer.invoke('mod:extractKeywords', modPath),
