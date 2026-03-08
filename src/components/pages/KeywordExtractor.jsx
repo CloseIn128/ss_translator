@@ -5,6 +5,7 @@ import {
   SearchOutlined,
   RobotOutlined,
   TranslationOutlined,
+  HighlightOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
@@ -15,12 +16,15 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
   const [keywords, setKeywords] = useState(() => project?.keywords || []);
   const [extracting, setExtracting] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [polishing, setPolishing] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [extractPhase, setExtractPhase] = useState(''); // 'structure' | 'ai' | ''
   const [enableAI, setEnableAI] = useState(true);
+  const [pageSize, setPageSize] = useState(20);
   const keyCounterRef = useRef(project?.keywords?.length || 0);
   const batchHandlerRef = useRef(null);
+  const logHandlerRef = useRef(null);
 
   // Sync keywords back to project whenever they change
   useEffect(() => {
@@ -36,6 +40,31 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     keyCounterRef.current = loaded.length;
     setSelectedRowKeys([]);
   }, [project?.id]);
+
+  // Sync from project.keywords when translations arrive while on this tab
+  // (e.g. translations update project.keywords via onUpdateKeywords in doTranslate,
+  //  but this also handles external updates)
+  useEffect(() => {
+    const projKw = project?.keywords;
+    if (!projKw) return;
+    // Only update if project keywords differ (avoid infinite loop with our own updates)
+    setKeywords(prev => {
+      if (prev === projKw) return prev;
+      // Check if they actually differ (simple length + first/last target check)
+      if (prev.length === projKw.length) {
+        let same = true;
+        for (let i = 0; i < prev.length; i++) {
+          if (prev[i].target !== projKw[i].target || prev[i].source !== projKw[i].source) {
+            same = false;
+            break;
+          }
+        }
+        if (same) return prev;
+      }
+      keyCounterRef.current = projKw.length;
+      return projKw;
+    });
+  }, [project?.keywords]);
 
   // Register / cleanup the keywords:batch event listener
   useEffect(() => {
@@ -67,6 +96,21 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       if (batchHandlerRef.current) {
         api.removeKeywordBatchListener(batchHandlerRef.current);
         batchHandlerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Register / cleanup the keywords:log event listener
+  useEffect(() => {
+    const handler = api.onKeywordLog((data) => {
+      addLog(data.level, data.message, '关键词提取');
+    });
+    logHandlerRef.current = handler;
+
+    return () => {
+      if (logHandlerRef.current) {
+        api.removeKeywordLogListener(logHandlerRef.current);
+        logHandlerRef.current = null;
       }
     };
   }, []);
@@ -210,9 +254,6 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
         const translated = result.data.filter(d => d.target).length;
         const msg = `已翻译 ${translated} 个关键词`;
         addLog('success', msg, '关键词提取');
-        for (const item of result.data.filter(d => d.target).slice(0, 5)) {
-          addLog('debug', `"${item.source}" → "${item.target}"`, '关键词提取');
-        }
         completeTask(msg);
         messageApi.success(msg);
       } else {
@@ -227,6 +268,73 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
       messageApi.error('翻译出错: ' + err.message);
     } finally {
       setTranslating(false);
+    }
+  };
+
+  // Polish all keywords for consistency
+  const handlePolishAll = async () => {
+    const translated = keywords.filter(kw => kw.target && kw.target.trim());
+    if (translated.length === 0) {
+      messageApi.warning('没有已翻译的术语可润色，请先翻译');
+      return;
+    }
+    await doPolish(keywords);
+  };
+
+  // Shared polish implementation
+  const doPolish = async (toPolish) => {
+    if (isTaskRunning) {
+      messageApi.warning('已有任务正在执行，请等待完成后再操作');
+      return;
+    }
+
+    const taskId = startTask(`润色 ${toPolish.length} 个关键词`);
+    if (!taskId) {
+      messageApi.warning('已有任务正在执行');
+      return;
+    }
+
+    setPolishing(true);
+    addLog('info', `开始润色 ${toPolish.length} 个关键词`, '关键词提取');
+    try {
+      const result = await api.polishKeywords({
+        keywords: toPolish.map(kw => ({ source: kw.source, target: kw.target || '', category: kw.category })),
+      });
+      if (result?.success) {
+        const polishMap = new Map();
+        for (const item of result.data) {
+          if (item.source && item.target) {
+            polishMap.set(item.source.toLowerCase(), item.target);
+          }
+        }
+        setKeywords(prev => {
+          const merged = prev.map(kw => {
+            const polished = polishMap.get(kw.source.toLowerCase());
+            return polished ? { ...kw, target: polished } : kw;
+          });
+          if (onUpdateKeywords) onUpdateKeywords(merged);
+          return merged;
+        });
+        const changed = result.data.filter((d, i) => {
+          const orig = toPolish[i];
+          return orig && d.target !== orig.target;
+        }).length;
+        const msg = `润色完成，${changed} 个术语有变更`;
+        addLog('success', msg, '关键词提取');
+        completeTask(msg);
+        messageApi.success(msg);
+      } else {
+        const errMsg = result?.error || '关键词润色失败';
+        addLog('error', errMsg, '关键词提取');
+        failTask(errMsg);
+        messageApi.error(errMsg);
+      }
+    } catch (err) {
+      addLog('error', `润色出错: ${err.message}`, '关键词提取');
+      failTask(`润色出错: ${err.message}`);
+      messageApi.error('润色出错: ' + err.message);
+    } finally {
+      setPolishing(false);
     }
   };
 
@@ -431,6 +539,15 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
             >
               翻译选中 ({selectedRowKeys.length})
             </Button>
+            <Button
+              size="small"
+              icon={<HighlightOutlined />}
+              onClick={handlePolishAll}
+              loading={polishing}
+              disabled={extracting || (isTaskRunning && !polishing)}
+            >
+              润色全部
+            </Button>
             <Divider type="vertical" />
             <Input
               placeholder="搜索关键词..."
@@ -504,8 +621,13 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
               onChange: setSelectedRowKeys,
               preserveSelectedRowKeys: true,
             }}
-            scroll={{ y: 'calc(100vh - 310px)' }}
-            pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
+            pagination={{
+              pageSize,
+              onShowSizeChange: (_, size) => setPageSize(size),
+              showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50', '100'],
+              showTotal: t => `共 ${t} 条`,
+            }}
           />
         </div>
       )}

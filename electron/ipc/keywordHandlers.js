@@ -125,13 +125,37 @@ function register(ctx) {
   // Keyword translation (separate from extraction, uses builtin glossary for context)
   ipcMain.handle('keywords:translate', async (_, { keywords }) => {
     try {
+      const mainWindow = ctx.getMainWindow();
+      // Log callback that sends events to the renderer
+      const onLog = (level, message) => {
+        mainWindow.webContents.send('keywords:log', { level, message });
+      };
       // Merge builtin glossary for translation reference
       const builtinGlossary = ctx.configManager.getBuiltinGlossary().map(e => ({
         source: e.source,
         target: e.target,
         category: e.category,
       }));
-      const results = await ctx.translationService.translateKeywords(keywords, builtinGlossary);
+      const results = await ctx.translationService.translateKeywords(keywords, builtinGlossary, {}, onLog);
+      return { success: true, data: results };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // Keyword polishing (refine translations for consistency)
+  ipcMain.handle('keywords:polish', async (_, { keywords }) => {
+    try {
+      const mainWindow = ctx.getMainWindow();
+      const onLog = (level, message) => {
+        mainWindow.webContents.send('keywords:log', { level, message });
+      };
+      const builtinGlossary = ctx.configManager.getBuiltinGlossary().map(e => ({
+        source: e.source,
+        target: e.target,
+        category: e.category,
+      }));
+      const results = await ctx.translationService.polishKeywords(keywords, builtinGlossary, {}, onLog);
       return { success: true, data: results };
     } catch (err) {
       return { success: false, error: err.message };

@@ -191,7 +191,7 @@ body {
   overflow: hidden;
 }
 
-/* Keyword table: fill remaining height with fixed pagination at bottom */
+/* Table wrapper: fill remaining height with fixed pagination at bottom */
 .keyword-table-wrapper {
   flex: 1;
   min-height: 0;
@@ -224,13 +224,40 @@ body {
   display: flex;
   flex-direction: column;
 }
+.keyword-table-wrapper .ant-table-header {
+  flex-shrink: 0;
+}
 .keyword-table-wrapper .ant-table-body {
   flex: 1;
   min-height: 0;
+  overflow-y: auto !important;
   max-height: none !important;
 }
 .keyword-table-wrapper .ant-table-pagination {
   flex-shrink: 0;
+  margin: 8px 0 !important;
+}
+
+/* Ensure Ant Design Tabs content fills available space for glossary panels */
+.ant-tabs {
+  min-height: 0;
+}
+.ant-tabs-content-holder {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ant-tabs-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ant-tabs-tabpane-active {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Sidebar */

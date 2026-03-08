@@ -165,4 +165,91 @@ describe('TranslationService', () => {
       expect(result[0].category).toBe('势力名称');
     });
   });
+
+  describe('translateKeywords', () => {
+    it('skips person and planet categories', async () => {
+      // Mock the _callAPI to avoid real API calls
+      ts._callAPI = vi.fn().mockResolvedValue('[{"source":"Hegemony","target":"霸主"}]');
+
+      const keywords = [
+        { source: 'Hegemony', category: '势力名称' },
+        { source: 'Alexander', category: '人名' },
+        { source: 'Corvus', category: '星球/星系名' },
+      ];
+      const results = await ts.translateKeywords(keywords);
+      expect(results).toHaveLength(3);
+      // Person names and planet names should keep their source as target
+      const alexander = results.find(r => r.source === 'Alexander');
+      expect(alexander.target).toBe('Alexander');
+      const corvus = results.find(r => r.source === 'Corvus');
+      expect(corvus.target).toBe('Corvus');
+    });
+
+    it('passes log callback for each batch', async () => {
+      ts._callAPI = vi.fn().mockResolvedValue('[{"source":"Test","target":"测试"}]');
+
+      const logs = [];
+      const onLog = (level, message) => logs.push({ level, message });
+
+      const keywords = [{ source: 'Test', category: '通用' }];
+      await ts.translateKeywords(keywords, [], {}, onLog);
+
+      const infoLogs = logs.filter(l => l.level === 'info');
+      expect(infoLogs.length).toBeGreaterThan(0);
+      expect(infoLogs.some(l => l.message.includes('Test'))).toBe(true);
+    });
+  });
+
+  describe('polishKeywords', () => {
+    it('passes through untranslated keywords unchanged', async () => {
+      ts._callAPI = vi.fn().mockResolvedValue('[]');
+
+      const keywords = [
+        { source: 'Hegemony', target: '霸主', category: '势力名称' },
+        { source: 'Unknown', target: '', category: '通用' },
+      ];
+      const results = await ts.polishKeywords(keywords);
+      expect(results).toHaveLength(2);
+      const unknown = results.find(r => r.source === 'Unknown');
+      expect(unknown.target).toBe('');
+    });
+
+    it('polishes translated keywords', async () => {
+      ts._callAPI = vi.fn().mockResolvedValue('[{"source":"Hegemony","target":"霸权"}]');
+
+      const keywords = [
+        { source: 'Hegemony', target: '霸主', category: '势力名称' },
+      ];
+      const results = await ts.polishKeywords(keywords);
+      const hegemony = results.find(r => r.source === 'Hegemony');
+      expect(hegemony.target).toBe('霸权');
+    });
+
+    it('keeps original translation if polish fails to parse', async () => {
+      ts._callAPI = vi.fn().mockResolvedValue('invalid response');
+
+      const keywords = [
+        { source: 'Hegemony', target: '霸主', category: '势力名称' },
+      ];
+      const results = await ts.polishKeywords(keywords);
+      const hegemony = results.find(r => r.source === 'Hegemony');
+      expect(hegemony.target).toBe('霸主');
+    });
+
+    it('passes log callback for polish batches', async () => {
+      ts._callAPI = vi.fn().mockResolvedValue('[{"source":"Hegemony","target":"霸权"}]');
+
+      const logs = [];
+      const onLog = (level, message) => logs.push({ level, message });
+
+      const keywords = [
+        { source: 'Hegemony', target: '霸主', category: '势力名称' },
+      ];
+      await ts.polishKeywords(keywords, [], {}, onLog);
+
+      const infoLogs = logs.filter(l => l.level === 'info');
+      expect(infoLogs.length).toBeGreaterThan(0);
+      expect(infoLogs.some(l => l.message.includes('润色'))).toBe(true);
+    });
+  });
 });

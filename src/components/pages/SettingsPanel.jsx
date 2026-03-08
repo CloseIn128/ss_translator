@@ -218,6 +218,7 @@ function PublicGlossaryTab({ messageApi }) {
   const [editingEntry, setEditingEntry] = useState(null); // { _origIdx, source, target, category }
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
     (async () => {
@@ -342,7 +343,13 @@ function PublicGlossaryTab({ messageApi }) {
       </div>
       <Table dataSource={filtered} columns={columns} rowKey={(r) => r._origIdx} size="small"
         loading={loading}
-        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: t => `共 ${t} 条` }} />
+        pagination={{
+          pageSize,
+          onShowSizeChange: (_, size) => setPageSize(size),
+          showSizeChanger: true,
+          pageSizeOptions: ['10', '20', '50', '100'],
+          showTotal: t => `共 ${t} 条`,
+        }} />
       <Modal title={editingEntry !== null ? '编辑术语' : '添加术语'} open={isModalOpen}
         onOk={handleModalOk} onCancel={() => setIsModalOpen(false)} okText="确认" cancelText="取消" width={480}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
