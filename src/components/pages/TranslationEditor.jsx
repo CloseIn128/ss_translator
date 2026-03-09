@@ -48,16 +48,27 @@ export default function TranslationEditor({
     };
   }, []);
 
-  // Merge project glossary with keywords (keywords with translations are usable as glossary)
+  // Merge project glossary with keywords — only confirmed (reviewed) terms are included
   const mergedGlossary = useMemo(() => {
     const glossary = project.glossary || [];
     const keywords = project.keywords || [];
-    // Build set of existing glossary sources to avoid duplicates
-    const existingSources = new Set(glossary.map(g => g.source.toLowerCase()));
+    // Only include confirmed glossary entries
+    const confirmedGlossary = glossary
+      .filter(g => g.confirmed && g.target && g.target.trim())
+      .map(g => ({ source: g.source, target: g.target, category: g.category || '通用' }));
+    const existingSources = new Set(confirmedGlossary.map(g => g.source.toLowerCase()));
+    // Only include confirmed keywords with translations
     const keywordGlossary = keywords
-      .filter(kw => kw.target && kw.target.trim() && !existingSources.has(kw.source.toLowerCase()))
+      .filter(kw => kw.confirmed && kw.target && kw.target.trim() && !existingSources.has(kw.source.toLowerCase()))
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category || '通用' }));
-    return [...glossary, ...keywordGlossary];
+    return [...confirmedGlossary, ...keywordGlossary];
+  }, [project.glossary, project.keywords]);
+
+  // Count unreviewed terms
+  const unreviewedTermCount = useMemo(() => {
+    const glossary = project.glossary || [];
+    const keywords = project.keywords || [];
+    return glossary.filter(g => !g.confirmed).length + keywords.filter(kw => !kw.confirmed).length;
   }, [project.glossary, project.keywords]);
 
   const [searchText, setSearchText] = useState('');
@@ -492,6 +503,12 @@ export default function TranslationEditor({
               {stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0}%
             </div>
             <div className="stat-label">翻译进度</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value" style={unreviewedTermCount > 0 ? { color: '#faad14' } : {}}>
+              {unreviewedTermCount}
+            </div>
+            <div className="stat-label">术语待审核</div>
           </div>
         </div>
 

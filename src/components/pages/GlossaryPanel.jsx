@@ -12,6 +12,8 @@ import {
   TranslationOutlined,
   HighlightOutlined,
   CheckOutlined,
+  ReloadOutlined,
+  ClearOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
@@ -276,10 +278,15 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
 
   // ─── Confirmed status toggle ──────────────────────────────────────
   const toggleConfirmed = (record) => {
-    if (record._type !== 'extracted') return;
-    onUpdateKeywords(keywords.map(kw =>
-      kw.key === record.key ? { ...kw, confirmed: !kw.confirmed } : kw
-    ));
+    if (record._type === 'glossary') {
+      onUpdateGlossary(glossary.map(g =>
+        g.id === record.id ? { ...g, confirmed: !g.confirmed } : g
+      ));
+    } else {
+      onUpdateKeywords(keywords.map(kw =>
+        kw.key === record.key ? { ...kw, confirmed: !kw.confirmed } : kw
+      ));
+    }
   };
 
   // ─── Keyword extraction ───────────────────────────────────────────
@@ -470,12 +477,41 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
   const handleConfirmSelected = () => {
     if (selectedRowKeys.length === 0) return;
     const selectedSet = new Set(selectedRowKeys);
-    const updated = keywords.map(kw => {
+    // Update glossary entries
+    const updatedGlossary = glossary.map(g => {
+      const rowKey = `g_${g.id}`;
+      return selectedSet.has(rowKey) ? { ...g, confirmed: true } : g;
+    });
+    onUpdateGlossary(updatedGlossary);
+    // Update keywords
+    const updatedKw = keywords.map(kw => {
       const rowKey = kw.key || `k_${kw.source}`;
       return selectedSet.has(rowKey) ? { ...kw, confirmed: true } : kw;
     });
-    onUpdateKeywords(updated);
-    messageApi.success(`已确认 ${selectedRowKeys.length} 个术语`);
+    onUpdateKeywords(updatedKw);
+    messageApi.success(`已审核 ${selectedRowKeys.length} 个术语`);
+  };
+
+  // ─── Delete all ──────────────────────────────────────────────────
+  const handleDeleteAll = () => {
+    if (unifiedData.length === 0) return;
+    Modal.confirm({
+      title: '删除全部术语',
+      content: `确定要删除全部 ${unifiedData.length} 个术语吗？此操作不可撤销。`,
+      okText: '确认删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      async onOk() {
+        // Delete all glossary entries
+        for (const g of glossary) {
+          await api.removeGlossaryEntry(g.id);
+        }
+        onUpdateGlossary([]);
+        onUpdateKeywords([]);
+        setSelectedRowKeys([]);
+        messageApi.success('已删除全部术语');
+      },
+    });
   };
 
   // ─── Table columns ────────────────────────────────────────────────
@@ -490,7 +526,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       sorter: (a, b) => a.source.localeCompare(b.source),
       render: (text, record) => (
         <span style={{ fontSize: 12 }}>
-          {record._type === 'extracted' && record.confirmed && (
+          {record.confirmed && (
             <CheckOutlined style={{ color: '#52c41a', marginRight: 4, fontSize: 10 }} />
           )}
           {text}
@@ -586,16 +622,14 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       render: (_, record) => (
         <Space size={4}>
           <Button size="small" type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-          {record._type === 'extracted' && (
-            <Tooltip title={record.confirmed ? '取消确认' : '确认'}>
-              <Button
-                size="small"
-                type="text"
-                icon={<CheckOutlined style={{ color: record.confirmed ? '#52c41a' : undefined }} />}
-                onClick={() => toggleConfirmed(record)}
-              />
-            </Tooltip>
-          )}
+          <Tooltip title={record.confirmed ? '取消审核' : '标记已审核'}>
+            <Button
+              size="small"
+              type="text"
+              icon={<CheckOutlined style={{ color: record.confirmed ? '#52c41a' : undefined }} />}
+              onClick={() => toggleConfirmed(record)}
+            />
+          </Tooltip>
           <Popconfirm title="确认删除?" onConfirm={() => handleDelete(record)} okText="确认" cancelText="取消">
             <Button size="small" type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -648,49 +682,69 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
             共 {filteredData.length} 条
             {glossary.length > 0 && ` (手动 ${glossary.length})`}
             {keywords.length > 0 && ` (提取 ${keywords.length})`}
+            {(() => {
+              const confirmedCount = unifiedData.filter(d => d.confirmed).length;
+              const unconfirmedCount = unifiedData.length - confirmedCount;
+              return unconfirmedCount > 0 ? ` | 未审核 ${unconfirmedCount}` : '';
+            })()}
           </span>
         </div>
-        {/* Row 2: Keyword actions (show when there are keywords) */}
-        {keywords.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Button
-              size="small"
-              icon={<TranslationOutlined />}
-              onClick={handleTranslateKeywords}
-              loading={translating}
-              disabled={extracting || (isTaskRunning && !translating)}
-            >
-              翻译提取术语
-            </Button>
-            <Button
-              size="small"
-              icon={<HighlightOutlined />}
-              onClick={handlePolishKeywords}
-              loading={polishing}
-              disabled={extracting || (isTaskRunning && !polishing)}
-            >
-              润色提取术语
-            </Button>
-            <Button
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={handleConfirmSelected}
-              disabled={selectedRowKeys.length === 0 || extracting}
-            >
-              确认选中 ({selectedRowKeys.length})
-            </Button>
-            {selectedRowKeys.length > 0 && (
+        {/* Row 2: Batch actions */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          {keywords.length > 0 && (
+            <>
               <Button
                 size="small"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={handleDeleteSelected}
+                icon={<TranslationOutlined />}
+                onClick={handleTranslateKeywords}
+                loading={translating}
+                disabled={extracting || (isTaskRunning && !translating)}
               >
-                删除选中 ({selectedRowKeys.length})
+                翻译提取术语
               </Button>
-            )}
-          </div>
-        )}
+              <Button
+                size="small"
+                icon={<HighlightOutlined />}
+                onClick={handlePolishKeywords}
+                loading={polishing}
+                disabled={extracting || (isTaskRunning && !polishing)}
+              >
+                润色提取术语
+              </Button>
+              <Divider type="vertical" style={{ margin: '0 2px' }} />
+            </>
+          )}
+          <Button
+            size="small"
+            icon={<CheckOutlined />}
+            onClick={handleConfirmSelected}
+            disabled={selectedRowKeys.length === 0 || extracting}
+          >
+            审核选中 ({selectedRowKeys.length})
+          </Button>
+          {selectedRowKeys.length > 0 && (
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={handleDeleteSelected}
+            >
+              删除选中 ({selectedRowKeys.length})
+            </Button>
+          )}
+          <Divider type="vertical" style={{ margin: '0 2px' }} />
+          <Tooltip title="删除项目术语表中的全部术语">
+            <Button
+              size="small"
+              danger
+              icon={<ClearOutlined />}
+              onClick={handleDeleteAll}
+              disabled={unifiedData.length === 0 || extracting}
+            >
+              删除全部
+            </Button>
+          </Tooltip>
+        </div>
       </div>
 
       {/* Extraction progress indicator */}
@@ -755,50 +809,137 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
   );
 }
 
-// ─── Built-in Glossary Reference Tab ─────────────────────────────────
+// ─── Public Glossary Tab (full management) ───────────────────────────
 
-function BuiltinGlossaryTab({ messageApi }) {
+function PublicGlossaryTab({ messageApi }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const handleBuiltinSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
+  const handleSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    setLoading(true);
-    api.getBuiltinGlossary().then(data => {
+    (async () => {
+      setLoading(true);
+      const data = await api.getBuiltinGlossary();
       setEntries(data || []);
       setLoading(false);
-    });
+    })();
   }, []);
 
-  const filtered = searchText.trim()
-    ? entries
-        .map((e, i) => ({ ...e, _origIdx: i }))
-        .filter(e =>
-          e.source.toLowerCase().includes(searchText.toLowerCase()) ||
-          e.target.toLowerCase().includes(searchText.toLowerCase()))
-    : entries.map((e, i) => ({ ...e, _origIdx: i }));
+  const filtered = (() => {
+    const base = searchText.trim()
+      ? entries
+          .map((e, i) => ({ ...e, _origIdx: i }))
+          .filter(e =>
+            e.source.toLowerCase().includes(searchText.toLowerCase()) ||
+            e.target.toLowerCase().includes(searchText.toLowerCase())
+          )
+      : entries.map((e, i) => ({ ...e, _origIdx: i }));
+    return base;
+  })();
+
+  const handleAdd = () => {
+    setEditingEntry(null);
+    form.resetFields();
+    form.setFieldsValue({ category: '通用' });
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (record) => {
+    setEditingEntry(record);
+    form.setFieldsValue({ source: record.source, target: record.target, category: record.category });
+    setIsModalOpen(true);
+  };
+
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields();
+      let newEntries;
+      if (editingEntry !== null) {
+        newEntries = entries.map((e, i) => i === editingEntry._origIdx ? { ...e, ...values } : e);
+      } else {
+        newEntries = [...entries, values];
+      }
+      await api.saveBuiltinGlossary(newEntries);
+      setEntries(newEntries);
+      setIsModalOpen(false);
+      messageApi.success(editingEntry !== null ? '术语更新成功' : '术语添加成功');
+    } catch {}
+  };
+
+  const handleDelete = async (origIdx) => {
+    const newEntries = entries.filter((_, i) => i !== origIdx);
+    await api.saveBuiltinGlossary(newEntries);
+    setEntries(newEntries);
+    messageApi.success('术语已删除');
+  };
+
+  const handleImport = async () => {
+    const result = await api.importBuiltinGlossary();
+    if (result?.success) {
+      setEntries(result.data);
+      messageApi.success(`导入成功，共 ${result.data.length} 条`);
+    }
+  };
+
+  const handleExport = async () => {
+    const result = await api.exportBuiltinGlossary();
+    if (result?.success) messageApi.success(`已导出 ${result.exported} 条术语`);
+  };
+
+  const handleReset = () => {
+    Modal.confirm({
+      title: '重置公共术语表',
+      content: '将恢复公共术语表为内置默认值，是否继续？',
+      okText: '确认重置',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        const result = await api.resetBuiltinGlossary();
+        if (result?.success) {
+          setEntries(result.data || []);
+          messageApi.success('公共术语表已重置为默认值');
+        }
+      },
+    });
+  };
 
   const columns = [
-    { title: '原文', dataIndex: 'source', key: 'source', width: '35%', sorter: (a, b) => a.source.localeCompare(b.source) },
-    { title: '译文', dataIndex: 'target', key: 'target', width: '35%' },
-    { title: '分类', dataIndex: 'category', key: 'category', width: '30%',
+    { title: '原文', dataIndex: 'source', key: 'source', width: '30%', sorter: (a, b) => a.source.localeCompare(b.source) },
+    { title: '译文', dataIndex: 'target', key: 'target', width: '30%', sorter: (a, b) => a.target.localeCompare(b.target) },
+    { title: '分类', dataIndex: 'category', key: 'category', width: '20%',
       filters: CATEGORIES.map(c => ({ text: c, value: c })),
-      onFilter: (value, record) => record.category === value,
-      render: (cat) => <Tag color="blue">{cat}</Tag> },
+      onFilter: (value, record) => record.category === value },
+    { title: '操作', key: 'actions', width: '20%',
+      render: (_, record) => (
+        <Space size={4}>
+          <Button size="small" type="text" icon={<EditOutlined />}
+            onClick={() => handleEdit(record)} />
+          <Popconfirm title="确认删除?" onConfirm={() => handleDelete(record._origIdx)} okText="确认" cancelText="取消">
+            <Button size="small" type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ) },
   ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <Input placeholder="搜索术语..." value={searchText} onChange={handleBuiltinSearchChange}
-          allowClear style={{ width: 250 }} size="small" />
-        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {entries.length} 条（可在"模型配置→公共词库"中管理）</span>
+      <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0 }}>
+        <Input placeholder="搜索术语..." value={searchText} onChange={handleSearchChange}
+          allowClear style={{ width: 220 }} size="small" />
+        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={handleAdd}>添加</Button>
+        <Button size="small" icon={<ImportOutlined />} onClick={handleImport}>导入</Button>
+        <Button size="small" icon={<ExportOutlined />} onClick={handleExport}>导出</Button>
+        <Button size="small" danger icon={<ReloadOutlined />} onClick={handleReset}>重置默认</Button>
+        <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>共 {entries.length} 条</span>
       </div>
       <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 8, flexShrink: 0 }}>
-        公共词库在 AI 翻译时自动注入到所有项目，可在"模型配置 → 公共词库"中添加/编辑。
+        公共术语表中的术语在 AI 翻译时会自动注入到所有项目的提示词中。
       </div>
       <div className="keyword-table-wrapper">
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
@@ -820,6 +961,20 @@ function BuiltinGlossaryTab({ messageApi }) {
           />
         </div>
       </div>
+      <Modal title={editingEntry !== null ? '编辑术语' : '添加术语'} open={isModalOpen}
+        onOk={handleModalOk} onCancel={() => setIsModalOpen(false)} okText="确认" cancelText="取消" width={480}>
+        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item label="原文（英文）" name="source" rules={[{ required: true, message: '请输入原文' }]}>
+            <Input placeholder="如: Hegemony" />
+          </Form.Item>
+          <Form.Item label="译文（中文）" name="target" rules={[{ required: true, message: '请输入译文' }]}>
+            <Input placeholder="如: 霸主" />
+          </Form.Item>
+          <Form.Item label="分类" name="category">
+            <Select options={CATEGORIES.map(c => ({ value: c, label: c }))} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }
@@ -842,8 +997,8 @@ export default function GlossaryPanel({ project, onUpdateGlossary, onUpdateKeywo
     },
     {
       key: 'builtin',
-      label: <><BookOutlined /> 公共词库（参考）</>,
-      children: <BuiltinGlossaryTab messageApi={messageApi} />,
+      label: <><BookOutlined /> 公共术语表</>,
+      children: <PublicGlossaryTab messageApi={messageApi} />,
     },
   ];
 

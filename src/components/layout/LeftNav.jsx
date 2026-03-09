@@ -12,6 +12,7 @@ import {
   InfoCircleOutlined,
   DesktopOutlined,
   HistoryOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 
 const MIN_NAV_WIDTH = 160;
@@ -62,7 +63,8 @@ export default function LeftNav({
   const navItems = [
     { key: 'info', icon: <InfoCircleOutlined />, label: '基本信息', requiresProject: true },
     { key: 'editor', icon: <FileTextOutlined />, label: '翻译编辑', requiresProject: true },
-    { key: 'glossary', icon: <BookOutlined />, label: '术语与词库', requiresProject: true },
+    { key: 'glossary', icon: <BookOutlined />, label: '术语管理', requiresProject: true },
+    { key: 'review', icon: <AuditOutlined />, label: '审核', requiresProject: true },
     { key: 'settings', icon: <SettingOutlined />, label: '模型配置' },
     { key: 'appSettings', icon: <DesktopOutlined />, label: '程序设置' },
     { key: 'requestHistory', icon: <HistoryOutlined />, label: '请求历史' },

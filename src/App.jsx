@@ -13,6 +13,7 @@ const TranslationEditor = React.lazy(() => import('./components/pages/Translatio
 const GlossaryPanel = React.lazy(() => import('./components/pages/GlossaryPanel'));
 const SettingsPanel = React.lazy(() => import('./components/pages/SettingsPanel'));
 const AppSettingsPanel = React.lazy(() => import('./components/pages/AppSettingsPanel'));
+const ReviewPanel = React.lazy(() => import('./components/pages/ReviewPanel'));
 const RequestHistory = React.lazy(() => import('./components/pages/RequestHistory'));
 
 const api = window.electronAPI;
@@ -195,7 +196,7 @@ function AppInner() {
 
   // For project-requiring tabs, show WelcomePage if no project
   const needsProject = (tabKey) => {
-    return ['info', 'editor', 'glossary'].includes(tabKey) && !project;
+    return ['info', 'editor', 'glossary', 'review'].includes(tabKey) && !project;
   };
 
   // Track which tabs have been visited to lazy-mount them (render on first visit, then keep mounted)
@@ -277,6 +278,19 @@ function AppInner() {
                     project={project}
                     onUpdateGlossary={handleUpdateGlossary}
                     onUpdateKeywords={handleUpdateKeywords}
+                    messageApi={messageApi}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {project && shouldRender('review') && (
+              <div className={tabClass('review')} style={tabStyle('review')}>
+                <Suspense fallback={lazyFallback}>
+                  <ReviewPanel
+                    project={project}
+                    onUpdateGlossary={handleUpdateGlossary}
+                    onUpdateKeywords={handleUpdateKeywords}
+                    onUpdateEntry={handleUpdateEntry}
                     messageApi={messageApi}
                   />
                 </Suspense>
