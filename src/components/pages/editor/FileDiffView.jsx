@@ -1,33 +1,49 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Spin } from 'antd';
 import {
   EyeOutlined,
   EyeInvisibleOutlined,
+  EllipsisOutlined,
 } from '@ant-design/icons';
 
 const api = window.electronAPI;
 
+/** Maximum line count for LCS diff (O(m*n) memory/time) */
+const MAX_DIFF_LINES = 5000;
+
+/** Number of unchanged context lines to show around each change */
+const CONTEXT_LINES = 3;
+
+/**
+ * Normalize line endings and split into lines.
+ */
+function splitLines(text) {
+  return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+}
+
 /**
  * Compute a line-level diff using LCS (longest common subsequence).
- * Returns an array of { type: 'same'|'removed'|'added'|'changed', left, right, leftNum, rightNum }
+ * Returns an array of { type: 'same'|'removed'|'added', left, right, leftNum, rightNum }
  */
 function computeLineDiff(originalText, translatedText) {
-  const origLines = originalText.split('\n');
-  const transLines = translatedText.split('\n');
-
-  // Build LCS table
+  const origLines = splitLines(originalText);
+  const transLines = splitLines(translatedText);
   const m = origLines.length;
   const n = transLines.length;
 
-  // Optimization: if texts are identical, return all same
+  // Fast path: identical content
   if (originalText === translatedText) {
     return origLines.map((line, i) => ({
       type: 'same', left: line, right: line, leftNum: i + 1, rightNum: i + 1,
     }));
   }
 
-  // Use O(n) space LCS via two-row approach for the table,
-  // then backtrack for the actual diff operations
+  // Safety: for very large files, fall back to simple paired comparison
+  if (m > MAX_DIFF_LINES || n > MAX_DIFF_LINES) {
+    return computeSimpleDiff(origLines, transLines);
+  }
+
+  // Build full LCS DP table
   const dp = Array.from({ length: m + 1 }, () => new Uint32Array(n + 1));
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
@@ -39,7 +55,7 @@ function computeLineDiff(originalText, translatedText) {
     }
   }
 
-  // Backtrack to produce diff
+  // Backtrack to produce diff operations
   const ops = [];
   let i = m, j = n;
   while (i > 0 || j > 0) {
@@ -56,38 +72,83 @@ function computeLineDiff(originalText, translatedText) {
   }
   ops.reverse();
 
-  // Convert ops to result with line numbers
+  // Convert to result with line numbers
   const result = [];
   let leftNum = 1, rightNum = 1;
-
   for (const op of ops) {
     if (op.type === 'same') {
-      result.push({
-        type: 'same',
-        left: origLines[op.origIdx],
-        right: transLines[op.transIdx],
-        leftNum: leftNum++,
-        rightNum: rightNum++,
-      });
+      result.push({ type: 'same', left: origLines[op.origIdx], right: transLines[op.transIdx], leftNum: leftNum++, rightNum: rightNum++ });
     } else if (op.type === 'removed') {
-      result.push({
-        type: 'removed',
-        left: origLines[op.origIdx],
-        right: '',
-        leftNum: leftNum++,
-        rightNum: null,
-      });
+      result.push({ type: 'removed', left: origLines[op.origIdx], right: '', leftNum: leftNum++, rightNum: null });
     } else {
-      result.push({
-        type: 'added',
-        left: '',
-        right: transLines[op.transIdx],
-        leftNum: null,
-        rightNum: rightNum++,
-      });
+      result.push({ type: 'added', left: '', right: transLines[op.transIdx], leftNum: null, rightNum: rightNum++ });
+    }
+  }
+  return result;
+}
+
+/**
+ * Simple line-paired diff fallback for very large files.
+ */
+function computeSimpleDiff(origLines, transLines) {
+  const result = [];
+  const maxLen = Math.max(origLines.length, transLines.length);
+  let leftNum = 1, rightNum = 1;
+
+  for (let i = 0; i < maxLen; i++) {
+    const left = i < origLines.length ? origLines[i] : undefined;
+    const right = i < transLines.length ? transLines[i] : undefined;
+    if (left === right) {
+      result.push({ type: 'same', left, right, leftNum: leftNum++, rightNum: rightNum++ });
+    } else if (left !== undefined && right !== undefined) {
+      // Show as remove + add pair for readability
+      result.push({ type: 'removed', left, right: '', leftNum: leftNum++, rightNum: null });
+      result.push({ type: 'added', left: '', right, leftNum: null, rightNum: rightNum++ });
+    } else if (left !== undefined) {
+      result.push({ type: 'removed', left, right: '', leftNum: leftNum++, rightNum: null });
+    } else {
+      result.push({ type: 'added', left: '', right, leftNum: null, rightNum: rightNum++ });
+    }
+  }
+  return result;
+}
+
+/**
+ * Collapse unchanged sections, keeping only CONTEXT_LINES around changes.
+ * Returns array of items, where each is either a diff line or a { type: 'collapse', count } separator.
+ */
+function collapseDiffLines(lines) {
+  if (lines.length === 0) return [];
+
+  // Mark which lines are near a change
+  const isChanged = lines.map(l => l.type !== 'same');
+  const showLine = new Uint8Array(lines.length);
+
+  for (let i = 0; i < lines.length; i++) {
+    if (isChanged[i]) {
+      // Mark context around this change
+      for (let k = Math.max(0, i - CONTEXT_LINES); k <= Math.min(lines.length - 1, i + CONTEXT_LINES); k++) {
+        showLine[k] = 1;
+      }
     }
   }
 
+  const result = [];
+  let collapsed = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (showLine[i]) {
+      if (collapsed > 0) {
+        result.push({ type: 'collapse', count: collapsed });
+        collapsed = 0;
+      }
+      result.push(lines[i]);
+    } else {
+      collapsed++;
+    }
+  }
+  if (collapsed > 0) {
+    result.push({ type: 'collapse', count: collapsed });
+  }
   return result;
 }
 
@@ -148,6 +209,12 @@ export default function FileDiffView({ modPath, selectedFile, entries }) {
     [diffLines]
   );
 
+  // Collapsed view: only show changed lines with context
+  const displayLines = useMemo(() =>
+    collapseDiffLines(diffLines),
+    [diffLines]
+  );
+
   if (!selectedFile) return null;
 
   return (
@@ -168,8 +235,10 @@ export default function FileDiffView({ modPath, selectedFile, entries }) {
             <div style={{ textAlign: 'center', padding: 24 }}><Spin /></div>
           ) : error ? (
             <div style={{ textAlign: 'center', padding: 16, color: '#ff4d4f' }}>{error}</div>
-          ) : diffLines.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 16, color: '#8c8c8c' }}>无文件内容</div>
+          ) : changeCount === 0 ? (
+            <div style={{ textAlign: 'center', padding: 16, color: '#8c8c8c' }}>
+              {diffLines.length === 0 ? '无文件内容' : '无变更内容'}
+            </div>
           ) : (
             <div className="file-diff-table-wrapper">
               <table className="file-diff-table">
@@ -182,17 +251,25 @@ export default function FileDiffView({ modPath, selectedFile, entries }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {diffLines.map((line, i) => (
-                    <tr key={i} className={`diff-row diff-${line.type}`}>
-                      <td className="diff-line-num">{line.leftNum ?? ''}</td>
-                      <td className="diff-cell diff-left">
-                        <pre>{line.left}</pre>
-                      </td>
-                      <td className="diff-line-num">{line.rightNum ?? ''}</td>
-                      <td className="diff-cell diff-right">
-                        <pre>{line.right}</pre>
-                      </td>
-                    </tr>
+                  {displayLines.map((line, i) => (
+                    line.type === 'collapse' ? (
+                      <tr key={`c${i}`} className="diff-row diff-collapse">
+                        <td colSpan={4} className="diff-collapse-cell">
+                          <EllipsisOutlined /> 省略 {line.count} 行未变更内容
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={i} className={`diff-row diff-${line.type}`}>
+                        <td className="diff-line-num">{line.leftNum ?? ''}</td>
+                        <td className="diff-cell diff-left">
+                          <pre>{line.left}</pre>
+                        </td>
+                        <td className="diff-line-num">{line.rightNum ?? ''}</td>
+                        <td className="diff-cell diff-right">
+                          <pre>{line.right}</pre>
+                        </td>
+                      </tr>
+                    )
                   ))}
                 </tbody>
               </table>

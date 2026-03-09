@@ -111,7 +111,12 @@ function applyJsonTranslations(filePath, entries) {
   for (const entry of entries) {
     // Use careful string replacement to preserve file formatting
     const originalEscaped = escapeForJsonSearch(entry.original);
-    const translatedEscaped = entry.translated.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const translatedEscaped = entry.translated
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
 
     // Replace in quoted strings
     content = content.replace(
