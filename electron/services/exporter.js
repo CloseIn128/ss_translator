@@ -183,5 +183,5 @@ function copyDirSync(src, dest) {
   }
 }
 
-module.exports = { exportMod };
+module.exports = { exportMod, getIdColumn };
 

@@ -17,6 +17,7 @@ const exportHandlers = require('./ipc/exportHandlers');
 const keywordHandlers = require('./ipc/keywordHandlers');
 const notificationHandlers = require('./ipc/notificationHandlers');
 const legacyHandlers = require('./ipc/legacyHandlers');
+const fileHandlers = require('./ipc/fileHandlers');
 
 let mainWindow;
 let glossaryManager;
@@ -99,6 +100,7 @@ app.whenReady().then(() => {
   keywordHandlers.register(ctx);
   notificationHandlers.register(ctx);
   legacyHandlers.register(ctx);
+  fileHandlers.register(ctx);
 
   // Auto-save project data sent from renderer
   ipcMain.handle('project:autoSave', async (_, projectData) => {
