@@ -87,85 +87,87 @@ export default function ProjectInfo({ project, onProjectFieldsChange, messageApi
   const hasModInfo = project.modInfo && Object.keys(project.modInfo).length > 0;
 
   return (
-    <div style={{ maxWidth: 800 }}>
-      {/* Project info */}
-      <Typography.Title level={5} style={{ marginTop: 0 }}>📋 项目信息</Typography.Title>
-      <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
-        <Descriptions.Item label="项目ID">
-          <span style={{ fontSize: 11, fontFamily: 'monospace' }}>{project.id}</span>
-        </Descriptions.Item>
-        <Descriptions.Item label="项目版本">{project.version || '1.0'}</Descriptions.Item>
-        <Descriptions.Item label="创建时间">{formatDate(project.createdAt)}</Descriptions.Item>
-        <Descriptions.Item label="更新时间">{formatDate(project.updatedAt)}</Descriptions.Item>
-        <Descriptions.Item label="翻译条目">
-          {project.entries?.length || 0} 条
-          {project.stats?.translated ? ` (已翻译 ${project.stats.translated})` : ''}
-        </Descriptions.Item>
-        <Descriptions.Item label="词库条目">{project.glossary?.length || 0} 条</Descriptions.Item>
-      </Descriptions>
+    <div className="centered-page-container">
+      <div>
+        {/* Project info */}
+        <Typography.Title level={5} style={{ marginTop: 0 }}>📋 项目信息</Typography.Title>
+        <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
+          <Descriptions.Item label="项目ID">
+            <span style={{ fontSize: 11, fontFamily: 'monospace' }}>{project.id}</span>
+          </Descriptions.Item>
+          <Descriptions.Item label="项目版本">{project.version || '1.0'}</Descriptions.Item>
+          <Descriptions.Item label="创建时间">{formatDate(project.createdAt)}</Descriptions.Item>
+          <Descriptions.Item label="更新时间">{formatDate(project.updatedAt)}</Descriptions.Item>
+          <Descriptions.Item label="翻译条目">
+            {project.entries?.length || 0} 条
+            {project.stats?.translated ? ` (已翻译 ${project.stats.translated})` : ''}
+          </Descriptions.Item>
+          <Descriptions.Item label="词库条目">{project.glossary?.length || 0} 条</Descriptions.Item>
+        </Descriptions>
 
-      {/* MOD info */}
-      {hasModInfo && (
-        <>
-          <Typography.Title level={5}>🎮 MOD信息</Typography.Title>
-          <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
-            <Descriptions.Item label="MOD名称">{project.modInfo.name || '—'}</Descriptions.Item>
-            <Descriptions.Item label="MOD ID">{project.modInfo.id || '—'}</Descriptions.Item>
-            <Descriptions.Item label="版本">{project.modInfo.version || '—'}</Descriptions.Item>
-            <Descriptions.Item label="作者">{project.modInfo.author || '—'}</Descriptions.Item>
-            {project.modInfo.description && (
-              <Descriptions.Item label="描述" span={2}>{project.modInfo.description}</Descriptions.Item>
-            )}
-          </Descriptions>
-        </>
-      )}
+        {/* MOD info */}
+        {hasModInfo && (
+          <>
+            <Typography.Title level={5}>🎮 MOD信息</Typography.Title>
+            <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
+              <Descriptions.Item label="MOD名称">{project.modInfo.name || '—'}</Descriptions.Item>
+              <Descriptions.Item label="MOD ID">{project.modInfo.id || '—'}</Descriptions.Item>
+              <Descriptions.Item label="版本">{project.modInfo.version || '—'}</Descriptions.Item>
+              <Descriptions.Item label="作者">{project.modInfo.author || '—'}</Descriptions.Item>
+              {project.modInfo.description && (
+                <Descriptions.Item label="描述" span={2}>{project.modInfo.description}</Descriptions.Item>
+              )}
+            </Descriptions>
+          </>
+        )}
 
-      {/* Path configuration */}
-      <Typography.Title level={5}>📁 路径配置</Typography.Title>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>MOD文件夹路径</div>
-          <Space.Compact style={{ width: '100%' }}>
-            <Input value={project.modPath || ''} readOnly placeholder="未设置 — 点击浏览选择MOD文件夹" />
-            <Button icon={<FolderOpenOutlined />} onClick={handleSelectModPath}>浏览</Button>
-          </Space.Compact>
+        {/* Path configuration */}
+        <Typography.Title level={5}>📁 路径配置</Typography.Title>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>MOD文件夹路径</div>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input value={project.modPath || ''} readOnly placeholder="未设置 — 点击浏览选择MOD文件夹" />
+              <Button icon={<FolderOpenOutlined />} onClick={handleSelectModPath}>浏览</Button>
+            </Space.Compact>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>老版本MOD路径</div>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input value={project.legacyModPath || ''} readOnly placeholder="未设置（可选）" />
+              <Button icon={<FolderOpenOutlined />} onClick={handleSelectLegacyPath}>浏览</Button>
+            </Space.Compact>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>输出文件夹</div>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input value={project.outputDir || ''} readOnly placeholder="未设置（导出时选择）" />
+              <Button icon={<FolderOpenOutlined />} onClick={handleSelectOutputDir}>浏览</Button>
+            </Space.Compact>
+          </div>
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>老版本MOD路径</div>
-          <Space.Compact style={{ width: '100%' }}>
-            <Input value={project.legacyModPath || ''} readOnly placeholder="未设置（可选）" />
-            <Button icon={<FolderOpenOutlined />} onClick={handleSelectLegacyPath}>浏览</Button>
-          </Space.Compact>
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>输出文件夹</div>
-          <Space.Compact style={{ width: '100%' }}>
-            <Input value={project.outputDir || ''} readOnly placeholder="未设置（导出时选择）" />
-            <Button icon={<FolderOpenOutlined />} onClick={handleSelectOutputDir}>浏览</Button>
-          </Space.Compact>
-        </div>
-      </div>
 
-      {/* MOD prompt */}
-      <Typography.Title level={5}>💡 MOD专属提示词</Typography.Title>
-      <Alert
-        type="info"
-        showIcon
-        message="这些内容会在AI翻译时自动注入到上下文中，帮助AI更好地理解并翻译MOD内容。"
-        style={{ marginBottom: 12, fontSize: 12 }}
-      />
-      <Input.TextArea
-        value={localPrompt}
-        onChange={e => {
-          setLocalPrompt(e.target.value);
-          onProjectFieldsChange({ modPrompt: e.target.value });
-        }}
-        placeholder={`示例：\n这是一个以银河战争为背景的MOD，主要讲述"星际联盟"与"暗影帝国"之间的对抗。\n翻译风格偏硬科幻军事风格，使用正式、简洁的军事用语。`}
-        rows={6}
-        style={{ fontFamily: 'monospace', fontSize: 12, marginBottom: 12 }}
-      />
-      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
-        提示词修改后自动保存到项目中，所有AI翻译和润色操作都会自动包含这些信息。
+        {/* MOD prompt */}
+        <Typography.Title level={5}>💡 MOD专属提示词</Typography.Title>
+        <Alert
+          type="info"
+          showIcon
+          message="这些内容会在AI翻译时自动注入到上下文中，帮助AI更好地理解并翻译MOD内容。"
+          style={{ marginBottom: 12, fontSize: 12 }}
+        />
+        <Input.TextArea
+          value={localPrompt}
+          onChange={e => {
+            setLocalPrompt(e.target.value);
+            onProjectFieldsChange({ modPrompt: e.target.value });
+          }}
+          placeholder={`示例：\n这是一个以银河战争为背景的MOD，主要讲述"星际联盟"与"暗影帝国"之间的对抗。\n翻译风格偏硬科幻军事风格，使用正式、简洁的军事用语。`}
+          rows={6}
+          style={{ fontFamily: 'monospace', fontSize: 12, marginBottom: 12 }}
+        />
+        <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
+          提示词修改后自动保存到项目中，所有AI翻译和润色操作都会自动包含这些信息。
+        </div>
       </div>
     </div>
   );

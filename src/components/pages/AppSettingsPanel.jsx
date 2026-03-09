@@ -1,12 +1,12 @@
 import React from 'react';
-import { Form, InputNumber, Card, Slider } from 'antd';
+import { Form, Slider, Card } from 'antd';
 import { ControlOutlined } from '@ant-design/icons';
 
 const DEFAULT_ZOOM = 100;
 
 export default function AppSettingsPanel({ zoomLevel, onZoomLevelChange }) {
   return (
-    <div className="settings-panel-full">
+    <div className="centered-page-container">
       <div className="settings-tab-content">
         <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
           <ControlOutlined /> 程序设置
