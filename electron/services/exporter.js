@@ -42,7 +42,7 @@ async function exportMod(projectData, outputDir) {
 
       if (ext === '.csv') {
         applyCSVTranslations(absPath, fileEntries, fileName);
-      } else if (ext === '.json' || ext === '.faction' || ext === '.ship' || ext === '.skin') {
+      } else if (ext === '.json' || ext === '.faction' || ext === '.ship' || ext === '.skin' || ext === '.variant' || ext === '.skill') {
         applyJsonTranslations(absPath, fileEntries);
       }
     } catch (err) {
@@ -148,7 +148,16 @@ function getIdColumn(fileName) {
     'sim_opponents.csv': 'id',
     'commodities.csv': 'id',
     'market_conditions.csv': 'id',
+    'title_screen_variants.csv': 'id',
     'LunaSettings.csv': 'fieldID',
+    'abilities.csv': 'id',
+    'submarkets.csv': 'id',
+    'personalities.csv': 'id',
+    'skill_data.csv': 'id',
+    'aptitude_data.csv': 'id',
+    'ship_systems.csv': 'id',
+    'reports.csv': 'event_type',
+    'name_gen_data.csv': 'name',
   };
   return map[fileName] || 'id';
 }
