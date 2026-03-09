@@ -64,10 +64,10 @@ export default function TranslationEditor({
     if (searchText.trim()) {
       const lower = searchText.toLowerCase();
       entries = entries.filter(e =>
-        e.original.toLowerCase().includes(lower) ||
+        e.original?.toLowerCase().includes(lower) ||
         e.translated?.toLowerCase().includes(lower) ||
         e.context?.toLowerCase().includes(lower) ||
-        e.id.toLowerCase().includes(lower)
+        e.id?.toLowerCase().includes(lower)
       );
     }
 

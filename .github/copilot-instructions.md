@@ -55,7 +55,10 @@
 │           │   └── useTranslationActions.js # 翻译操作自定义 Hook
 │           ├── GlossaryPanel.jsx      # 词库管理页
 │           ├── KeywordExtractor.jsx   # 关键词提取页
-│           └── SettingsPanel.jsx      # 模型配置页
+│           ├── ReviewPanel.jsx        # 审核页（逐条审核术语和翻译）
+│           ├── SettingsPanel.jsx      # 模型配置页
+│           ├── AppSettingsPanel.jsx   # 程序设置页（界面外观等）
+│           └── RequestHistory.jsx     # 请求历史页
 └── tests/                        # 自动化测试（vitest）
     └── electron/services/        # 后端服务单元测试
 ```
@@ -178,8 +181,9 @@
 ┌──────────────────────────────────────────────────────┐
 │  LeftNav  │              app-content                 │
 │  (侧边栏)  │  (ProjectInfo / TranslationEditor /     │
-│           │   GlossaryPanel / KeywordExtractor /     │
-│           │   SettingsPanel)                         │
+│           │   GlossaryPanel / ReviewPanel /          │
+│           │   SettingsPanel / AppSettingsPanel /     │
+│           │   RequestHistory)                        │
 ├───────────┴──────────────────────────────────────────┤
 │                    LogPanel (日志面板，可切换)           │
 ├──────────────────────────────────────────────────────┤
