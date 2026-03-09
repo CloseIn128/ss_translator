@@ -1,21 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Button } from 'antd';
+import { Alert, Button } from 'antd';
+import { WarningOutlined } from '@ant-design/icons';
 import FileSidebar from './editor/FileSidebar';
 import EditorHeader from './editor/EditorHeader';
 import EntryRow from './editor/EntryRow';
 import FileDiffView from './editor/FileDiffView';
 import useTranslationActions from './editor/useTranslationActions';
+import useProjectStore from '../../store/useProjectStore';
 
 const PAGE_SIZE = 50;
 
-export default function TranslationEditor({
-  project,
-  selectedFile,
-  onSelectFile,
-  onUpdateEntry,
-  onBatchUpdate,
-  messageApi,
-}) {
+export default function TranslationEditor({ messageApi }) {
+  const project = useProjectStore(s => s.project);
+  const selectedFile = useProjectStore(s => s.selectedFile);
+  const setSelectedFile = useProjectStore(s => s.setSelectedFile);
+  const updateEntry = useProjectStore(s => s.updateEntry);
+  const batchUpdate = useProjectStore(s => s.batchUpdate);
+
   // Merge project glossary with keywords — only confirmed (reviewed) terms are included
   const mergedGlossary = useMemo(() => {
     const glossary = project.glossary || [];
@@ -30,12 +31,18 @@ export default function TranslationEditor({
     return [...confirmedGlossary, ...keywordGlossary];
   }, [project.glossary, project.keywords]);
 
-  // Count unreviewed terms
-  const unreviewedTermCount = useMemo(() => {
+  // Count untranslated terms (terms missing translation)
+  const untranslatedTermCount = useMemo(() => {
     const glossary = project.glossary || [];
     const keywords = project.keywords || [];
-    return glossary.filter(g => !g.confirmed).length + keywords.filter(kw => !kw.confirmed).length;
+    return glossary.filter(g => !g.target || !g.target.trim()).length +
+      keywords.filter(kw => !kw.target || !kw.target.trim()).length;
   }, [project.glossary, project.keywords]);
+
+  // Dismissible banner state
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  // Reset banner when untranslated count changes (e.g., after translating terms)
+  useEffect(() => { setBannerDismissed(false); }, [untranslatedTermCount]);
 
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -107,8 +114,8 @@ export default function TranslationEditor({
     project,
     filteredEntries,
     mergedGlossary,
-    onUpdateEntry,
-    onBatchUpdate,
+    onUpdateEntry: updateEntry,
+    onBatchUpdate: batchUpdate,
     messageApi,
   });
 
@@ -117,13 +124,29 @@ export default function TranslationEditor({
       <FileSidebar
         entries={project.entries}
         selectedFile={selectedFile}
-        onSelectFile={onSelectFile}
+        onSelectFile={setSelectedFile}
       />
 
       <div className="editor-main">
+        {/* Untranslated terms banner */}
+        {untranslatedTermCount > 0 && !bannerDismissed && (
+          <Alert
+            message={
+              <span>
+                <WarningOutlined style={{ marginRight: 8 }} />
+                还有 <strong>{untranslatedTermCount}</strong> 个术语尚未翻译，建议先在术语管理中完成翻译
+              </span>
+            }
+            type="warning"
+            closable
+            onClose={() => setBannerDismissed(true)}
+            style={{ borderRadius: 0, flexShrink: 0 }}
+            banner
+          />
+        )}
+
         <EditorHeader
           stats={stats}
-          unreviewedTermCount={unreviewedTermCount}
           filteredCount={filteredEntries.length}
           searchText={searchText}
           onSearchChange={setSearchText}
@@ -154,7 +177,7 @@ export default function TranslationEditor({
                 key={entry.id}
                 entry={entry}
                 isTranslating={translatingIds.has(entry.id)}
-                onUpdateEntry={onUpdateEntry}
+                onUpdateEntry={updateEntry}
                 onTranslate={handleTranslate}
                 onPolish={handlePolish}
               />
@@ -184,5 +207,3 @@ export default function TranslationEditor({
     </div>
   );
 }
-
-

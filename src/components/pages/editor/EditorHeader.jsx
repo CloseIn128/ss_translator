@@ -9,7 +9,6 @@ import {
 
 export default function EditorHeader({
   stats,
-  unreviewedTermCount,
   filteredCount,
   searchText,
   onSearchChange,
@@ -26,30 +25,6 @@ export default function EditorHeader({
 }) {
   return (
     <div className="editor-header">
-      {/* Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-value">{stats.total}</div>
-          <div className="stat-label">当前条目数</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats.translated}</div>
-          <div className="stat-label">已翻译</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">
-            {stats.total > 0 ? Math.round((stats.translated / stats.total) * 100) : 0}%
-          </div>
-          <div className="stat-label">翻译进度</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={unreviewedTermCount > 0 ? { color: '#faad14' } : {}}>
-            {unreviewedTermCount}
-          </div>
-          <div className="stat-label">术语待审核</div>
-        </div>
-      </div>
-
       {/* Filter bar */}
       <div className="filter-bar">
         <Input
@@ -114,7 +89,7 @@ export default function EditorHeader({
           清空翻译
         </Button>
         <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
-          共 {filteredCount} 条
+          {stats.translated}/{stats.total} 已翻译 · 共 {filteredCount} 条
         </span>
       </div>
     </div>

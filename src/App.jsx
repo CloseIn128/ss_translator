@@ -6,6 +6,7 @@ import LogPanel from './components/layout/LogPanel';
 import BottomBar from './components/layout/BottomBar';
 import WelcomePage from './components/pages/WelcomePage';
 import { TaskProvider } from './components/context/TaskContext';
+import useProjectStore from './store/useProjectStore';
 
 // Lazy-load page components for faster initial render and tab switching
 const ProjectInfo = React.lazy(() => import('./components/pages/ProjectInfo'));
@@ -22,9 +23,17 @@ const DEFAULT_ZOOM_LEVEL = 100;
 const AUTO_SAVE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
 function AppInner() {
-  const [project, setProject] = useState(null);
+  const project = useProjectStore(s => s.project);
+  const setProject = useProjectStore(s => s.setProject);
+  const selectedFile = useProjectStore(s => s.selectedFile);
+  const setSelectedFile = useProjectStore(s => s.setSelectedFile);
+  const storeUpdateEntry = useProjectStore(s => s.updateEntry);
+  const storeBatchUpdate = useProjectStore(s => s.batchUpdate);
+  const storeUpdateGlossary = useProjectStore(s => s.updateGlossary);
+  const storeUpdateKeywords = useProjectStore(s => s.updateKeywords);
+  const storeUpdateProjectFields = useProjectStore(s => s.updateProjectFields);
+
   const [activeTab, setActiveTab] = useState('editor');
-  const [selectedFile, setSelectedFile] = useState(null);
   const [messageApi, contextHolder] = message.useMessage();
   const [logVisible, setLogVisible] = useState(false);
   const projectRef = useRef(null);
@@ -59,12 +68,12 @@ function AppInner() {
     try {
       const result = await api.autoSaveProject(p);
       if (result?.success && result.data?.projectFilePath) {
-        setProject(prev => prev ? { ...prev, projectFilePath: result.data.projectFilePath } : prev);
+        storeUpdateProjectFields({ projectFilePath: result.data.projectFilePath });
       }
     } catch {
       // silent failure for auto-save
     }
-  }, []);
+  }, [storeUpdateProjectFields]);
 
   // Periodic auto-save timer
   useEffect(() => {
@@ -108,7 +117,7 @@ function AppInner() {
     } else {
       messageApi.error(result?.error || '创建项目失败');
     }
-  }, [messageApi]);
+  }, [messageApi, setProject, setSelectedFile]);
 
   const handleLoadProject = useCallback(async () => {
     const result = await api.loadProject();
@@ -121,7 +130,7 @@ function AppInner() {
     } else {
       messageApi.error(result.error || '加载项目失败');
     }
-  }, [messageApi]);
+  }, [messageApi, setProject, setSelectedFile]);
 
   const handleSaveProject = useCallback(async () => {
     if (!project) return;
@@ -129,14 +138,14 @@ function AppInner() {
     if (result?.success) {
       // Update projectFilePath if the backend assigned one (e.g. via save dialog)
       if (result.data?.projectFilePath) {
-        setProject(prev => prev ? { ...prev, projectFilePath: result.data.projectFilePath } : prev);
+        storeUpdateProjectFields({ projectFilePath: result.data.projectFilePath });
       }
       messageApi.success('项目保存成功');
     } else if (result) {
       messageApi.error(result?.error || '保存失败');
     }
     // result is null when user cancels save dialog
-  }, [project, messageApi]);
+  }, [project, messageApi, storeUpdateProjectFields]);
 
   const handleExport = useCallback(async () => {
     if (!project) return;
@@ -147,40 +156,6 @@ function AppInner() {
       messageApi.error(result.error || '导出失败');
     }
   }, [project, messageApi]);
-
-  const handleUpdateEntry = useCallback((entryId, updates) => {
-    setProject(prev => {
-      if (!prev) return prev;
-      const newEntries = prev.entries.map(e =>
-        e.id === entryId ? { ...e, ...updates } : e
-      );
-      return { ...prev, entries: newEntries };
-    });
-  }, []);
-
-  const handleBatchUpdate = useCallback((updates) => {
-    setProject(prev => {
-      if (!prev) return prev;
-      const updateMap = new Map(updates.map(u => [u.id, u]));
-      const newEntries = prev.entries.map(e => {
-        const upd = updateMap.get(e.id);
-        return upd ? { ...e, ...upd } : e;
-      });
-      return { ...prev, entries: newEntries };
-    });
-  }, []);
-
-  const handleUpdateGlossary = useCallback((glossary) => {
-    setProject(prev => prev ? { ...prev, glossary } : prev);
-  }, []);
-
-  const handleUpdateKeywords = useCallback((keywords) => {
-    setProject(prev => prev ? { ...prev, keywords } : prev);
-  }, []);
-
-  const handleProjectFieldsChange = useCallback((fields) => {
-    setProject(prev => prev ? { ...prev, ...fields } : prev);
-  }, []);
 
   // Helper to wrap tab content with display:none for inactive tabs
   const tabStyle = (tabKey) => ({
@@ -251,7 +226,7 @@ function AppInner() {
                 <Suspense fallback={lazyFallback}>
                   <ProjectInfo
                     project={project}
-                    onProjectFieldsChange={handleProjectFieldsChange}
+                    onProjectFieldsChange={storeUpdateProjectFields}
                     messageApi={messageApi}
                   />
                 </Suspense>
@@ -261,11 +236,6 @@ function AppInner() {
               <div className={tabClass('editor')} style={tabStyle('editor')}>
                 <Suspense fallback={lazyFallback}>
                   <TranslationEditor
-                    project={project}
-                    selectedFile={selectedFile}
-                    onSelectFile={setSelectedFile}
-                    onUpdateEntry={handleUpdateEntry}
-                    onBatchUpdate={handleBatchUpdate}
                     messageApi={messageApi}
                   />
                 </Suspense>
@@ -276,8 +246,8 @@ function AppInner() {
                 <Suspense fallback={lazyFallback}>
                   <GlossaryPanel
                     project={project}
-                    onUpdateGlossary={handleUpdateGlossary}
-                    onUpdateKeywords={handleUpdateKeywords}
+                    onUpdateGlossary={storeUpdateGlossary}
+                    onUpdateKeywords={storeUpdateKeywords}
                     messageApi={messageApi}
                   />
                 </Suspense>
@@ -288,9 +258,9 @@ function AppInner() {
                 <Suspense fallback={lazyFallback}>
                   <ReviewPanel
                     project={project}
-                    onUpdateGlossary={handleUpdateGlossary}
-                    onUpdateKeywords={handleUpdateKeywords}
-                    onUpdateEntry={handleUpdateEntry}
+                    onUpdateGlossary={storeUpdateGlossary}
+                    onUpdateKeywords={storeUpdateKeywords}
+                    onUpdateEntry={storeUpdateEntry}
                     messageApi={messageApi}
                   />
                 </Suspense>

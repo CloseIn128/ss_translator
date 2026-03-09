@@ -103,12 +103,16 @@ export default function EntryRow({ entry, isTranslating, onUpdateEntry, onTransl
                 disabled={!entry.translated}
               />
             </Tooltip>
-            <Tooltip title="标记为已审核">
+            <Tooltip title={entry.status === 'reviewed' ? '取消审核' : '标记为已审核'}>
               <Button
                 size="small"
                 type="text"
-                icon={<CheckCircleOutlined />}
-                onClick={() => onUpdateEntry(entry.id, { status: 'reviewed' })}
+                icon={<CheckCircleOutlined style={entry.status === 'reviewed' ? { color: '#faad14' } : {}} />}
+                onClick={() => onUpdateEntry(entry.id, {
+                  status: entry.status === 'reviewed'
+                    ? (entry.translated ? 'translated' : 'untranslated')
+                    : 'reviewed'
+                })}
                 disabled={!entry.translated}
               />
             </Tooltip>

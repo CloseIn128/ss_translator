@@ -259,10 +259,40 @@ body {
   color: var(--primary-color);
 }
 
+.file-tree-folder {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.file-tree-expand-icon {
+  font-size: 10px;
+  width: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 .file-tree-progress {
   margin-left: auto;
   font-size: 11px;
   color: var(--text-secondary);
+}
+
+/* Progress groups in LeftNav */
+.progress-group {
+  margin-bottom: 8px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+.progress-numbers {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Translation Editor */
@@ -274,15 +304,33 @@ body {
 }
 
 .editor-file-sidebar {
-  width: 200px;
+  width: 220px;
   min-width: 160px;
-  max-width: 280px;
+  max-width: 500px;
   border-right: 1px solid var(--border-color);
   background: var(--bg-card);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+  background: var(--primary-color);
 }
 
 .editor-main {
@@ -296,7 +344,7 @@ body {
 
 .editor-header {
   flex-shrink: 0;
-  padding: 16px 16px 0 16px;
+  padding: 12px 16px;
   background: var(--bg-dark);
   border-bottom: 1px solid var(--border-color);
 }

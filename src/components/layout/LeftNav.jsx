@@ -70,19 +70,33 @@ export default function LeftNav({
     { key: 'requestHistory', icon: <HistoryOutlined />, label: '请求历史' },
   ];
 
-  const totalStats = useMemo(() => {
-    if (!project) return { total: 0, translated: 0 };
-    let total = project.entries.length;
-    let translated = 0;
-    for (const e of project.entries) {
-      if (e.status !== 'untranslated' && e.status !== 'error') translated++;
-    }
-    return { total, translated };
+  // Compute detailed progress stats
+  const progressStats = useMemo(() => {
+    if (!project) return null;
+
+    // Term stats (glossary + keywords)
+    const glossary = project.glossary || [];
+    const keywords = project.keywords || [];
+    const allTerms = [...glossary, ...keywords];
+    const termTotal = allTerms.length;
+    const termTranslated = allTerms.filter(t => t.target && t.target.trim()).length;
+    const termReviewed = allTerms.filter(t => t.confirmed).length;
+
+    // Entry stats
+    const entries = project.entries || [];
+    const entryTotal = entries.length;
+    const entryTranslated = entries.filter(
+      e => e.status !== 'untranslated' && e.status !== 'error'
+    ).length;
+    const entryReviewed = entries.filter(e => e.status === 'reviewed').length;
+
+    return {
+      termTotal, termTranslated, termReviewed,
+      entryTotal, entryTranslated, entryReviewed,
+    };
   }, [project]);
 
-  const overallPercent = totalStats.total > 0
-    ? Math.round((totalStats.translated / totalStats.total) * 100)
-    : 0;
+  const pct = (n, d) => d > 0 ? Math.round((n / d) * 100) : 0;
 
   return (
     <div className="left-nav" style={{ width: navWidth }}>
@@ -135,16 +149,44 @@ export default function LeftNav({
         })}
       </div>
 
-      {/* Overall progress (when project loaded) */}
-      {project && (
+      {/* Detailed progress (when project loaded) */}
+      {project && progressStats && (
         <div className="left-nav-filetree">
           <div className="sidebar-section">
             <div className="sidebar-section-title">
               <GlobalOutlined /> 总体进度
             </div>
-            <Progress percent={overallPercent} size="small" />
-            <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 4 }}>
-              {totalStats.translated}/{totalStats.total} 已翻译
+
+            {/* Term progress */}
+            <div className="progress-group">
+              <div className="progress-label">
+                <span>术语翻译</span>
+                <span className="progress-numbers">{progressStats.termTranslated}/{progressStats.termTotal}</span>
+              </div>
+              <Progress percent={pct(progressStats.termTranslated, progressStats.termTotal)} size="small" showInfo={false} />
+            </div>
+            <div className="progress-group">
+              <div className="progress-label">
+                <span>术语审核</span>
+                <span className="progress-numbers">{progressStats.termReviewed}/{progressStats.termTotal}</span>
+              </div>
+              <Progress percent={pct(progressStats.termReviewed, progressStats.termTotal)} size="small" strokeColor="#faad14" showInfo={false} />
+            </div>
+
+            {/* Entry progress */}
+            <div className="progress-group">
+              <div className="progress-label">
+                <span>条目翻译</span>
+                <span className="progress-numbers">{progressStats.entryTranslated}/{progressStats.entryTotal}</span>
+              </div>
+              <Progress percent={pct(progressStats.entryTranslated, progressStats.entryTotal)} size="small" showInfo={false} />
+            </div>
+            <div className="progress-group">
+              <div className="progress-label">
+                <span>条目审核</span>
+                <span className="progress-numbers">{progressStats.entryReviewed}/{progressStats.entryTotal}</span>
+              </div>
+              <Progress percent={pct(progressStats.entryReviewed, progressStats.entryTotal)} size="small" strokeColor="#faad14" showInfo={false} />
             </div>
           </div>
         </div>
