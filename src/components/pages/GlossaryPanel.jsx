@@ -10,7 +10,6 @@ import {
   SearchOutlined,
   RobotOutlined,
   TranslationOutlined,
-  HighlightOutlined,
   CheckOutlined,
   ReloadOutlined,
   ClearOutlined,
@@ -42,7 +41,6 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
   // Extraction state
   const [extracting, setExtracting] = useState(false);
   const [translating, setTranslating] = useState(false);
-  const [polishing, setPolishing] = useState(false);
   const [enableAI, setEnableAI] = useState(true);
   const [extractPhase, setExtractPhase] = useState('');
   const keyCounterRef = useRef(project?.keywords?.length || 0);
@@ -166,10 +164,8 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       const values = await form.validateFields();
       if (editingEntry) {
         if (editingEntry._type === 'glossary') {
-          const result = await api.updateGlossaryEntry({ projectId: project.id, id: editingEntry.id, ...values });
-          if (result) {
-            onUpdateGlossary(glossary.map(g => g.id === editingEntry.id ? { ...g, ...values } : g));
-          }
+          // Update glossary entry directly in React state (no IPC needed)
+          onUpdateGlossary(glossary.map(g => g.id === editingEntry.id ? { ...g, ...values } : g));
         } else {
           // Edit extracted keyword
           const updated = keywords.map(kw =>
@@ -178,17 +174,22 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
           onUpdateKeywords(updated);
         }
       } else {
-        const result = await api.addGlossaryEntry({ projectId: project.id, ...values });
-        if (result) { onUpdateGlossary([...glossary, result]); }
+        // Add new glossary entry with locally generated ID (no IPC needed)
+        const newEntry = {
+          id: crypto.randomUUID(),
+          ...values,
+          createdAt: Date.now(),
+        };
+        onUpdateGlossary([...glossary, newEntry]);
       }
       setIsModalOpen(false);
       messageApi.success(editingEntry ? '术语更新成功' : '术语添加成功');
     } catch (err) { /* form validation */ }
   };
 
-  const handleDelete = async (record) => {
+  const handleDelete = (record) => {
     if (record._type === 'glossary') {
-      await api.removeGlossaryEntry(record.id);
+      // Delete glossary entry directly in React state (no IPC needed)
       onUpdateGlossary(glossary.filter(g => g.id !== record.id));
     } else {
       onUpdateKeywords(keywords.filter(kw => kw.key !== record.key));
@@ -218,10 +219,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
             }
           }
         }
-        // Delete glossary entries
-        for (const id of glossaryToDelete) {
-          await api.removeGlossaryEntry(id);
-        }
+        // Delete glossary entries directly in React state (no IPC needed)
         if (glossaryToDelete.length > 0) {
           const deleteSet = new Set(glossaryToDelete);
           onUpdateGlossary(glossary.filter(g => !deleteSet.has(g.id)));
@@ -355,8 +353,8 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
 
   // ─── Keyword translation ──────────────────────────────────────────
   const handleTranslateKeywords = async () => {
-    const untranslated = keywords.filter(kw => !kw.confirmed && (!kw.target || !kw.target.trim()));
-    if (untranslated.length === 0) {
+    const toTranslate = keywords.filter(kw => !kw.confirmed);
+    if (toTranslate.length === 0) {
       messageApi.info('没有需要翻译的术语');
       return;
     }
@@ -364,19 +362,19 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
     }
-    const taskId = startTask(`翻译 ${untranslated.length} 个术语`);
+    const taskId = startTask(`翻译 ${toTranslate.length} 个术语`);
     if (!taskId) {
       messageApi.warning('已有任务正在执行');
       return;
     }
     setTranslating(true);
-    addLog('info', `开始翻译 ${untranslated.length} 个术语`, '术语管理');
+    addLog('info', `开始翻译 ${toTranslate.length} 个术语`, '术语管理');
     const confirmedGlossary = keywords
       .filter(kw => kw.confirmed && kw.target && kw.target.trim())
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
     try {
       const result = await api.translateKeywords({
-        keywords: untranslated.map(kw => ({ source: kw.source, category: kw.category })),
+        keywords: toTranslate.map(kw => ({ source: kw.source, category: kw.category })),
         extraGlossary: confirmedGlossary,
       });
       if (result?.success) {
@@ -411,67 +409,6 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
     }
   };
 
-  // ─── Keyword polishing ────────────────────────────────────────────
-  const handlePolishKeywords = async () => {
-    const unconfirmedTranslated = keywords.filter(kw => !kw.confirmed && kw.target && kw.target.trim());
-    if (unconfirmedTranslated.length === 0) {
-      messageApi.warning('没有可润色的术语');
-      return;
-    }
-    if (isTaskRunning) {
-      messageApi.warning('已有任务正在执行，请等待完成后再操作');
-      return;
-    }
-    const taskId = startTask(`润色 ${unconfirmedTranslated.length} 个术语`);
-    if (!taskId) {
-      messageApi.warning('已有任务正在执行');
-      return;
-    }
-    setPolishing(true);
-    addLog('info', `开始润色 ${unconfirmedTranslated.length} 个术语`, '术语管理');
-    const confirmedGlossary = keywords
-      .filter(kw => kw.confirmed && kw.target && kw.target.trim())
-      .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
-    try {
-      const result = await api.polishKeywords({
-        keywords: unconfirmedTranslated.map(kw => ({ source: kw.source, target: kw.target || '', category: kw.category })),
-        extraGlossary: confirmedGlossary,
-      });
-      if (result?.success) {
-        const polishMap = new Map();
-        for (const item of result.data) {
-          if (item.source && item.target) {
-            polishMap.set(item.source.toLowerCase(), item.target);
-          }
-        }
-        const updatedKws = keywords.map(kw => {
-          const polished = polishMap.get(kw.source.toLowerCase());
-          return polished ? { ...kw, target: polished } : kw;
-        });
-        onUpdateKeywords(updatedKws);
-        const origMap = new Map(unconfirmedTranslated.map(kw => [kw.source.toLowerCase(), kw.target || '']));
-        const changed = result.data.filter(d => {
-          const origTarget = origMap.get(d.source?.toLowerCase());
-          return origTarget !== undefined && d.target !== origTarget;
-        }).length;
-        const msg = `润色完成，${changed} 个术语有变更`;
-        addLog('success', msg, '术语管理');
-        completeTask(msg);
-        messageApi.success(msg);
-      } else {
-        const errMsg = result?.error || '术语润色失败';
-        addLog('error', errMsg, '术语管理');
-        failTask(errMsg);
-        messageApi.error(errMsg);
-      }
-    } catch (err) {
-      addLog('error', `润色出错: ${err.message}`, '术语管理');
-      failTask(`润色出错: ${err.message}`);
-      messageApi.error('润色出错: ' + err.message);
-    } finally {
-      setPolishing(false);
-    }
-  };
 
   // ─── Confirm selected ─────────────────────────────────────────────
   const handleConfirmSelected = () => {
@@ -501,9 +438,8 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       okText: '确认删除',
       cancelText: '取消',
       okButtonProps: { danger: true },
-      async onOk() {
-        // Delete all glossary entries in parallel
-        await Promise.all(glossary.map(g => api.removeGlossaryEntry(g.id)));
+      onOk() {
+        // Delete all directly in React state (no IPC needed)
         onUpdateGlossary([]);
         onUpdateKeywords([]);
         setSelectedRowKeys([]);
@@ -699,15 +635,6 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
                 disabled={extracting || (isTaskRunning && !translating)}
               >
                 翻译提取术语
-              </Button>
-              <Button
-                size="small"
-                icon={<HighlightOutlined />}
-                onClick={handlePolishKeywords}
-                loading={polishing}
-                disabled={extracting || (isTaskRunning && !polishing)}
-              >
-                润色提取术语
               </Button>
               <Divider type="vertical" style={{ margin: '0 2px' }} />
             </>

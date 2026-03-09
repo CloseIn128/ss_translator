@@ -80,7 +80,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Unified keyword extraction (structural + AI with incremental updates)
   extractAllKeywords: (data) => ipcRenderer.invoke('keywords:extractAll', data),
   translateKeywords: (data) => ipcRenderer.invoke('keywords:translate', data),
-  polishKeywords: (data) => ipcRenderer.invoke('keywords:polish', data),
   onKeywordBatch: (callback) => {
     const handler = (_, data) => callback(data);
     ipcRenderer.on('keywords:batch', handler);
