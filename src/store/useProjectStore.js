@@ -3,7 +3,14 @@ import { create } from 'zustand';
 const api = typeof window !== 'undefined' ? window.electronAPI : null;
 
 const DEFAULT_ZOOM_LEVEL = 100;
+const MIN_ZOOM = 50;
+const MAX_ZOOM = 200;
 const AUTO_SAVE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
+
+const clampZoom = (v) => {
+  const num = Number(v);
+  return Number.isFinite(num) && num >= MIN_ZOOM && num <= MAX_ZOOM ? num : DEFAULT_ZOOM_LEVEL;
+};
 
 /**
  * Zustand store – single source of truth for all project state and UI state.
@@ -20,9 +27,7 @@ const useProjectStore = create((set, get) => ({
   activeTab: 'editor',
   zoomLevel: (() => {
     if (typeof localStorage === 'undefined') return DEFAULT_ZOOM_LEVEL;
-    const saved = localStorage.getItem('ss_translator_zoom_level');
-    const num = Number(saved);
-    return Number.isFinite(num) && num >= 50 && num <= 200 ? num : DEFAULT_ZOOM_LEVEL;
+    return clampZoom(localStorage.getItem('ss_translator_zoom_level'));
   })(),
   logVisible: false,
 
@@ -33,9 +38,10 @@ const useProjectStore = create((set, get) => ({
   setLogVisible: (v) => set({ logVisible: typeof v === 'function' ? v(get().logVisible) : v }),
 
   setZoomLevel: (level) => {
-    set({ zoomLevel: level });
-    localStorage.setItem('ss_translator_zoom_level', String(level));
-    if (api?.setZoomFactor) api.setZoomFactor(level / 100);
+    const clamped = clampZoom(level);
+    set({ zoomLevel: clamped });
+    localStorage.setItem('ss_translator_zoom_level', String(clamped));
+    if (api?.setZoomFactor) api.setZoomFactor(clamped / 100);
   },
 
   // ---- Entry updates ----

@@ -267,11 +267,15 @@
 
 ### 状态管理（zustand）
 
-- 项目状态通过 `src/store/useProjectStore.js`（zustand store）统一管理
-- Store 包含：`project`、`selectedFile`、`updateEntry`、`batchUpdate`、`updateGlossary`、`updateKeywords`、`updateProjectFields`
-- `App.jsx` 通过 store 管理项目数据和更新逻辑，取代了原来的 props 层层传递
-- `TranslationEditor` 及其子组件直接从 store 读取数据，不再依赖 App.jsx 传递 props
-- 其他页面组件（`GlossaryPanel`、`ReviewPanel` 等）仍接收 store 方法作为 props（后续可逐步迁移）
+- 所有项目状态和 UI 状态通过 `src/store/useProjectStore.js`（zustand store）统一管理
+- Store 包含：
+  - **项目数据**：`project`、`selectedFile`、`updateEntry`、`batchUpdate`、`updateGlossary`、`updateKeywords`、`updateProjectFields`
+  - **UI 状态**：`activeTab`、`zoomLevel`、`logVisible`
+  - **IPC 操作**：`createProject`、`loadProject`、`saveProject`、`autoSave`、`exportMod`
+  - **自动保存**：`startAutoSave`、`stopAutoSave`（3 分钟定时器）
+- `App.jsx` 是极简外壳：渲染布局、提供 message 反馈，不持有项目状态
+- 所有页面组件直接从 store 读取数据，不再通过 App.jsx 传递 props
+- 只有 `messageApi`（Ant Design 消息 API）和少量 UI 回调（`onNewProject`、`onLoadProject` 等含消息提示的包装函数）作为 props 传递
 
 ### 术语未翻译横幅
 
