@@ -176,7 +176,7 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       } else {
         // Add new glossary entry with locally generated ID (no IPC needed)
         const newEntry = {
-          id: crypto.randomUUID(),
+          id: (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)),
           ...values,
           createdAt: Date.now(),
         };
@@ -353,8 +353,8 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
 
   // ─── Keyword translation ──────────────────────────────────────────
   const handleTranslateKeywords = async () => {
-    const toTranslate = keywords.filter(kw => !kw.confirmed);
-    if (toTranslate.length === 0) {
+    const unconfirmedKeywords = keywords.filter(kw => !kw.confirmed);
+    if (unconfirmedKeywords.length === 0) {
       messageApi.info('没有需要翻译的术语');
       return;
     }
@@ -362,19 +362,19 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
     }
-    const taskId = startTask(`翻译 ${toTranslate.length} 个术语`);
+    const taskId = startTask(`翻译 ${unconfirmedKeywords.length} 个术语`);
     if (!taskId) {
       messageApi.warning('已有任务正在执行');
       return;
     }
     setTranslating(true);
-    addLog('info', `开始翻译 ${toTranslate.length} 个术语`, '术语管理');
+    addLog('info', `开始翻译 ${unconfirmedKeywords.length} 个术语`, '术语管理');
     const confirmedGlossary = keywords
       .filter(kw => kw.confirmed && kw.target && kw.target.trim())
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
     try {
       const result = await api.translateKeywords({
-        keywords: toTranslate.map(kw => ({ source: kw.source, category: kw.category })),
+        keywords: unconfirmedKeywords.map(kw => ({ source: kw.source, category: kw.category })),
         extraGlossary: confirmedGlossary,
       });
       if (result?.success) {
