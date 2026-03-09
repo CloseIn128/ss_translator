@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Input, Select, Button, Tag, Tooltip, Space, Modal, Spin, Progress } from 'antd';
 import {
   TranslationOutlined,
@@ -9,6 +9,7 @@ import {
   FileTextOutlined,
   DatabaseOutlined,
   GlobalOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
@@ -32,8 +33,44 @@ export default function TranslationEditor({
   onBatchUpdate,
   messageApi,
 }) {
-  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
+  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning, isTaskCancelled } = useTask();
   const modPrompt = project.modPrompt || '';
+  const progressHandlerRef = useRef(null);
+
+  // Cleanup progress event listeners on unmount
+  useEffect(() => {
+    return () => {
+      if (progressHandlerRef.current) {
+        api.removeTranslateProgressListener(progressHandlerRef.current);
+        api.removePolishProgressListener(progressHandlerRef.current);
+        progressHandlerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Merge project glossary with keywords — only confirmed (reviewed) terms are included
+  const mergedGlossary = useMemo(() => {
+    const glossary = project.glossary || [];
+    const keywords = project.keywords || [];
+    // Only include confirmed glossary entries
+    const confirmedGlossary = glossary
+      .filter(g => g.confirmed && g.target && g.target.trim())
+      .map(g => ({ source: g.source, target: g.target, category: g.category || '通用' }));
+    const existingSources = new Set(confirmedGlossary.map(g => g.source.toLowerCase()));
+    // Only include confirmed keywords with translations
+    const keywordGlossary = keywords
+      .filter(kw => kw.confirmed && kw.target && kw.target.trim() && !existingSources.has(kw.source.toLowerCase()))
+      .map(kw => ({ source: kw.source, target: kw.target, category: kw.category || '通用' }));
+    return [...confirmedGlossary, ...keywordGlossary];
+  }, [project.glossary, project.keywords]);
+
+  // Count unreviewed terms
+  const unreviewedTermCount = useMemo(() => {
+    const glossary = project.glossary || [];
+    const keywords = project.keywords || [];
+    return glossary.filter(g => !g.confirmed).length + keywords.filter(kw => !kw.confirmed).length;
+  }, [project.glossary, project.keywords]);
+
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -102,7 +139,7 @@ export default function TranslationEditor({
     try {
       const result = await api.translate({
         entries: [{ id: entry.id, original: entry.original, context: entry.context }],
-        glossary: project.glossary || [],
+        glossary: mergedGlossary,
         modPrompt,
       });
       if (result?.success && result.data?.length > 0) {
@@ -128,7 +165,7 @@ export default function TranslationEditor({
         return s;
       });
     }
-  }, [project.glossary, modPrompt, onUpdateEntry, messageApi, addLog]);
+  }, [mergedGlossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
   // Polish single entry
   const handlePolish = useCallback(async (entry) => {
@@ -141,7 +178,7 @@ export default function TranslationEditor({
     try {
       const result = await api.polish({
         entry: { id: entry.id, original: entry.original, translated: entry.translated },
-        glossary: project.glossary || [],
+        glossary: mergedGlossary,
         modPrompt,
       });
       if (result?.success) {
@@ -161,13 +198,40 @@ export default function TranslationEditor({
         return s;
       });
     }
-  }, [project.glossary, modPrompt, onUpdateEntry, messageApi, addLog]);
+  }, [mergedGlossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
-  // Batch translate all untranslated in current filter
+  // Clear all translations in current scope
+  const handleClearTranslations = useCallback(() => {
+    const translatedEntries = filteredEntries.filter(e => e.status !== 'untranslated');
+    if (translatedEntries.length === 0) {
+      messageApi.info('当前筛选下没有已翻译的条目');
+      return;
+    }
+
+    Modal.confirm({
+      title: '清空翻译',
+      content: `将清空当前筛选范围内 ${translatedEntries.length} 条已翻译文本的译文，是否继续？`,
+      okText: '确认清空',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk() {
+        const updates = translatedEntries.map(e => ({
+          id: e.id,
+          translated: '',
+          status: 'untranslated',
+        }));
+        onBatchUpdate(updates);
+        messageApi.success(`已清空 ${translatedEntries.length} 条翻译`);
+        addLog('info', `已清空 ${translatedEntries.length} 条翻译`, '翻译编辑');
+      },
+    });
+  }, [filteredEntries, onBatchUpdate, messageApi, addLog]);
+
+  // Batch translate all entries in current filter (re-translate all, not just untranslated)
   const handleBatchTranslate = useCallback(async () => {
-    const untranslated = filteredEntries.filter(e => e.status === 'untranslated' || e.status === 'error');
-    if (untranslated.length === 0) {
-      messageApi.info('当前筛选下没有需要翻译的条目');
+    const targetEntries = filteredEntries;
+    if (targetEntries.length === 0) {
+      messageApi.info('当前筛选下没有条目');
       return;
     }
 
@@ -178,37 +242,50 @@ export default function TranslationEditor({
 
     Modal.confirm({
       title: '批量翻译',
-      content: `将翻译当前筛选范围内的 ${untranslated.length} 条未翻译/失败文本，是否继续？`,
+      content: `将翻译当前筛选范围内的 ${targetEntries.length} 条文本，是否继续？`,
       okText: '开始翻译',
       cancelText: '取消',
       onOk() {
-        // Do not return the promise so the dialog closes immediately.
-        // Using a fire-and-forget async IIFE: if onOk were async, Ant Design's
-        // Modal.confirm would keep the dialog open until the Promise resolves.
-        const taskId = startTask(`批量翻译 ${untranslated.length} 条`);
+        const taskId = startTask(`批量翻译 ${targetEntries.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');
           return;
         }
         setBatchTranslating(true);
-        addLog('info', `开始批量翻译 ${untranslated.length} 条未翻译文本`, '翻译编辑');
+        addLog('info', `开始批量翻译 ${targetEntries.length} 条文本`, '翻译编辑');
+
+        // Listen for incremental progress from backend
+        if (progressHandlerRef.current) {
+          api.removeTranslateProgressListener(progressHandlerRef.current);
+        }
+        const handler = api.onTranslateProgress(({ completed, total, batchResults }) => {
+          updateTaskProgress(`${completed}/${total}`);
+          // Incrementally update entries as batches complete
+          if (batchResults && batchResults.length > 0) {
+            onBatchUpdate(batchResults);
+          }
+        });
+        progressHandlerRef.current = handler;
+
         (async () => {
           try {
-            const batchInput = untranslated.map(e => ({
+            const batchInput = targetEntries.map(e => ({
               id: e.id,
               original: e.original,
               context: e.context,
             }));
-            updateTaskProgress(`0/${untranslated.length}`);
+            updateTaskProgress(`0/${targetEntries.length}`);
             const result = await api.translate({
               entries: batchInput,
-              glossary: project.glossary || [],
+              glossary: mergedGlossary,
               modPrompt,
             });
+            if (isTaskCancelled()) return;
             if (result?.success) {
+              // Final update with all results (ensures consistency)
               onBatchUpdate(result.data);
               const successCount = result.data.filter(r => r.status === 'translated').length;
-              const msg = `批量翻译完成：${successCount}/${untranslated.length} 成功`;
+              const msg = `批量翻译完成：${successCount}/${targetEntries.length} 成功`;
               addLog('success', msg, '翻译编辑');
               for (const r of result.data.slice(0, 5)) {
                 if (r.status === 'translated') {
@@ -224,16 +301,22 @@ export default function TranslationEditor({
               messageApi.error(errMsg);
             }
           } catch (err) {
-            addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
-            failTask(`批量翻译出错: ${err.message}`);
-            messageApi.error('批量翻译出错: ' + err.message);
+            if (!isTaskCancelled()) {
+              addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
+              failTask(`批量翻译出错: ${err.message}`);
+              messageApi.error('批量翻译出错: ' + err.message);
+            }
           } finally {
             setBatchTranslating(false);
+            if (progressHandlerRef.current) {
+              api.removeTranslateProgressListener(progressHandlerRef.current);
+              progressHandlerRef.current = null;
+            }
           }
         })();
       },
     });
-  }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog, isTaskCancelled]);
 
   // Batch polish all translated
   const handleBatchPolish = useCallback(async () => {
@@ -254,9 +337,6 @@ export default function TranslationEditor({
       okText: '开始润色',
       cancelText: '取消',
       onOk() {
-        // Do not return the promise so the dialog closes immediately.
-        // Using a fire-and-forget async IIFE: if onOk were async, Ant Design's
-        // Modal.confirm would keep the dialog open until the Promise resolves.
         const taskId = startTask(`批量润色 ${translated.length} 条`);
         if (!taskId) {
           messageApi.warning('已有任务正在执行');
@@ -264,41 +344,64 @@ export default function TranslationEditor({
         }
         setBatchTranslating(true);
         addLog('info', `开始批量润色 ${translated.length} 条已翻译文本`, '翻译编辑');
+
+        // Listen for incremental progress from backend
+        if (progressHandlerRef.current) {
+          api.removePolishProgressListener(progressHandlerRef.current);
+        }
+        const handler = api.onPolishProgress(({ completed, total, batchResults }) => {
+          updateTaskProgress(`${completed}/${total}`);
+          if (batchResults && batchResults.length > 0) {
+            onBatchUpdate(batchResults);
+          }
+        });
+        progressHandlerRef.current = handler;
+
         (async () => {
           try {
-            const updates = [];
-            for (let i = 0; i < translated.length; i++) {
-              const entry = translated[i];
-              updateTaskProgress(`${i + 1}/${translated.length}`);
-              addLog('debug', `润色 (${i + 1}/${translated.length}): "${entry.original.slice(0, 40)}"`, '翻译编辑');
-              const result = await api.polish({
-                entry: { id: entry.id, original: entry.original, translated: entry.translated },
-                glossary: project.glossary || [],
-                modPrompt,
-              });
-              if (result?.success) {
-                updates.push(result.data);
-                addLog('debug', `润色结果: "${(result.data.translated || '').slice(0, 40)}"`, '翻译编辑');
-              }
+            const batchInput = translated.map(e => ({
+              id: e.id,
+              original: e.original,
+              translated: e.translated,
+              context: e.context,
+            }));
+            updateTaskProgress(`0/${translated.length}`);
+            const result = await api.polishBatch({
+              entries: batchInput,
+              glossary: mergedGlossary,
+              modPrompt,
+            });
+            if (isTaskCancelled()) return;
+            if (result?.success) {
+              onBatchUpdate(result.data);
+              const successCount = result.data.filter(r => r.status === 'polished').length;
+              const msg = `批量润色完成：${successCount}/${translated.length} 成功`;
+              addLog('success', msg, '翻译编辑');
+              completeTask(msg);
+              messageApi.success(msg);
+            } else {
+              const errMsg = result?.error || '批量润色失败';
+              addLog('error', errMsg, '翻译编辑');
+              failTask(errMsg);
+              messageApi.error(errMsg);
             }
-            if (updates.length > 0) {
-              onBatchUpdate(updates);
-            }
-            const msg = `批量润色完成：${updates.length}/${translated.length} 成功`;
-            addLog('success', msg, '翻译编辑');
-            completeTask(msg);
-            messageApi.success(msg);
           } catch (err) {
-            addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
-            failTask(`批量润色出错: ${err.message}`);
-            messageApi.error('批量润色出错: ' + err.message);
+            if (!isTaskCancelled()) {
+              addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
+              failTask(`批量润色出错: ${err.message}`);
+              messageApi.error('批量润色出错: ' + err.message);
+            }
           } finally {
             setBatchTranslating(false);
+            if (progressHandlerRef.current) {
+              api.removePolishProgressListener(progressHandlerRef.current);
+              progressHandlerRef.current = null;
+            }
           }
         })();
       },
     });
-  }, [filteredEntries, project.glossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog]);
+  }, [filteredEntries, mergedGlossary, modPrompt, onBatchUpdate, messageApi, isTaskRunning, startTask, updateTaskProgress, completeTask, failTask, addLog, isTaskCancelled]);
 
   // File stats for sidebar
   const fileStats = useMemo(() => {
@@ -401,6 +504,12 @@ export default function TranslationEditor({
             </div>
             <div className="stat-label">翻译进度</div>
           </div>
+          <div className="stat-card">
+            <div className="stat-value" style={unreviewedTermCount > 0 ? { color: '#faad14' } : {}}>
+              {unreviewedTermCount}
+            </div>
+            <div className="stat-label">术语待审核</div>
+          </div>
         </div>
 
         {/* Filter bar */}
@@ -456,6 +565,15 @@ export default function TranslationEditor({
             disabled={isTaskRunning && !batchTranslating}
           >
             批量润色
+          </Button>
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={handleClearTranslations}
+            disabled={isTaskRunning}
+          >
+            清空翻译
           </Button>
           <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
             共 {filteredEntries.length} 条

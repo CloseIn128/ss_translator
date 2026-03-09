@@ -437,5 +437,81 @@ describe('TranslationService', () => {
       expect(results).toHaveLength(2);
       expect(apiCallCount).toBe(2);
     });
+
+    it('polishBatch uses concurrent batches', async () => {
+      let apiCallCount = 0;
+      ts._callAPI = vi.fn().mockImplementation(async () => {
+        apiCallCount++;
+        return '[1] 润色后的文本A';
+      });
+
+      ts.configure({ batchSize: 1, concurrentRequests: 2, rateLimitMs: 0 });
+
+      const entries = [
+        { id: '1', original: 'Text A', translated: '文本A' },
+        { id: '2', original: 'Text B', translated: '文本B' },
+      ];
+      const results = await ts.polishBatch(entries);
+      expect(results).toHaveLength(2);
+      expect(apiCallCount).toBe(2);
+      // Each result should have id and status
+      expect(results[0].id).toBe('1');
+      expect(results[1].id).toBe('2');
+    });
+  });
+
+  describe('polishBatch', () => {
+    it('splits entries into batches by batchSize', async () => {
+      const batchSizes = [];
+      ts._polishBatchRequest = vi.fn().mockImplementation(async (entries) => {
+        batchSizes.push(entries.length);
+        return entries.map(e => ({ id: e.id, translated: 'polished', status: 'polished' }));
+      });
+
+      ts.configure({ batchSize: 2, rateLimitMs: 0 });
+
+      const entries = [
+        { id: '1', original: 'A', translated: 'a' },
+        { id: '2', original: 'B', translated: 'b' },
+        { id: '3', original: 'C', translated: 'c' },
+      ];
+      const results = await ts.polishBatch(entries);
+      expect(results).toHaveLength(3);
+      expect(batchSizes).toEqual([2, 1]);
+    });
+
+    it('returns error status on API failure', async () => {
+      ts._callAPI = vi.fn().mockRejectedValue(new Error('API error'));
+
+      ts.configure({ batchSize: 2, rateLimitMs: 0 });
+
+      const entries = [
+        { id: '1', original: 'A', translated: 'a' },
+        { id: '2', original: 'B', translated: 'b' },
+      ];
+      const results = await ts.polishBatch(entries);
+      expect(results).toHaveLength(2);
+      expect(results[0].status).toBe('error');
+      expect(results[0].translated).toBe('a'); // keeps original on error
+      expect(results[1].status).toBe('error');
+    });
+
+    it('passes glossary and modPrompt to batch request', async () => {
+      ts._polishBatchRequest = vi.fn().mockImplementation(async (entries, glossary, cfg, modPrompt) => {
+        return entries.map(e => ({
+          id: e.id,
+          translated: `polished with ${glossary.length} glossary and mod=${modPrompt}`,
+          status: 'polished',
+        }));
+      });
+
+      ts.configure({ batchSize: 5, rateLimitMs: 0 });
+
+      const glossary = [{ source: 'Test', target: '测试' }];
+      const entries = [{ id: '1', original: 'A', translated: 'a' }];
+      const results = await ts.polishBatch(entries, glossary, {}, 'my mod prompt');
+      expect(results[0].translated).toContain('1 glossary');
+      expect(results[0].translated).toContain('mod=my mod prompt');
+    });
   });
 });

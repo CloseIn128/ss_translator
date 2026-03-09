@@ -35,6 +35,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDefaultPrompts: () => ipcRenderer.invoke('ai:getDefaultPrompts'),
   translate: (data) => ipcRenderer.invoke('ai:translate', data),
   polish: (data) => ipcRenderer.invoke('ai:polish', data),
+  polishBatch: (data) => ipcRenderer.invoke('ai:polishBatch', data),
+
+  // AI progress events (for batch translate/polish)
+  onTranslateProgress: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('ai:translateProgress', handler);
+    return handler;
+  },
+  removeTranslateProgressListener: (handler) => {
+    ipcRenderer.removeListener('ai:translateProgress', handler);
+  },
+  onPolishProgress: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('ai:polishProgress', handler);
+    return handler;
+  },
+  removePolishProgressListener: (handler) => {
+    ipcRenderer.removeListener('ai:polishProgress', handler);
+  },
 
   // Request History (AI debugging)
   getRequestHistory: () => ipcRenderer.invoke('ai:getRequestHistory'),
@@ -61,7 +80,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Unified keyword extraction (structural + AI with incremental updates)
   extractAllKeywords: (data) => ipcRenderer.invoke('keywords:extractAll', data),
   translateKeywords: (data) => ipcRenderer.invoke('keywords:translate', data),
-  polishKeywords: (data) => ipcRenderer.invoke('keywords:polish', data),
   onKeywordBatch: (callback) => {
     const handler = (_, data) => callback(data);
     ipcRenderer.on('keywords:batch', handler);

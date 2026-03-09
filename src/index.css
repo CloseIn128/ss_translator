@@ -179,16 +179,19 @@ body {
 
 .app-content {
   flex: 1;
-  overflow: auto;
-  padding: 16px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* Editor layout fills all available space with its own internal padding */
-.app-content:has(.editor-layout) {
+/* Tab wrapper panels: add padding to all except the editor which has its own layout */
+.tab-panel {
+  padding: 16px;
+}
+
+.tab-panel-editor {
+  /* Editor manages its own internal padding */
   padding: 0;
-  overflow: hidden;
 }
 
 /* Table wrapper: fill remaining height with fixed pagination at bottom */

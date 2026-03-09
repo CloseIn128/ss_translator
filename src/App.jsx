@@ -1,18 +1,20 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ConfigProvider, theme, message, Modal } from 'antd';
+import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import { ConfigProvider, theme, message, Modal, Spin } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/layout/LeftNav';
 import LogPanel from './components/layout/LogPanel';
 import BottomBar from './components/layout/BottomBar';
 import WelcomePage from './components/pages/WelcomePage';
-import ProjectInfo from './components/pages/ProjectInfo';
-import TranslationEditor from './components/pages/TranslationEditor';
-import GlossaryPanel from './components/pages/GlossaryPanel';
-import KeywordExtractor from './components/pages/KeywordExtractor';
-import SettingsPanel from './components/pages/SettingsPanel';
-import AppSettingsPanel from './components/pages/AppSettingsPanel';
-import RequestHistory from './components/pages/RequestHistory';
 import { TaskProvider } from './components/context/TaskContext';
+
+// Lazy-load page components for faster initial render and tab switching
+const ProjectInfo = React.lazy(() => import('./components/pages/ProjectInfo'));
+const TranslationEditor = React.lazy(() => import('./components/pages/TranslationEditor'));
+const GlossaryPanel = React.lazy(() => import('./components/pages/GlossaryPanel'));
+const SettingsPanel = React.lazy(() => import('./components/pages/SettingsPanel'));
+const AppSettingsPanel = React.lazy(() => import('./components/pages/AppSettingsPanel'));
+const ReviewPanel = React.lazy(() => import('./components/pages/ReviewPanel'));
+const RequestHistory = React.lazy(() => import('./components/pages/RequestHistory'));
 
 const api = window.electronAPI;
 
@@ -180,72 +182,47 @@ function AppInner() {
     setProject(prev => prev ? { ...prev, ...fields } : prev);
   }, []);
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'info':
-        if (!project) {
-          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
-        }
-        return (
-          <ProjectInfo
-            project={project}
-            onProjectFieldsChange={handleProjectFieldsChange}
-            messageApi={messageApi}
-          />
-        );
-      case 'editor':
-        if (!project) {
-          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
-        }
-        return (
-          <TranslationEditor
-            project={project}
-            selectedFile={selectedFile}
-            onSelectFile={setSelectedFile}
-            onUpdateEntry={handleUpdateEntry}
-            onBatchUpdate={handleBatchUpdate}
-            messageApi={messageApi}
-          />
-        );
-      case 'glossary':
-        if (!project) {
-          return <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />;
-        }
-        return (
-          <GlossaryPanel
-            project={project}
-            onUpdateGlossary={handleUpdateGlossary}
-            messageApi={messageApi}
-          />
-        );
-      case 'keywords':
-        return (
-          <KeywordExtractor
-            project={project}
-            onUpdateKeywords={handleUpdateKeywords}
-            onUpdateGlossary={handleUpdateGlossary}
-            messageApi={messageApi}
-          />
-        );
-      case 'settings':
-        return (
-          <SettingsPanel
-            messageApi={messageApi}
-          />
-        );
-      case 'appSettings':
-        return (
-          <AppSettingsPanel
-            zoomLevel={zoomLevel}
-            onZoomLevelChange={setZoomLevel}
-          />
-        );
-      case 'requestHistory':
-        return <RequestHistory />;
-      default:
-        return null;
-    }
+  // Helper to wrap tab content with display:none for inactive tabs
+  const tabStyle = (tabKey) => ({
+    display: activeTab === tabKey ? 'flex' : 'none',
+    flexDirection: 'column',
+    flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
+  });
+
+  // CSS class for tab panels - editor gets no padding, others get padding
+  const tabClass = (tabKey) => tabKey === 'editor' ? 'tab-panel-editor' : 'tab-panel';
+
+  // For project-requiring tabs, show WelcomePage if no project
+  const needsProject = (tabKey) => {
+    return ['info', 'editor', 'glossary', 'review'].includes(tabKey) && !project;
   };
+
+  // Track which tabs have been visited to lazy-mount them (render on first visit, then keep mounted)
+  const [visitedTabs, setVisitedTabs] = useState(new Set([activeTab]));
+  useEffect(() => {
+    setVisitedTabs(prev => {
+      if (prev.has(activeTab)) return prev;
+      return new Set([...prev, activeTab]);
+    });
+  }, [activeTab]);
+
+  // Reset visited tabs when project changes (clear heavy tabs)
+  useEffect(() => {
+    if (project) {
+      setVisitedTabs(new Set([activeTab]));
+    }
+  }, [project?.id]);
+
+  // Only render tab if it has been visited
+  const shouldRender = (tabKey) => visitedTabs.has(tabKey);
+
+  const lazyFallback = (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flex: 1 }}>
+      <Spin size="large" tip="加载中..." />
+    </div>
+  );
 
   return (
     <>
@@ -262,7 +239,89 @@ function AppInner() {
             onExport={handleExport}
           />
           <div className="app-content">
-            {renderContent()}
+            {/* WelcomePage shown for project-requiring tabs when no project */}
+            {needsProject(activeTab) && (
+              <WelcomePage onNewProject={handleNewProject} onLoadProject={handleLoadProject} />
+            )}
+
+            {/* All tabs rendered but hidden when inactive to avoid unmount/remount */}
+            {/* Tabs are lazy-mounted: only rendered on first visit, then kept alive */}
+            {project && shouldRender('info') && (
+              <div className={tabClass('info')} style={tabStyle('info')}>
+                <Suspense fallback={lazyFallback}>
+                  <ProjectInfo
+                    project={project}
+                    onProjectFieldsChange={handleProjectFieldsChange}
+                    messageApi={messageApi}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {project && shouldRender('editor') && (
+              <div className={tabClass('editor')} style={tabStyle('editor')}>
+                <Suspense fallback={lazyFallback}>
+                  <TranslationEditor
+                    project={project}
+                    selectedFile={selectedFile}
+                    onSelectFile={setSelectedFile}
+                    onUpdateEntry={handleUpdateEntry}
+                    onBatchUpdate={handleBatchUpdate}
+                    messageApi={messageApi}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {project && shouldRender('glossary') && (
+              <div className={tabClass('glossary')} style={tabStyle('glossary')}>
+                <Suspense fallback={lazyFallback}>
+                  <GlossaryPanel
+                    project={project}
+                    onUpdateGlossary={handleUpdateGlossary}
+                    onUpdateKeywords={handleUpdateKeywords}
+                    messageApi={messageApi}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {project && shouldRender('review') && (
+              <div className={tabClass('review')} style={tabStyle('review')}>
+                <Suspense fallback={lazyFallback}>
+                  <ReviewPanel
+                    project={project}
+                    onUpdateGlossary={handleUpdateGlossary}
+                    onUpdateKeywords={handleUpdateKeywords}
+                    onUpdateEntry={handleUpdateEntry}
+                    messageApi={messageApi}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {shouldRender('settings') && (
+              <div className={tabClass('settings')} style={tabStyle('settings')}>
+                <Suspense fallback={lazyFallback}>
+                  <SettingsPanel
+                    messageApi={messageApi}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {shouldRender('appSettings') && (
+              <div className={tabClass('appSettings')} style={tabStyle('appSettings')}>
+                <Suspense fallback={lazyFallback}>
+                  <AppSettingsPanel
+                    zoomLevel={zoomLevel}
+                    onZoomLevelChange={setZoomLevel}
+                  />
+                </Suspense>
+              </div>
+            )}
+            {shouldRender('requestHistory') && (
+              <div className={tabClass('requestHistory')} style={tabStyle('requestHistory')}>
+                <Suspense fallback={lazyFallback}>
+                  <RequestHistory />
+                </Suspense>
+              </div>
+            )}
           </div>
         </div>
         <LogPanel visible={logVisible} />

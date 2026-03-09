@@ -144,26 +144,6 @@ function register(ctx) {
     }
   });
 
-  // Keyword polishing (refine translations for consistency)
-  ipcMain.handle('keywords:polish', async (_, { keywords, extraGlossary }) => {
-    try {
-      const mainWindow = ctx.getMainWindow();
-      const onLog = (level, message) => {
-        mainWindow.webContents.send('keywords:log', { level, message });
-      };
-      const builtinGlossary = ctx.configManager.getBuiltinGlossary().map(e => ({
-        source: e.source,
-        target: e.target,
-        category: e.category,
-      }));
-      const mergedGlossary = [...builtinGlossary, ...(extraGlossary || [])];
-      const results = await ctx.translationService.polishKeywords(keywords, mergedGlossary, {}, onLog);
-      return { success: true, data: results };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  });
-
   // Legacy keyword extraction from MOD folder (kept for compatibility)
   ipcMain.handle('mod:extractKeywords', async (_, modPath) => {
     try {

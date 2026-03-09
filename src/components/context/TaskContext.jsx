@@ -25,6 +25,7 @@ export function TaskProvider({ children }) {
   const [currentTask, setCurrentTask] = useState(null); // { id, name, status, progress, message }
   const [taskHighlight, setTaskHighlight] = useState(false); // flash when task finishes
   const taskIdCounter = useRef(0);
+  const cancelledRef = useRef(false);
 
   // ── Logging ──────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export function TaskProvider({ children }) {
     const task = { id, name, status: 'running', progress: '', message: '' };
     setCurrentTask(task);
     setTaskHighlight(false);
+    cancelledRef.current = false;
     addLog('info', `任务开始: ${name}`, '任务管理');
     return id;
   }, [currentTask, addLog]);
@@ -100,6 +102,20 @@ export function TaskProvider({ children }) {
     }
   }, [addLog]);
 
+  const cancelTask = useCallback(() => {
+    cancelledRef.current = true;
+    setCurrentTask(prev => {
+      if (!prev || prev.status !== 'running') return prev;
+      return { ...prev, status: 'failed', message: '任务已取消' };
+    });
+    setTaskHighlight(false);
+    addLog('warning', '任务已取消', '任务管理');
+  }, [addLog]);
+
+  const isTaskCancelled = useCallback(() => {
+    return cancelledRef.current;
+  }, []);
+
   const dismissTask = useCallback(() => {
     setCurrentTask(null);
     setTaskHighlight(false);
@@ -120,6 +136,8 @@ export function TaskProvider({ children }) {
     updateTaskProgress,
     completeTask,
     failTask,
+    cancelTask,
+    isTaskCancelled,
     dismissTask,
     isTaskRunning,
     taskHighlight,
