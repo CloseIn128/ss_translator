@@ -122,13 +122,13 @@ function collapseDiffLines(lines) {
 
   // Mark which lines are near a change
   const isChanged = lines.map(l => l.type !== 'same');
-  const showLine = new Uint8Array(lines.length);
+  const showLine = new Set();
 
   for (let i = 0; i < lines.length; i++) {
     if (isChanged[i]) {
       // Mark context around this change
       for (let k = Math.max(0, i - CONTEXT_LINES); k <= Math.min(lines.length - 1, i + CONTEXT_LINES); k++) {
-        showLine[k] = 1;
+        showLine.add(k);
       }
     }
   }
@@ -136,7 +136,7 @@ function collapseDiffLines(lines) {
   const result = [];
   let collapsed = 0;
   for (let i = 0; i < lines.length; i++) {
-    if (showLine[i]) {
+    if (showLine.has(i)) {
       if (collapsed > 0) {
         result.push({ type: 'collapse', count: collapsed });
         collapsed = 0;
@@ -203,6 +203,13 @@ export default function FileDiffView({ modPath, selectedFile, entries }) {
     return computeLineDiff(original, translated);
   }, [original, translated]);
 
+  // Detect if large file fallback was used
+  const isLargeFile = useMemo(() => {
+    const origLineCount = splitLines(original).length;
+    const transLineCount = splitLines(translated).length;
+    return origLineCount > MAX_DIFF_LINES || transLineCount > MAX_DIFF_LINES;
+  }, [original, translated]);
+
   // Count changes
   const changeCount = useMemo(() =>
     diffLines.filter(l => l.type !== 'same').length,
@@ -241,6 +248,11 @@ export default function FileDiffView({ modPath, selectedFile, entries }) {
             </div>
           ) : (
             <div className="file-diff-table-wrapper">
+              {isLargeFile && (
+                <div style={{ textAlign: 'center', padding: '6px 16px', color: '#faad14', fontSize: 12, background: 'rgba(250, 173, 20, 0.06)' }}>
+                  文件较大（超过 {MAX_DIFF_LINES} 行），使用简化对比模式
+                </div>
+              )}
               <table className="file-diff-table">
                 <thead>
                   <tr>

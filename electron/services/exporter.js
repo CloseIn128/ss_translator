@@ -111,6 +111,7 @@ function applyJsonTranslations(filePath, entries) {
   for (const entry of entries) {
     // Use careful string replacement to preserve file formatting
     const originalEscaped = escapeForJsonSearch(entry.original);
+    // Order matters: backslash must be escaped first to avoid double-escaping
     const translatedEscaped = entry.translated
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"')

@@ -93,7 +93,7 @@ describe('exportMod', () => {
       const content = fs.readFileSync(outputFile, 'utf-8');
       // Newline and tab should be escaped in JSON output
       expect(content).toContain('Line\\none\\ttab');
-      // The file should still be valid JSON (or at least parseable)
+      // The file should still be valid JSON
       expect(() => JSON.parse(content)).not.toThrow();
     } finally {
       cleanupDir(modDir);
