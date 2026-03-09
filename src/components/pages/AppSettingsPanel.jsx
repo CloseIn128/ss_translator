@@ -6,7 +6,7 @@ const DEFAULT_ZOOM = 100;
 
 export default function AppSettingsPanel({ zoomLevel, onZoomLevelChange }) {
   return (
-    <div className="centered-page-container">
+    <div style={{ flex: 1, overflow: 'auto' }}>
       <div className="settings-tab-content">
         <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
           <ControlOutlined /> 程序设置

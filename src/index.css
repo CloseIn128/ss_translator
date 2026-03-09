@@ -465,6 +465,7 @@ body {
 
 .settings-tab-content {
   max-width: 860px;
+  margin: 0 auto;
 }
 
 .settings-form-grid {
