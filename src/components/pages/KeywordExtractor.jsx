@@ -11,7 +11,7 @@ import {
 import useKeywordActions from './keyword/useKeywordActions';
 import KeywordTable from './keyword/KeywordTable';
 
-export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGlossary, messageApi }) {
+export default function KeywordExtractor({ messageApi }) {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const {
@@ -32,7 +32,7 @@ export default function KeywordExtractor({ project, onUpdateKeywords, onUpdateGl
     handleAddSelectedToGlossary,
     handleAddAllToGlossary,
     updateKeyword,
-  } = useKeywordActions({ project, onUpdateKeywords, onUpdateGlossary, messageApi });
+  } = useKeywordActions({ messageApi });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>

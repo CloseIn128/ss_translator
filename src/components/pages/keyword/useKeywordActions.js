@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from 'antd';
 import { useTask } from '../../context/TaskContext';
+import useProjectStore from '../../../store/useProjectStore';
 
 const api = window.electronAPI;
 
@@ -8,7 +9,10 @@ const api = window.electronAPI;
  * Custom hook for keyword extraction, translation, polishing and glossary operations.
  * Manages keyword state, event listeners, and all related business logic.
  */
-export default function useKeywordActions({ project, onUpdateKeywords, onUpdateGlossary, messageApi }) {
+export default function useKeywordActions({ messageApi }) {
+  const project = useProjectStore(s => s.project);
+  const onUpdateKeywords = useProjectStore(s => s.updateKeywords);
+  const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
   const [keywords, setKeywords] = useState(() => project?.keywords || []);
   const [extracting, setExtracting] = useState(false);

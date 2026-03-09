@@ -9,6 +9,7 @@ import {
   FileTextOutlined,
   BookOutlined,
 } from '@ant-design/icons';
+import useProjectStore from '../../store/useProjectStore';
 
 const api = window.electronAPI;
 
@@ -24,13 +25,11 @@ const STATUS_MAP = {
   error: { label: '错误', color: 'error' },
 };
 
-export default function ReviewPanel({
-  project,
-  onUpdateGlossary,
-  onUpdateKeywords,
-  onUpdateEntry,
-  messageApi,
-}) {
+export default function ReviewPanel({ messageApi }) {
+  const project = useProjectStore(s => s.project);
+  const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
+  const onUpdateKeywords = useProjectStore(s => s.updateKeywords);
+  const onUpdateEntry = useProjectStore(s => s.updateEntry);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [editTarget, setEditTarget] = useState('');
   const [editCategory, setEditCategory] = useState('通用');

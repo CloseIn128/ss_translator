@@ -1,10 +1,13 @@
 import React from 'react';
 import { Form, Slider, Card } from 'antd';
 import { ControlOutlined } from '@ant-design/icons';
+import useProjectStore from '../../store/useProjectStore';
 
 const DEFAULT_ZOOM = 100;
 
-export default function AppSettingsPanel({ zoomLevel, onZoomLevelChange }) {
+export default function AppSettingsPanel() {
+  const zoomLevel = useProjectStore(s => s.zoomLevel);
+  const setZoomLevel = useProjectStore(s => s.setZoomLevel);
   return (
     <div style={{ flex: 1, overflow: 'auto' }}>
       <div className="settings-tab-content">
@@ -19,7 +22,7 @@ export default function AppSettingsPanel({ zoomLevel, onZoomLevelChange }) {
                 max={200}
                 step={10}
                 value={zoomLevel}
-                onChange={v => onZoomLevelChange(v ?? DEFAULT_ZOOM)}
+                onChange={v => setZoomLevel(v ?? DEFAULT_ZOOM)}
                 marks={{ 50: '50%', 100: '100%', 150: '150%', 200: '200%' }}
               />
             </Form.Item>

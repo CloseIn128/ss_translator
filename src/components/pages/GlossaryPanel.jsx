@@ -4,16 +4,13 @@ import { BookOutlined } from '@ant-design/icons';
 import ProjectGlossaryTab from './glossary/ProjectGlossaryTab';
 import PublicGlossaryTab from './glossary/PublicGlossaryTab';
 
-export default function GlossaryPanel({ project, onUpdateGlossary, onUpdateKeywords, messageApi }) {
+export default function GlossaryPanel({ messageApi }) {
   const tabItems = [
     {
       key: 'project',
       label: '项目术语表',
       children: (
         <ProjectGlossaryTab
-          project={project}
-          onUpdateGlossary={onUpdateGlossary}
-          onUpdateKeywords={onUpdateKeywords}
           messageApi={messageApi}
         />
       ),

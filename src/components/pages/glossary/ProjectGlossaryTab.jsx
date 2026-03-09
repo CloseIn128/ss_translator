@@ -13,12 +13,16 @@ import {
   ClearOutlined,
 } from '@ant-design/icons';
 import { useTask } from '../../context/TaskContext';
+import useProjectStore from '../../../store/useProjectStore';
 
 const api = window.electronAPI;
 const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '战舰系统', '游戏术语', '人名/地名', '其他'];
 const KEYWORD_CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '人名', '星球/星系名', '游戏术语', '物品名称', '其他'];
 
-export default function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messageApi }) {
+export default function ProjectGlossaryTab({ messageApi }) {
+  const project = useProjectStore(s => s.project);
+  const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
+  const onUpdateKeywords = useProjectStore(s => s.updateKeywords);
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning, isTaskCancelled } = useTask();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);

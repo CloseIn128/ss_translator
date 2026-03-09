@@ -4,10 +4,13 @@ import {
   FolderOpenOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
+import useProjectStore from '../../store/useProjectStore';
 
 const api = window.electronAPI;
 
-export default function ProjectInfo({ project, onProjectFieldsChange, messageApi }) {
+export default function ProjectInfo({ messageApi }) {
+  const project = useProjectStore(s => s.project);
+  const updateProjectFields = useProjectStore(s => s.updateProjectFields);
   const [localPrompt, setLocalPrompt] = useState(project?.modPrompt || '');
 
   // Sync localPrompt when project.modPrompt changes externally
@@ -31,7 +34,7 @@ export default function ProjectInfo({ project, onProjectFieldsChange, messageApi
       messageApi.destroy('parse');
       if (result?.success) {
         const parsed = result.data;
-        onProjectFieldsChange({
+        updateProjectFields({
           modPath: parsed.modPath,
           modInfo: parsed.modInfo,
           entries: parsed.entries,
@@ -71,12 +74,12 @@ export default function ProjectInfo({ project, onProjectFieldsChange, messageApi
 
   const handleSelectLegacyPath = async () => {
     const selectedPath = await api.selectModFolder();
-    if (selectedPath) onProjectFieldsChange({ legacyModPath: selectedPath });
+    if (selectedPath) updateProjectFields({ legacyModPath: selectedPath });
   };
 
   const handleSelectOutputDir = async () => {
     const selectedPath = await api.selectModFolder();
-    if (selectedPath) onProjectFieldsChange({ outputDir: selectedPath });
+    if (selectedPath) updateProjectFields({ outputDir: selectedPath });
   };
 
   const formatDate = (ts) => {
@@ -159,7 +162,7 @@ export default function ProjectInfo({ project, onProjectFieldsChange, messageApi
           value={localPrompt}
           onChange={e => {
             setLocalPrompt(e.target.value);
-            onProjectFieldsChange({ modPrompt: e.target.value });
+            updateProjectFields({ modPrompt: e.target.value });
           }}
           placeholder={`示例：\n这是一个以银河战争为背景的MOD，主要讲述"星际联盟"与"暗影帝国"之间的对抗。\n翻译风格偏硬科幻军事风格，使用正式、简洁的军事用语。`}
           rows={6}
