@@ -42,7 +42,7 @@ async function exportMod(projectData, outputDir) {
 
       if (ext === '.csv') {
         applyCSVTranslations(absPath, fileEntries, fileName);
-      } else if (ext === '.json' || ext === '.faction' || ext === '.ship' || ext === '.skin') {
+      } else if (ext === '.json' || ext === '.faction' || ext === '.ship' || ext === '.skin' || ext === '.variant' || ext === '.skill') {
         applyJsonTranslations(absPath, fileEntries);
       }
     } catch (err) {
@@ -111,7 +111,13 @@ function applyJsonTranslations(filePath, entries) {
   for (const entry of entries) {
     // Use careful string replacement to preserve file formatting
     const originalEscaped = escapeForJsonSearch(entry.original);
-    const translatedEscaped = entry.translated.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    // Order matters: backslash must be escaped first to avoid double-escaping
+    const translatedEscaped = entry.translated
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
 
     // Replace in quoted strings
     content = content.replace(
@@ -148,7 +154,16 @@ function getIdColumn(fileName) {
     'sim_opponents.csv': 'id',
     'commodities.csv': 'id',
     'market_conditions.csv': 'id',
+    'title_screen_variants.csv': 'id',
     'LunaSettings.csv': 'fieldID',
+    'abilities.csv': 'id',
+    'submarkets.csv': 'id',
+    'personalities.csv': 'id',
+    'skill_data.csv': 'id',
+    'aptitude_data.csv': 'id',
+    'ship_systems.csv': 'id',
+    'reports.csv': 'event_type',
+    'name_gen_data.csv': 'name',
   };
   return map[fileName] || 'id';
 }
@@ -174,5 +189,5 @@ function copyDirSync(src, dest) {
   }
 }
 
-module.exports = { exportMod };
+module.exports = { exportMod, getIdColumn };
 

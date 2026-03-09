@@ -111,6 +111,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   confirmClose: () => ipcRenderer.send('app:close-confirmed'),
 
+  // File preview (diff view)
+  getFilePreview: (data) => ipcRenderer.invoke('file:preview', data),
+
   // Zoom
   setZoomFactor: (factor) => webFrame.setZoomFactor(factor),
 });

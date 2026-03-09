@@ -29,6 +29,14 @@ const CSV_TRANSLATABLE = {
   'sim_opponents.csv': { columns: ['name'], idColumn: 'id' },
   'title_screen_variants.csv': { columns: ['name'], idColumn: 'id' },
   'LunaSettings.csv': { columns: ['fieldName', 'fieldDescription', 'tab'], idColumn: 'fieldID' },
+  'abilities.csv': { columns: ['name', 'desc'], idColumn: 'id' },
+  'submarkets.csv': { columns: ['name', 'desc'], idColumn: 'id' },
+  'personalities.csv': { columns: ['name', 'desc'], idColumn: 'id' },
+  'skill_data.csv': { columns: ['name', 'description', 'author'], idColumn: 'id' },
+  'aptitude_data.csv': { columns: ['name', 'description'], idColumn: 'id' },
+  'ship_systems.csv': { columns: ['name'], idColumn: 'id' },
+  'reports.csv': { columns: ['subject', 'summary', 'assessment'], idColumn: 'event_type' },
+  'name_gen_data.csv': { columns: ['name'], idColumn: 'name' },
 };
 
 /** Category labels for CSV files */
@@ -48,6 +56,14 @@ const CSV_CATEGORY = {
   'sim_opponents.csv': '战斗文本',
   'title_screen_variants.csv': '界面文本',
   'LunaSettings.csv': 'Luna设置',
+  'abilities.csv': '能力',
+  'submarkets.csv': '子市场',
+  'personalities.csv': '性格',
+  'skill_data.csv': '技能',
+  'aptitude_data.csv': '能力分支',
+  'ship_systems.csv': '舰船系统',
+  'reports.csv': '事件报告',
+  'name_gen_data.csv': '程序命名',
 };
 
 /** descriptions.csv `type` column values → Chinese category */
@@ -66,6 +82,7 @@ const JSON_TRANSLATABLE_FIELDS = {
   '.faction': ['displayName', 'displayNameWithArticle', 'displayNameLong', 'displayNameLongWithArticle', 'entityNamePrefix', 'personNamePrefix'],
   '.ship': ['hullName'],
   '.skin': ['hullName', 'descriptionPrefix'],
+  '.variant': ['displayName'],
 };
 
 /** Category labels for JSON file extensions */
@@ -73,12 +90,27 @@ const JSON_EXT_CATEGORY = {
   '.faction': '势力',
   '.ship': '舰船',
   '.skin': '舰船皮肤',
+  '.variant': '变体',
 };
 
 /** Simple JSON files with array of strings */
 const JSON_STRING_ARRAYS = {
   'tips.json': { path: 'tips', category: '游戏提示' },
   'ship_names.json': { path: '*', category: '舰船名称' },
+};
+
+/** JSON config files: top-level keys are IDs, each value is an object with translatable fields */
+const JSON_CONFIG_FILES = {
+  'planets.json': { fields: ['name'], category: '星球类型' },
+  'battle_objectives.json': { fields: ['name'], category: '战斗目标' },
+  'contact_tag_data.json': { fields: ['name'], category: '联络人标签' },
+  'tag_data.json': { fields: ['name'], category: '情报标签' },
+  'custom_entities.json': { fields: ['defaultName', 'nameInText', 'shortName', 'aOrAn', 'isOrAre'], category: '自定义实体' },
+};
+
+/** JSON files where all top-level key→value pairs are translatable strings */
+const JSON_FLAT_STRING_MAP = {
+  'default_fleet_type_names.json': { category: '舰队类型' },
 };
 
 // ─── Main parser ─────────────────────────────────────────────────────
@@ -127,9 +159,58 @@ async function parseModFolder(modPath) {
         continue;
       }
 
-      // Relaxed JSON files (.faction, .ship, .skin)
+      // Relaxed JSON files (.faction, .ship, .skin, .variant)
       if (JSON_TRANSLATABLE_FIELDS[ext]) {
         const jsonEntries = parseRelaxedJsonFile(filePath, relPath, ext);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // JSON config files (planets.json, battle_objectives.json, etc.)
+      if (JSON_CONFIG_FILES[fileName]) {
+        const jsonEntries = parseJsonConfigFile(filePath, relPath, fileName);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // JSON flat string maps (default_fleet_type_names.json)
+      if (JSON_FLAT_STRING_MAP[fileName]) {
+        const jsonEntries = parseJsonFlatStringMap(filePath, relPath, fileName);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // default_ranks.json (nested sections with name field)
+      if (fileName === 'default_ranks.json') {
+        const jsonEntries = parseDefaultRanksFile(filePath, relPath);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // strings.json (deep nested string values)
+      if (fileName === 'strings.json') {
+        const jsonEntries = parseStringsFile(filePath, relPath);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // tooltips.json (nested objects with title/body)
+      if (fileName === 'tooltips.json') {
+        const jsonEntries = parseTooltipsFile(filePath, relPath);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // Mission descriptor files (missions/*/descriptor.json)
+      if (fileName === 'descriptor.json' && relPath.includes('missions/')) {
+        const jsonEntries = parseMissionDescriptor(filePath, relPath);
+        entries.push(...jsonEntries);
+        continue;
+      }
+
+      // .skill files (effectGroups[n].name)
+      if (ext === '.skill') {
+        const jsonEntries = parseSkillFile(filePath, relPath);
         entries.push(...jsonEntries);
         continue;
       }
@@ -340,6 +421,214 @@ function parseRelaxedJsonFile(filePath, relPath, ext) {
         status: 'untranslated',
         context: `${path.basename(filePath)} - ${field}`,
       });
+    }
+  }
+
+  return entries;
+}
+
+function parseJsonConfigFile(filePath, relPath, fileName) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const config = JSON_CONFIG_FILES[fileName];
+  const entries = [];
+
+  for (const [key, obj] of Object.entries(data)) {
+    if (typeof obj !== 'object' || obj === null) continue;
+    for (const field of config.fields) {
+      if (obj[field] && typeof obj[field] === 'string' && obj[field].trim()) {
+        entries.push({
+          id: `${relPath}::${key}::${field}`,
+          file: relPath,
+          fileType: 'json_config',
+          category: config.category,
+          field,
+          objectKey: key,
+          original: obj[field],
+          translated: '',
+          status: 'untranslated',
+          context: `${fileName} - ${key}.${field}`,
+        });
+      }
+    }
+  }
+
+  return entries;
+}
+
+function parseJsonFlatStringMap(filePath, relPath, fileName) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const config = JSON_FLAT_STRING_MAP[fileName];
+  const entries = [];
+
+  for (const [key, value] of Object.entries(data)) {
+    if (typeof value === 'string' && value.trim()) {
+      entries.push({
+        id: `${relPath}::${key}`,
+        file: relPath,
+        fileType: 'json_flat_map',
+        category: config.category,
+        field: key,
+        original: value,
+        translated: '',
+        status: 'untranslated',
+        context: `${fileName} - ${key}`,
+      });
+    }
+  }
+
+  return entries;
+}
+
+function parseDefaultRanksFile(filePath, relPath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const entries = [];
+
+  for (const section of ['ranks', 'posts']) {
+    const sectionData = data[section];
+    if (!sectionData || typeof sectionData !== 'object') continue;
+
+    for (const [key, obj] of Object.entries(sectionData)) {
+      if (typeof obj !== 'object' || obj === null) continue;
+      if (obj.name && typeof obj.name === 'string' && obj.name.trim()) {
+        entries.push({
+          id: `${relPath}::${section}::${key}::name`,
+          file: relPath,
+          fileType: 'json_ranks',
+          category: '军衔',
+          field: 'name',
+          section,
+          objectKey: key,
+          original: obj.name,
+          translated: '',
+          status: 'untranslated',
+          context: `default_ranks.json - ${section}.${key}.name`,
+        });
+      }
+    }
+  }
+
+  return entries;
+}
+
+function parseStringsFile(filePath, relPath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const entries = [];
+
+  function walk(obj, pathParts) {
+    for (const [key, value] of Object.entries(obj)) {
+      const currentPath = [...pathParts, key];
+      if (typeof value === 'string' && value.trim()) {
+        entries.push({
+          id: `${relPath}::${currentPath.join('.')}`,
+          file: relPath,
+          fileType: 'json_strings',
+          category: 'UI字符串',
+          field: currentPath.join('.'),
+          original: value,
+          translated: '',
+          status: 'untranslated',
+          context: `strings.json - ${currentPath.join('.')}`,
+        });
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        walk(value, currentPath);
+      }
+    }
+  }
+
+  walk(data, []);
+  return entries;
+}
+
+function parseTooltipsFile(filePath, relPath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const entries = [];
+  const tooltipFields = ['title', 'body'];
+
+  function walk(obj, pathParts) {
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) continue;
+      const currentPath = [...pathParts, key];
+
+      // Check if this is a tooltip leaf (has title or body)
+      const hasTooltipField = tooltipFields.some(f => typeof value[f] === 'string');
+      if (hasTooltipField) {
+        for (const field of tooltipFields) {
+          if (typeof value[field] === 'string' && value[field].trim()) {
+            entries.push({
+              id: `${relPath}::${currentPath.join('.')}.${field}`,
+              file: relPath,
+              fileType: 'json_tooltips',
+              category: '提示信息',
+              field: `${currentPath.join('.')}.${field}`,
+              original: value[field],
+              translated: '',
+              status: 'untranslated',
+              context: `tooltips.json - ${currentPath.join('.')}.${field}`,
+            });
+          }
+        }
+      } else {
+        walk(value, currentPath);
+      }
+    }
+  }
+
+  walk(data, []);
+  return entries;
+}
+
+function parseMissionDescriptor(filePath, relPath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const entries = [];
+  const fields = ['title', 'difficulty'];
+
+  for (const field of fields) {
+    if (data[field] && typeof data[field] === 'string' && data[field].trim()) {
+      entries.push({
+        id: `${relPath}::${field}`,
+        file: relPath,
+        fileType: 'json_mission',
+        category: '任务',
+        field,
+        original: data[field],
+        translated: '',
+        status: 'untranslated',
+        context: `${path.basename(path.dirname(filePath))} - ${field}`,
+      });
+    }
+  }
+
+  return entries;
+}
+
+function parseSkillFile(filePath, relPath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const data = parseRelaxedJson(content);
+  const entries = [];
+
+  if (Array.isArray(data.effectGroups)) {
+    for (let i = 0; i < data.effectGroups.length; i++) {
+      const group = data.effectGroups[i];
+      if (group && typeof group.name === 'string' && group.name.trim()) {
+        entries.push({
+          id: `${relPath}::effectGroups::${i}::name`,
+          file: relPath,
+          fileType: 'json_skill',
+          category: '技能',
+          field: 'name',
+          arrayIndex: i,
+          original: group.name,
+          translated: '',
+          status: 'untranslated',
+          context: `${path.basename(filePath)} - effectGroups[${i}].name`,
+        });
+      }
     }
   }
 

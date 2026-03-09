@@ -1,0 +1,294 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Spin } from 'antd';
+import {
+  EyeOutlined,
+  EyeInvisibleOutlined,
+  EllipsisOutlined,
+} from '@ant-design/icons';
+
+const api = window.electronAPI;
+
+/** Maximum line count for LCS diff (O(m*n) memory/time) */
+const MAX_DIFF_LINES = 5000;
+
+/** Number of unchanged context lines to show around each change */
+const CONTEXT_LINES = 3;
+
+/**
+ * Normalize line endings and split into lines.
+ */
+function splitLines(text) {
+  return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+}
+
+/**
+ * Compute a line-level diff using LCS (longest common subsequence).
+ * Returns an array of { type: 'same'|'removed'|'added', left, right, leftNum, rightNum }
+ */
+function computeLineDiff(originalText, translatedText) {
+  const origLines = splitLines(originalText);
+  const transLines = splitLines(translatedText);
+  const m = origLines.length;
+  const n = transLines.length;
+
+  // Fast path: identical content
+  if (originalText === translatedText) {
+    return origLines.map((line, i) => ({
+      type: 'same', left: line, right: line, leftNum: i + 1, rightNum: i + 1,
+    }));
+  }
+
+  // Safety: for very large files, fall back to simple paired comparison
+  if (m > MAX_DIFF_LINES || n > MAX_DIFF_LINES) {
+    return computeSimpleDiff(origLines, transLines);
+  }
+
+  // Build full LCS DP table
+  const dp = Array.from({ length: m + 1 }, () => new Uint32Array(n + 1));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (origLines[i - 1] === transLines[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  // Backtrack to produce diff operations
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && origLines[i - 1] === transLines[j - 1]) {
+      ops.push({ type: 'same', origIdx: i - 1, transIdx: j - 1 });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      ops.push({ type: 'added', transIdx: j - 1 });
+      j--;
+    } else {
+      ops.push({ type: 'removed', origIdx: i - 1 });
+      i--;
+    }
+  }
+  ops.reverse();
+
+  // Convert to result with line numbers
+  const result = [];
+  let leftNum = 1, rightNum = 1;
+  for (const op of ops) {
+    if (op.type === 'same') {
+      result.push({ type: 'same', left: origLines[op.origIdx], right: transLines[op.transIdx], leftNum: leftNum++, rightNum: rightNum++ });
+    } else if (op.type === 'removed') {
+      result.push({ type: 'removed', left: origLines[op.origIdx], right: '', leftNum: leftNum++, rightNum: null });
+    } else {
+      result.push({ type: 'added', left: '', right: transLines[op.transIdx], leftNum: null, rightNum: rightNum++ });
+    }
+  }
+  return result;
+}
+
+/**
+ * Simple line-paired diff fallback for very large files.
+ */
+function computeSimpleDiff(origLines, transLines) {
+  const result = [];
+  const maxLen = Math.max(origLines.length, transLines.length);
+  let leftNum = 1, rightNum = 1;
+
+  for (let i = 0; i < maxLen; i++) {
+    const left = i < origLines.length ? origLines[i] : undefined;
+    const right = i < transLines.length ? transLines[i] : undefined;
+    if (left === right) {
+      result.push({ type: 'same', left, right, leftNum: leftNum++, rightNum: rightNum++ });
+    } else if (left !== undefined && right !== undefined) {
+      // Show as remove + add pair for readability
+      result.push({ type: 'removed', left, right: '', leftNum: leftNum++, rightNum: null });
+      result.push({ type: 'added', left: '', right, leftNum: null, rightNum: rightNum++ });
+    } else if (left !== undefined) {
+      result.push({ type: 'removed', left, right: '', leftNum: leftNum++, rightNum: null });
+    } else {
+      result.push({ type: 'added', left: '', right, leftNum: null, rightNum: rightNum++ });
+    }
+  }
+  return result;
+}
+
+/**
+ * Collapse unchanged sections, keeping only CONTEXT_LINES around changes.
+ * Returns array of items, where each is either a diff line or a { type: 'collapse', count } separator.
+ */
+function collapseDiffLines(lines) {
+  if (lines.length === 0) return [];
+
+  // Mark which lines are near a change
+  const isChanged = lines.map(l => l.type !== 'same');
+  const showLine = new Set();
+
+  for (let i = 0; i < lines.length; i++) {
+    if (isChanged[i]) {
+      // Mark context around this change
+      for (let k = Math.max(0, i - CONTEXT_LINES); k <= Math.min(lines.length - 1, i + CONTEXT_LINES); k++) {
+        showLine.add(k);
+      }
+    }
+  }
+
+  const result = [];
+  let collapsed = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (showLine.has(i)) {
+      if (collapsed > 0) {
+        result.push({ type: 'collapse', count: collapsed });
+        collapsed = 0;
+      }
+      result.push(lines[i]);
+    } else {
+      collapsed++;
+    }
+  }
+  if (collapsed > 0) {
+    result.push({ type: 'collapse', count: collapsed });
+  }
+  return result;
+}
+
+export default function FileDiffView({ modPath, selectedFile, entries }) {
+  const [visible, setVisible] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [original, setOriginal] = useState('');
+  const [translated, setTranslated] = useState('');
+  const [error, setError] = useState('');
+
+  // Get entries for the selected file
+  const fileEntries = useMemo(() => {
+    if (!selectedFile) return [];
+    return entries.filter(e => e.file === selectedFile);
+  }, [entries, selectedFile]);
+
+  // Load file preview whenever selected file or entries change
+  useEffect(() => {
+    if (!selectedFile || !modPath) {
+      setOriginal('');
+      setTranslated('');
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+
+    api.getFilePreview({ modPath, relFile: selectedFile, entries: fileEntries })
+      .then(result => {
+        if (cancelled) return;
+        if (result?.success) {
+          setOriginal(result.original);
+          setTranslated(result.translated);
+        } else {
+          setError(result?.error || '加载失败');
+        }
+      })
+      .catch(err => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [selectedFile, modPath, fileEntries]);
+
+  // Compute diff lines
+  const diffLines = useMemo(() => {
+    if (!original && !translated) return [];
+    return computeLineDiff(original, translated);
+  }, [original, translated]);
+
+  // Detect if large file fallback was used
+  const isLargeFile = useMemo(() => {
+    const origLineCount = splitLines(original).length;
+    const transLineCount = splitLines(translated).length;
+    return origLineCount > MAX_DIFF_LINES || transLineCount > MAX_DIFF_LINES;
+  }, [original, translated]);
+
+  // Count changes
+  const changeCount = useMemo(() =>
+    diffLines.filter(l => l.type !== 'same').length,
+    [diffLines]
+  );
+
+  // Collapsed view: only show changed lines with context
+  const displayLines = useMemo(() =>
+    collapseDiffLines(diffLines),
+    [diffLines]
+  );
+
+  if (!selectedFile) return null;
+
+  return (
+    <div className="file-diff-container">
+      <div className="file-diff-header" onClick={() => setVisible(!visible)}>
+        <span className="file-diff-toggle">
+          {visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+        </span>
+        <span className="file-diff-title">文件对比预览</span>
+        <span className="file-diff-filename">{selectedFile}</span>
+        {changeCount > 0 && (
+          <span className="file-diff-changes">{changeCount} 处变更</span>
+        )}
+      </div>
+      {visible && (
+        <div className="file-diff-content">
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: 24 }}><Spin /></div>
+          ) : error ? (
+            <div style={{ textAlign: 'center', padding: 16, color: '#ff4d4f' }}>{error}</div>
+          ) : changeCount === 0 ? (
+            <div style={{ textAlign: 'center', padding: 16, color: '#8c8c8c' }}>
+              {diffLines.length === 0 ? '无文件内容' : '无变更内容'}
+            </div>
+          ) : (
+            <div className="file-diff-table-wrapper">
+              {isLargeFile && (
+                <div style={{ textAlign: 'center', padding: '6px 16px', color: '#faad14', fontSize: 12, background: 'rgba(250, 173, 20, 0.06)' }}>
+                  文件较大（超过 {MAX_DIFF_LINES} 行），使用简化对比模式
+                </div>
+              )}
+              <table className="file-diff-table">
+                <thead>
+                  <tr>
+                    <th className="diff-line-num">#</th>
+                    <th className="diff-side-header">原始文件</th>
+                    <th className="diff-line-num">#</th>
+                    <th className="diff-side-header">翻译后文件</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayLines.map((line, i) => (
+                    line.type === 'collapse' ? (
+                      <tr key={`c${i}`} className="diff-row diff-collapse">
+                        <td colSpan={4} className="diff-collapse-cell">
+                          <EllipsisOutlined /> 省略 {line.count} 行未变更内容
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={i} className={`diff-row diff-${line.type}`}>
+                        <td className="diff-line-num">{line.leftNum ?? ''}</td>
+                        <td className="diff-cell diff-left">
+                          <pre>{line.left}</pre>
+                        </td>
+                        <td className="diff-line-num">{line.rightNum ?? ''}</td>
+                        <td className="diff-cell diff-right">
+                          <pre>{line.right}</pre>
+                        </td>
+                      </tr>
+                    )
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
