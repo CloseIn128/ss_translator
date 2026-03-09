@@ -36,11 +36,13 @@
 │   ├── App.jsx                   # 应用根组件
 │   ├── main.jsx                  # 入口
 │   ├── index.css                 # 全局样式
+│   ├── store/
+│   │   └── useProjectStore.js    # Zustand 项目状态管理
 │   └── components/
 │       ├── context/
 │       │   └── TaskContext.jsx    # 任务管理与日志上下文
 │       ├── layout/
-│       │   ├── LeftNav.jsx       # 左侧导航栏
+│       │   ├── LeftNav.jsx       # 左侧导航栏（含详细进度）
 │       │   ├── LogPanel.jsx      # 日志面板
 │       │   └── BottomBar.jsx     # 底部状态栏
 │       └── pages/
@@ -48,9 +50,9 @@
 │           ├── ProjectInfo.jsx        # 项目基本信息页
 │           ├── TranslationEditor.jsx  # 翻译编辑页（主协调组件）
 │           ├── editor/                    # 翻译编辑器子组件
-│           │   ├── EntryRow.jsx           # 单条翻译条目
-│           │   ├── FileSidebar.jsx        # 左侧文件列表
-│           │   ├── EditorHeader.jsx       # 统计 + 筛选栏
+│           │   ├── EntryRow.jsx           # 单条翻译条目（含审核切换）
+│           │   ├── FileSidebar.jsx        # 左侧文件目录树（可拖拽调整宽度）
+│           │   ├── EditorHeader.jsx       # 筛选栏
 │           │   ├── FileDiffView.jsx       # 文件对比预览面板
 │           │   └── useTranslationActions.js # 翻译操作自定义 Hook
 │           ├── GlossaryPanel.jsx      # 词库管理页
@@ -256,12 +258,35 @@
 
 ### 组件拆分
 
-- `TranslationEditor.jsx`：主协调组件，管理筛选状态和分页
-- `editor/FileSidebar.jsx`：左侧文件列表，显示翻译进度
-- `editor/EditorHeader.jsx`：统计卡片和筛选/操作栏
-- `editor/EntryRow.jsx`：单条翻译条目，支持内联编辑和 AI 翻译/润色
+- `TranslationEditor.jsx`：主协调组件，管理筛选状态和分页，通过 zustand store 读取/更新项目数据
+- `editor/FileSidebar.jsx`：左侧文件目录树，按目录层级展示文件，支持拖拽调整宽度
+- `editor/EditorHeader.jsx`：筛选/操作栏（搜索、分类、状态、批量操作）
+- `editor/EntryRow.jsx`：单条翻译条目，支持内联编辑、AI 翻译/润色、审核状态切换
 - `editor/FileDiffView.jsx`：文件对比预览面板
 - `editor/useTranslationActions.js`：翻译操作自定义 Hook（单条翻译、润色、批量翻译、批量润色、清空翻译）
+
+### 状态管理（zustand）
+
+- 项目状态通过 `src/store/useProjectStore.js`（zustand store）统一管理
+- Store 包含：`project`、`selectedFile`、`updateEntry`、`batchUpdate`、`updateGlossary`、`updateKeywords`、`updateProjectFields`
+- `App.jsx` 通过 store 管理项目数据和更新逻辑，取代了原来的 props 层层传递
+- `TranslationEditor` 及其子组件直接从 store 读取数据，不再依赖 App.jsx 传递 props
+- 其他页面组件（`GlossaryPanel`、`ReviewPanel` 等）仍接收 store 方法作为 props（后续可逐步迁移）
+
+### 术语未翻译横幅
+
+- 当有术语缺少翻译时，TranslationEditor 顶部显示可关闭的黄色警告横幅
+- 横幅提示术语未翻译数量，关闭后不再显示（直到数量变化时重新出现）
+
+### 条目审核
+
+- EntryRow 的审核按钮支持切换：已翻译/已润色 ↔ 已审核
+- 审核状态通过 `status: 'reviewed'` 标记，取消审核恢复为 `'translated'`
+
+### LeftNav 进度
+
+- LeftNav 显示四个维度的进度：术语翻译、术语审核、条目翻译、条目审核
+- 翻译编辑界面不再显示总体进度（已移至 LeftNav）
 
 ## IPC 处理器架构
 

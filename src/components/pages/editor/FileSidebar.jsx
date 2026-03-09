@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { Tooltip } from 'antd';
 import {
   FileTextOutlined,
@@ -183,19 +183,10 @@ export default function FileSidebar({ entries, selectedFile, onSelectFile }) {
 
   const tree = useMemo(() => buildFileTree(fileStats), [fileStats]);
 
-  // Expand all folders by default
-  const [expandedFolders, setExpandedFolders] = useState(() => {
-    const allPaths = new Set();
-    function collectPaths(node) {
-      if (node.path) allPaths.add(node.path);
-      for (const child of node.children) collectPaths(child);
-    }
-    // Will be initialized properly when tree changes
-    return allPaths;
-  });
+  // Expand all folders by default; re-initialize when tree changes
+  const [expandedFolders, setExpandedFolders] = useState(new Set());
 
-  // Re-initialize expanded state when tree structure changes (new project etc.)
-  useMemo(() => {
+  useEffect(() => {
     const allPaths = new Set();
     function collectPaths(node) {
       if (node.path) allPaths.add(node.path);
