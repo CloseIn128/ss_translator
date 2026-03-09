@@ -502,10 +502,8 @@ function ProjectGlossaryTab({ project, onUpdateGlossary, onUpdateKeywords, messa
       cancelText: '取消',
       okButtonProps: { danger: true },
       async onOk() {
-        // Delete all glossary entries
-        for (const g of glossary) {
-          await api.removeGlossaryEntry(g.id);
-        }
+        // Delete all glossary entries in parallel
+        await Promise.all(glossary.map(g => api.removeGlossaryEntry(g.id)));
         onUpdateGlossary([]);
         onUpdateKeywords([]);
         setSelectedRowKeys([]);
