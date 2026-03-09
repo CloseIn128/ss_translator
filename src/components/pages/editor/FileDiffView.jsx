@@ -8,30 +8,83 @@ import {
 const api = window.electronAPI;
 
 /**
- * Compute a simple line-level diff between two texts.
+ * Compute a line-level diff using LCS (longest common subsequence).
  * Returns an array of { type: 'same'|'removed'|'added'|'changed', left, right, leftNum, rightNum }
  */
 function computeLineDiff(originalText, translatedText) {
   const origLines = originalText.split('\n');
   const transLines = translatedText.split('\n');
-  const result = [];
-  const maxLen = Math.max(origLines.length, transLines.length);
 
-  let leftNum = 1;
-  let rightNum = 1;
+  // Build LCS table
+  const m = origLines.length;
+  const n = transLines.length;
 
-  for (let i = 0; i < maxLen; i++) {
-    const left = i < origLines.length ? origLines[i] : undefined;
-    const right = i < transLines.length ? transLines[i] : undefined;
+  // Optimization: if texts are identical, return all same
+  if (originalText === translatedText) {
+    return origLines.map((line, i) => ({
+      type: 'same', left: line, right: line, leftNum: i + 1, rightNum: i + 1,
+    }));
+  }
 
-    if (left === right) {
-      result.push({ type: 'same', left, right, leftNum: leftNum++, rightNum: rightNum++ });
-    } else if (left !== undefined && right !== undefined) {
-      result.push({ type: 'changed', left, right, leftNum: leftNum++, rightNum: rightNum++ });
-    } else if (left !== undefined) {
-      result.push({ type: 'removed', left, right: '', leftNum: leftNum++, rightNum: null });
+  // Use O(n) space LCS via two-row approach for the table,
+  // then backtrack for the actual diff operations
+  const dp = Array.from({ length: m + 1 }, () => new Uint32Array(n + 1));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (origLines[i - 1] === transLines[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  // Backtrack to produce diff
+  const ops = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && origLines[i - 1] === transLines[j - 1]) {
+      ops.push({ type: 'same', origIdx: i - 1, transIdx: j - 1 });
+      i--; j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      ops.push({ type: 'added', transIdx: j - 1 });
+      j--;
     } else {
-      result.push({ type: 'added', left: '', right, leftNum: null, rightNum: rightNum++ });
+      ops.push({ type: 'removed', origIdx: i - 1 });
+      i--;
+    }
+  }
+  ops.reverse();
+
+  // Convert ops to result with line numbers
+  const result = [];
+  let leftNum = 1, rightNum = 1;
+
+  for (const op of ops) {
+    if (op.type === 'same') {
+      result.push({
+        type: 'same',
+        left: origLines[op.origIdx],
+        right: transLines[op.transIdx],
+        leftNum: leftNum++,
+        rightNum: rightNum++,
+      });
+    } else if (op.type === 'removed') {
+      result.push({
+        type: 'removed',
+        left: origLines[op.origIdx],
+        right: '',
+        leftNum: leftNum++,
+        rightNum: null,
+      });
+    } else {
+      result.push({
+        type: 'added',
+        left: '',
+        right: transLines[op.transIdx],
+        leftNum: null,
+        rightNum: rightNum++,
+      });
     }
   }
 

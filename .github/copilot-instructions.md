@@ -17,7 +17,8 @@
 │   │   ├── exportHandlers.js     # MOD 导出
 │   │   ├── keywordHandlers.js    # 关键词提取与翻译
 │   │   ├── legacyHandlers.js     # 老版本汉化加载/匹配
-│   │   └── notificationHandlers.js # 系统通知
+│   │   ├── notificationHandlers.js # 系统通知
+│   │   └── fileHandlers.js       # 文件预览（diff 对比）
 │   ├── services/                 # 业务逻辑服务
 │   │   ├── configManager.js      # 配置持久化
 │   │   ├── translator.js         # AI 翻译服务
@@ -45,7 +46,13 @@
 │       └── pages/
 │           ├── WelcomePage.jsx        # 欢迎页
 │           ├── ProjectInfo.jsx        # 项目基本信息页
-│           ├── TranslationEditor.jsx  # 翻译编辑页
+│           ├── TranslationEditor.jsx  # 翻译编辑页（主协调组件）
+│           ├── editor/                    # 翻译编辑器子组件
+│           │   ├── EntryRow.jsx           # 单条翻译条目
+│           │   ├── FileSidebar.jsx        # 左侧文件列表
+│           │   ├── EditorHeader.jsx       # 统计 + 筛选栏
+│           │   ├── FileDiffView.jsx       # 文件对比预览面板
+│           │   └── useTranslationActions.js # 翻译操作自定义 Hook
 │           ├── GlossaryPanel.jsx      # 词库管理页
 │           ├── KeywordExtractor.jsx   # 关键词提取页
 │           └── SettingsPanel.jsx      # 模型配置页
@@ -217,6 +224,36 @@
 - vitest 配置在 `vite.config.js` 的 `test` 字段中，已启用 `globals: true`
 - 新增后端服务或修改逻辑后，应在 `tests/electron/services/` 下编写或更新对应测试
 - 开发完成后需执行 `npm test` 确保所有测试通过
+
+## 文件对比预览 (FileDiffView)
+
+### 功能
+
+- 在翻译编辑页的右侧面板上方显示选定文件的对比预览
+- 左侧显示原始文件内容，右侧显示替换了全部翻译条目后的文件内容
+- 支持 CSV 和 JSON 类型文件的翻译替换预览
+- 变更行以颜色高亮标记（红色=原始，绿色=翻译后）
+- 面板可折叠/展开，默认展开
+- 显示变更行数统计
+
+### 规范
+
+- 文件内容通过 `file:preview` IPC 获取，由 `fileHandlers.js` 处理
+- CSV 文件替换使用 `parseCSV`/`serializeCSV` 进行精确列替换
+- JSON 文件替换使用正则字符串替换（与导出逻辑一致）
+- 对比采用简单的逐行比较，变更行高亮显示
+- 选中"全部文件"时不显示对比面板
+
+## 翻译编辑器组件架构
+
+### 组件拆分
+
+- `TranslationEditor.jsx`：主协调组件，管理筛选状态和分页
+- `editor/FileSidebar.jsx`：左侧文件列表，显示翻译进度
+- `editor/EditorHeader.jsx`：统计卡片和筛选/操作栏
+- `editor/EntryRow.jsx`：单条翻译条目，支持内联编辑和 AI 翻译/润色
+- `editor/FileDiffView.jsx`：文件对比预览面板
+- `editor/useTranslationActions.js`：翻译操作自定义 Hook（单条翻译、润色、批量翻译、批量润色、清空翻译）
 
 ## IPC 处理器架构
 

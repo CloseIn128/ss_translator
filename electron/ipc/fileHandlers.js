@@ -75,6 +75,8 @@ function applyCSVPreview(content, entries, fileName) {
 function applyJsonPreview(content, entries) {
   let result = content;
   for (const entry of entries) {
+    // Escape original text as it appears in JSON, then escape for regex
+    // (mirrors exporter.js escapeForJsonSearch logic)
     const originalEscaped = entry.original
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"')
@@ -82,7 +84,12 @@ function applyJsonPreview(content, entries) {
       .replace(/\r/g, '\\r')
       .replace(/\t/g, '\\t')
       .replace(/[.*+?^${}()|[\]]/g, '\\$&');
-    const translatedEscaped = entry.translated.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const translatedEscaped = entry.translated
+      .replace(/\\/g, '\\\\')
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t');
     result = result.replace(
       new RegExp(`"${originalEscaped}"`, 'g'),
       `"${translatedEscaped}"`
