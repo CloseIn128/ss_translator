@@ -175,4 +175,55 @@ describe('exportMod', () => {
       cleanupDir(outputDir);
     }
   });
+
+  it('skips ignored entries during export', async () => {
+    const csvContent = 'id,name,desc\nship1,Destroyer,A fast ship\nship2,Cruiser,A big ship\n';
+    const modDir = createTempDir({
+      'mod_info.json': JSON.stringify({ id: 'test', name: 'Test', version: '1.0' }),
+      'data/ship_data.csv': csvContent,
+      'data/config.json': '{\n  "greeting": "Hello World"\n}',
+    });
+    const outputDir = createTempDir({});
+
+    try {
+      const result = await exportMod({
+        modPath: modDir,
+        entries: [
+          {
+            file: 'data/ship_data.csv',
+            csvFileName: 'ship_data.csv',
+            original: 'Destroyer',
+            translated: '驱逐舰',
+            status: 'translated',
+            field: 'name',
+            rowId: 'ship1',
+            ignored: true,      // This entry is ignored
+          },
+          {
+            file: 'data/config.json',
+            original: 'Hello World',
+            translated: '你好世界',
+            status: 'translated',
+            field: 'greeting',
+            ignored: false,
+          },
+        ],
+        modInfo: { id: 'test', name: 'Test' },
+      }, outputDir);
+
+      // Ignored CSV entry should NOT be translated
+      const csvFile = path.join(result.outputPath, 'data/ship_data.csv');
+      const csvOut = fs.readFileSync(csvFile, 'utf-8');
+      expect(csvOut).toContain('Destroyer'); // Not replaced
+      expect(csvOut).not.toContain('驱逐舰');
+
+      // Non-ignored JSON entry SHOULD be translated
+      const jsonFile = path.join(result.outputPath, 'data/config.json');
+      const jsonOut = fs.readFileSync(jsonFile, 'utf-8');
+      expect(jsonOut).toContain('"你好世界"');
+    } finally {
+      cleanupDir(modDir);
+      cleanupDir(outputDir);
+    }
+  });
 });

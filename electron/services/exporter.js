@@ -23,9 +23,10 @@ async function exportMod(projectData, outputDir) {
   // 1) Copy entire mod folder
   copyDirSync(modPath, destPath);
 
-  // 2) Build a lookup map: file -> entries
+  // 2) Build a lookup map: file -> entries (skip ignored entries)
   const fileEntryMap = {};
   for (const entry of entries) {
+    if (entry.ignored) continue;
     if (!entry.translated || entry.status === 'untranslated') continue;
     if (!fileEntryMap[entry.file]) fileEntryMap[entry.file] = [];
     fileEntryMap[entry.file].push(entry);

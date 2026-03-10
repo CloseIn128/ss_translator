@@ -157,4 +157,24 @@ describe('ProjectManager – createEmptyProject', () => {
     expect(project.outputDir).toBe('');
     expect(project.modPrompt).toBe('');
   });
+
+  it('_computeStats excludes ignored entries', () => {
+    const entries = [
+      { file: 'a.csv', fileType: 'csv', csvFileName: 'a.csv', status: 'translated' },
+      { file: 'a.csv', fileType: 'csv', csvFileName: 'a.csv', status: 'untranslated', ignored: true },
+      { file: 'b.json', fileType: 'json', status: 'polished' },
+      { file: 'b.json', fileType: 'json', status: 'reviewed', ignored: true },
+    ];
+
+    const stats = pm._computeStats(entries);
+    // total should be 2 (two non-ignored)
+    expect(stats.total).toBe(2);
+    // translated: 'translated' + 'polished' (both non-ignored)
+    expect(stats.translated).toBe(2);
+    // polished: only 'polished' (non-ignored)
+    expect(stats.polished).toBe(1);
+    // byFile
+    expect(stats.byFile['a.csv'].total).toBe(1);
+    expect(stats.byFile['b.json'].total).toBe(1);
+  });
 });

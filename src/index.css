@@ -404,6 +404,17 @@ body {
   margin-bottom: 4px;
 }
 
+.entry-source-label {
+  font-size: 11px;
+  color: #5a7a9a;
+  margin-bottom: 4px;
+  font-family: monospace;
+}
+
+.entry-ignored {
+  opacity: 0.5;
+}
+
 .entry-actions {
   display: flex;
   flex-direction: column;

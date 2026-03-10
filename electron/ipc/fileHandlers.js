@@ -19,7 +19,7 @@ function register(ctx) {
 
       const original = fs.readFileSync(absPath, 'utf-8');
 
-      const translatedEntries = entries.filter(e => e.translated && e.status !== 'untranslated');
+      const translatedEntries = entries.filter(e => !e.ignored && e.translated && e.status !== 'untranslated');
       if (translatedEntries.length === 0) {
         return { success: true, original, translated: original };
       }

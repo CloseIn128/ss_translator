@@ -83,8 +83,8 @@ export default function LeftNav({
     const termTranslated = allTerms.filter(t => t.target && t.target.trim()).length;
     const termReviewed = allTerms.filter(t => t.confirmed).length;
 
-    // Entry stats
-    const entries = project.entries || [];
+    // Entry stats (exclude ignored entries)
+    const entries = (project.entries || []).filter(e => !e.ignored);
     const entryTotal = entries.length;
     const entryTranslated = entries.filter(
       e => e.status !== 'untranslated' && e.status !== 'error'

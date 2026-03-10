@@ -4,6 +4,8 @@ import {
   TranslationOutlined,
   HighlightOutlined,
   CheckCircleOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
 
 const STATUS_MAP = {
@@ -13,6 +15,26 @@ const STATUS_MAP = {
   reviewed: { label: '已审核', color: 'warning' },
   error: { label: '错误', color: 'error' },
 };
+
+/**
+ * Build a human-readable source location string for the entry.
+ * - CSV entries: show "列: <field>  |  行ID: <rowId>"
+ * - JSON entries with a dot-path field: show "属性: <field>"
+ * - Other JSON entries: show "字段: <field>"
+ */
+function entrySourceLabel(entry) {
+  if (entry.fileType === 'csv') {
+    const parts = [];
+    if (entry.field) parts.push(`列: ${entry.field}`);
+    if (entry.rowId) parts.push(`行ID: ${entry.rowId}`);
+    return parts.join('  |  ');
+  }
+  // JSON-like files
+  if (entry.field) {
+    return entry.field.includes('.') ? `属性: ${entry.field}` : `字段: ${entry.field}`;
+  }
+  return '';
+}
 
 export default function EntryRow({ entry, isTranslating, onUpdateEntry, onTranslate, onPolish }) {
   const [editing, setEditing] = useState(false);
@@ -31,22 +53,33 @@ export default function EntryRow({ entry, isTranslating, onUpdateEntry, onTransl
     setEditing(false);
   };
 
+  const handleToggleIgnored = () => {
+    onUpdateEntry(entry.id, { ignored: !entry.ignored });
+  };
+
   const statusInfo = STATUS_MAP[entry.status] || STATUS_MAP.untranslated;
+  const sourceLabel = entrySourceLabel(entry);
 
   return (
-    <div className="entry-row">
+    <div className={`entry-row${entry.ignored ? ' entry-ignored' : ''}`}>
       {/* Original text */}
       <div className="entry-original">
         <div className="entry-meta">
           <Tag color={statusInfo.color} style={{ fontSize: 10 }}>{statusInfo.label}</Tag>
+          {entry.ignored && <Tag color="default" style={{ fontSize: 10 }}>已忽略</Tag>}
           <span>{entry.context}</span>
         </div>
+        {sourceLabel && (
+          <div className="entry-source-label">{sourceLabel}</div>
+        )}
         <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{entry.original}</div>
       </div>
 
       {/* Translated text */}
       <div className="entry-translated">
-        {editing ? (
+        {entry.ignored ? (
+          <div style={{ color: '#555', fontStyle: 'italic', padding: 4 }}>该条目已忽略，不参与翻译和导出</div>
+        ) : editing ? (
           <div>
             <textarea
               className="translation-textarea"
@@ -86,36 +119,48 @@ export default function EntryRow({ entry, isTranslating, onUpdateEntry, onTransl
           <Spin size="small" />
         ) : (
           <>
-            <Tooltip title="AI翻译">
+            <Tooltip title={entry.ignored ? '取消忽略' : '忽略此条目'}>
               <Button
                 size="small"
                 type="text"
-                icon={<TranslationOutlined />}
-                onClick={() => onTranslate(entry)}
+                icon={entry.ignored ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                onClick={handleToggleIgnored}
               />
             </Tooltip>
-            <Tooltip title="AI润色">
-              <Button
-                size="small"
-                type="text"
-                icon={<HighlightOutlined />}
-                onClick={() => onPolish(entry)}
-                disabled={!entry.translated}
-              />
-            </Tooltip>
-            <Tooltip title={entry.status === 'reviewed' ? '取消审核' : '标记为已审核'}>
-              <Button
-                size="small"
-                type="text"
-                icon={<CheckCircleOutlined style={entry.status === 'reviewed' ? { color: '#faad14' } : {}} />}
-                onClick={() => onUpdateEntry(entry.id, {
-                  status: entry.status === 'reviewed'
-                    ? (entry.translated ? 'translated' : 'untranslated')
-                    : 'reviewed'
-                })}
-                disabled={!entry.translated}
-              />
-            </Tooltip>
+            {!entry.ignored && (
+              <>
+                <Tooltip title="AI翻译">
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<TranslationOutlined />}
+                    onClick={() => onTranslate(entry)}
+                  />
+                </Tooltip>
+                <Tooltip title="AI润色">
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<HighlightOutlined />}
+                    onClick={() => onPolish(entry)}
+                    disabled={!entry.translated}
+                  />
+                </Tooltip>
+                <Tooltip title={entry.status === 'reviewed' ? '取消审核' : '标记为已审核'}>
+                  <Button
+                    size="small"
+                    type="text"
+                    icon={<CheckCircleOutlined style={entry.status === 'reviewed' ? { color: '#faad14' } : {}} />}
+                    onClick={() => onUpdateEntry(entry.id, {
+                      status: entry.status === 'reviewed'
+                        ? (entry.translated ? 'translated' : 'untranslated')
+                        : 'reviewed'
+                    })}
+                    disabled={!entry.translated}
+                  />
+                </Tooltip>
+              </>
+            )}
           </>
         )}
       </div>
