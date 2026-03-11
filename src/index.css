@@ -195,7 +195,7 @@ body {
 }
 
 /* Centered page container: for pages whose content doesn't fill the horizontal width
-   (e.g., ProjectInfo, SettingsPanel, AppSettingsPanel) */
+   (e.g., ProjectInfo, SettingsPanel, AppSettingsPanel, ReviewPanel) */
 .centered-page-container {
   display: flex;
   flex-direction: column;
@@ -208,7 +208,7 @@ body {
 
 .centered-page-container > * {
   width: 100%;
-  max-width: 860px;
+  max-width: max(60%, 600px);
 }
 
 /* Table wrapper: fill remaining height with fixed pagination at bottom */
@@ -475,7 +475,7 @@ body {
 }
 
 .settings-tab-content {
-  max-width: 860px;
+  max-width: max(60%, 600px);
   margin: 0 auto;
 }
 
@@ -901,5 +901,163 @@ body {
   font-size: 11px;
   font-style: italic;
   border-bottom: 1px dashed var(--border-color);
+}
+
+/* ─── Shared DiffViewer ──────────────────────────────────────────── */
+
+.diff-viewer {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.diff-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.diff-viewer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.diff-viewer-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Modified rows: show both left/right sides highlighted */
+.diff-row.diff-modified .diff-left {
+  background: rgba(255, 77, 79, 0.08);
+  color: #ff7875;
+}
+
+.diff-row.diff-modified .diff-right {
+  background: rgba(82, 196, 26, 0.08);
+  color: #95de64;
+}
+
+/* ─── CSV Diff Table ─────────────────────────────────────────────── */
+
+.csv-diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.csv-diff-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.csv-diff-row-num {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  text-align: right;
+  padding: 2px 6px;
+  color: #555;
+  font-size: 10px;
+  user-select: none;
+  border-right: 1px solid var(--border-color);
+}
+
+.csv-diff-header {
+  padding: 4px 8px;
+}
+
+.csv-diff-cell {
+  padding: 2px 8px;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: top;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.csv-diff-cell-changed {
+  background: rgba(250, 173, 20, 0.06);
+}
+
+.csv-diff-cell-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.csv-diff-cell-old {
+  color: #ff7875;
+  text-decoration: line-through;
+  font-size: 10px;
+}
+
+.csv-diff-cell-new {
+  color: #95de64;
+}
+
+.csv-diff-row-added {
+  background: rgba(82, 196, 26, 0.06);
+}
+
+.csv-diff-row-removed {
+  background: rgba(255, 77, 79, 0.06);
+}
+
+/* ─── JSON Syntax Highlighting Tokens ────────────────────────────── */
+
+.json-token.json-key { color: #9cdcfe; }
+.json-token.json-string { color: #ce9178; }
+.json-token.json-number { color: #b5cea8; }
+.json-token.json-boolean { color: #569cd6; }
+.json-token.json-null { color: #569cd6; }
+.json-token.json-brace { color: #d4d4d4; }
+.json-token.json-comment { color: #6a9955; font-style: italic; }
+.json-token.json-text { color: inherit; }
+
+/* ─── Full-page diff mode in Translation Editor ──────────────────── */
+
+.editor-diff-mode {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 16px 16px;
+}
+
+.editor-diff-mode .diff-viewer {
+  flex: 1;
+  min-height: 0;
+}
+
+.editor-diff-mode .diff-viewer > div {
+  flex: 1;
+  min-height: 0;
 }
 

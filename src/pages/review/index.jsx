@@ -1,14 +1,13 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { Button, Input, Tag, Space, Card, Select, Empty, Tooltip, Divider } from 'antd';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Button, Input, Tag, Space, Card, Select, Empty, Tooltip, Divider, Spin } from 'antd';
 import {
   CheckOutlined,
   LeftOutlined,
   RightOutlined,
   TranslationOutlined,
-  EditOutlined,
   FileTextOutlined,
-  BookOutlined,
 } from '@ant-design/icons';
+import DiffViewer from '../../components/diff/DiffViewer';
 import useProjectStore from '../../store/useProjectStore';
 
 const api = window.electronAPI;
@@ -25,6 +24,24 @@ const STATUS_MAP = {
   error: { label: '错误', color: 'error' },
 };
 
+/**
+ * Detect file type from relative path.
+ */
+function detectFileType(relFile) {
+  if (!relFile) return 'text';
+  const lower = relFile.toLowerCase();
+  if (lower.endsWith('.csv')) return 'csv';
+  if (
+    lower.endsWith('.json') ||
+    lower.endsWith('.faction') ||
+    lower.endsWith('.ship') ||
+    lower.endsWith('.skin') ||
+    lower.endsWith('.variant') ||
+    lower.endsWith('.skill')
+  ) return 'json';
+  return 'text';
+}
+
 export default function ReviewPanel({ messageApi }) {
   const project = useProjectStore(s => s.project);
   const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
@@ -35,6 +52,11 @@ export default function ReviewPanel({ messageApi }) {
   const [editCategory, setEditCategory] = useState('通用');
   const [translating, setTranslating] = useState(false);
   const [reviewMode, setReviewMode] = useState('terms'); // 'terms' | 'entries'
+
+  // Diff preview state for entry review
+  const [diffOriginal, setDiffOriginal] = useState('');
+  const [diffTranslated, setDiffTranslated] = useState('');
+  const [diffLoading, setDiffLoading] = useState(false);
 
   const glossary = project.glossary || [];
   const keywords = project.keywords || [];
@@ -75,8 +97,31 @@ export default function ReviewPanel({ messageApi }) {
   const currentItems = reviewMode === 'terms' ? unreviewedTerms : unreviewedEntries;
   const currentItem = currentItems[currentIndex] || null;
 
+  // Load diff preview for current entry
+  useEffect(() => {
+    if (reviewMode !== 'entries' || !currentItem || !currentItem.file || !project.modPath) {
+      setDiffOriginal('');
+      setDiffTranslated('');
+      return;
+    }
+    let cancelled = false;
+    setDiffLoading(true);
+    const fileEntries = entries.filter(e => e.file === currentItem.file);
+    api.getFilePreview({ modPath: project.modPath, relFile: currentItem.file, entries: fileEntries })
+      .then(result => {
+        if (cancelled) return;
+        if (result?.success) {
+          setDiffOriginal(result.original);
+          setDiffTranslated(result.translated);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setDiffLoading(false); });
+    return () => { cancelled = true; };
+  }, [currentItem?.file, currentItem?.id, reviewMode, project.modPath, entries]);
+
   // Sync edit values when current item changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!currentItem) {
       setEditTarget('');
       setEditCategory('通用');
@@ -92,7 +137,7 @@ export default function ReviewPanel({ messageApi }) {
   }, [currentItem, currentIndex, reviewMode]);
 
   // Reset index when mode changes
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentIndex(0);
   }, [reviewMode]);
 
@@ -108,7 +153,6 @@ export default function ReviewPanel({ messageApi }) {
   const handleApprove = useCallback(() => {
     if (!currentItem) return;
     if (reviewMode === 'terms') {
-      // Mark term as confirmed, also save the edited target/category
       if (currentItem._type === 'glossary') {
         onUpdateGlossary(glossary.map(g =>
           g.id === currentItem.id ? { ...g, confirmed: true, target: editTarget, category: editCategory } : g
@@ -122,12 +166,9 @@ export default function ReviewPanel({ messageApi }) {
       }
       messageApi.success('术语已审核');
     } else {
-      // Mark entry as reviewed
       onUpdateEntry(currentItem.id, { translated: editTarget, status: 'reviewed' });
       messageApi.success('条目已审核');
     }
-    // Move to next item, or stay at same index (which will now show the next unreviewed)
-    // Since the item was removed from unreviewedItems, same index now points to next
     if (currentIndex >= currentItems.length - 1 && currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
@@ -162,171 +203,194 @@ export default function ReviewPanel({ messageApi }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'auto', gap: 16 }}>
-      {/* Mode selector and stats */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <Select
-          value={reviewMode}
-          onChange={setReviewMode}
-          style={{ width: 160 }}
-          size="small"
-          options={[
-            { value: 'terms', label: `术语审核 (${unreviewedTerms.length})` },
-            { value: 'entries', label: `条目审核 (${unreviewedEntries.length})` },
-          ]}
-        />
-        <span style={{ fontSize: 13, color: '#8c8c8c' }}>
-          {reviewMode === 'terms'
-            ? `${unreviewedTerms.length} 个术语待审核`
-            : `${unreviewedEntries.length} 个条目待审核`
-          }
-        </span>
-        <span style={{ marginLeft: 'auto', fontSize: 13, color: '#8c8c8c' }}>
-          {currentItems.length > 0 ? `${currentIndex + 1} / ${currentItems.length}` : '无待审核项'}
-        </span>
-      </div>
+    <div className="centered-page-container">
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, gap: 16 }}>
+        {/* Mode selector and stats */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <Select
+            value={reviewMode}
+            onChange={setReviewMode}
+            style={{ width: 160 }}
+            size="small"
+            options={[
+              { value: 'terms', label: `术语审核 (${unreviewedTerms.length})` },
+              { value: 'entries', label: `条目审核 (${unreviewedEntries.length})` },
+            ]}
+          />
+          <span style={{ fontSize: 13, color: '#8c8c8c' }}>
+            {reviewMode === 'terms'
+              ? `${unreviewedTerms.length} 个术语待审核`
+              : `${unreviewedEntries.length} 个条目待审核`
+            }
+          </span>
+          <span style={{ marginLeft: 'auto', fontSize: 13, color: '#8c8c8c' }}>
+            {currentItems.length > 0 ? `${currentIndex + 1} / ${currentItems.length}` : '无待审核项'}
+          </span>
+        </div>
 
-      {/* Navigation */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <Button
-          size="small"
-          icon={<LeftOutlined />}
-          onClick={handlePrev}
-          disabled={currentIndex <= 0 || currentItems.length === 0}
-        >
-          上一个
-        </Button>
-        <Button
-          size="small"
-          icon={<RightOutlined />}
-          onClick={handleNext}
-          disabled={currentIndex >= currentItems.length - 1 || currentItems.length === 0}
-        >
-          下一个
-        </Button>
-        <Divider type="vertical" />
-        <Tooltip title="使用AI翻译当前项">
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <Button
             size="small"
-            icon={<TranslationOutlined />}
-            onClick={handleTranslate}
-            loading={translating}
-            disabled={!currentItem}
+            icon={<LeftOutlined />}
+            onClick={handlePrev}
+            disabled={currentIndex <= 0 || currentItems.length === 0}
           >
-            AI翻译
+            上一个
           </Button>
-        </Tooltip>
-        <Button
-          type="primary"
-          size="small"
-          icon={<CheckOutlined />}
-          onClick={handleApprove}
-          disabled={!currentItem || !editTarget.trim()}
-        >
-          审核通过
-        </Button>
-      </div>
+          <Button
+            size="small"
+            icon={<RightOutlined />}
+            onClick={handleNext}
+            disabled={currentIndex >= currentItems.length - 1 || currentItems.length === 0}
+          >
+            下一个
+          </Button>
+          <Divider type="vertical" />
+          <Tooltip title="使用AI翻译当前项">
+            <Button
+              size="small"
+              icon={<TranslationOutlined />}
+              onClick={handleTranslate}
+              loading={translating}
+              disabled={!currentItem}
+            >
+              AI翻译
+            </Button>
+          </Tooltip>
+          <Button
+            type="primary"
+            size="small"
+            icon={<CheckOutlined />}
+            onClick={handleApprove}
+            disabled={!currentItem || !editTarget.trim()}
+          >
+            审核通过
+          </Button>
+        </div>
 
-      {/* Current item display */}
-      {currentItem ? (
-        <Card size="small" style={{ flexShrink: 0 }}>
-          {/* Source info */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Tag color={reviewMode === 'terms'
-                ? (currentItem._type === 'glossary' ? 'green' : 'blue')
-                : STATUS_MAP[currentItem.status]?.color || 'default'
-              }>
-                {reviewMode === 'terms'
-                  ? (currentItem._type === 'glossary' ? '手动术语' : '提取术语')
-                  : STATUS_MAP[currentItem.status]?.label || currentItem.status
-                }
-              </Tag>
-              {currentItem.category && (
-                <Tag>{currentItem.category}</Tag>
-              )}
-              {reviewMode === 'entries' && currentItem.file && (
-                <span style={{ fontSize: 11, color: '#8c8c8c' }}>
-                  <FileTextOutlined style={{ marginRight: 4 }} />
-                  {currentItem.file}
-                </span>
-              )}
-              {reviewMode === 'terms' && currentItem.extractType && (
-                <span style={{ fontSize: 11, color: '#8c8c8c' }}>
-                  提取方式: {currentItem.extractType === 'structure' ? '结构化' : 'AI'}
-                </span>
-              )}
+        {/* Diff preview for entry review */}
+        {reviewMode === 'entries' && currentItem && currentItem.file && (
+          <div style={{ flexShrink: 0, border: '1px solid var(--border-color)', borderRadius: 6, overflow: 'hidden' }}>
+            <div style={{ padding: '4px 12px', fontSize: 12, color: '#8c8c8c', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+              <FileTextOutlined style={{ marginRight: 4 }} />
+              文件差异预览 — {currentItem.file}
             </div>
-
-            <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4 }}>原文</div>
-            <div style={{
-              padding: '8px 12px',
-              background: 'var(--bg-card, #1f1f1f)',
-              borderRadius: 4,
-              fontSize: 13,
-              lineHeight: 1.6,
-              wordBreak: 'break-all',
-              border: '1px solid rgba(255,255,255,0.06)',
-            }}>
-              {reviewMode === 'terms' ? currentItem.source : currentItem.original}
-            </div>
+            {diffLoading ? (
+              <div style={{ textAlign: 'center', padding: 16 }}><Spin size="small" /></div>
+            ) : (
+              <DiffViewer
+                original={diffOriginal}
+                translated={diffTranslated}
+                fileType={detectFileType(currentItem.file)}
+                maxHeight="200px"
+              />
+            )}
           </div>
+        )}
 
-          {/* Context info for entries */}
-          {reviewMode === 'entries' && currentItem.context && (
+        {/* Current item display */}
+        {currentItem ? (
+          <Card size="small" style={{ flexShrink: 0 }}>
+            {/* Source info */}
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4, color: '#8c8c8c' }}>上下文</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <Tag color={reviewMode === 'terms'
+                  ? (currentItem._type === 'glossary' ? 'green' : 'blue')
+                  : STATUS_MAP[currentItem.status]?.color || 'default'
+                }>
+                  {reviewMode === 'terms'
+                    ? (currentItem._type === 'glossary' ? '手动术语' : '提取术语')
+                    : STATUS_MAP[currentItem.status]?.label || currentItem.status
+                  }
+                </Tag>
+                {currentItem.category && (
+                  <Tag>{currentItem.category}</Tag>
+                )}
+                {reviewMode === 'entries' && currentItem.file && (
+                  <span style={{ fontSize: 11, color: '#8c8c8c' }}>
+                    <FileTextOutlined style={{ marginRight: 4 }} />
+                    {currentItem.file}
+                  </span>
+                )}
+                {reviewMode === 'terms' && currentItem.extractType && (
+                  <span style={{ fontSize: 11, color: '#8c8c8c' }}>
+                    提取方式: {currentItem.extractType === 'structure' ? '结构化' : 'AI'}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4 }}>原文</div>
               <div style={{
-                padding: '6px 12px',
-                background: 'rgba(255,255,255,0.02)',
+                padding: '8px 12px',
+                background: 'var(--bg-card, #1f1f1f)',
                 borderRadius: 4,
-                fontSize: 12,
-                color: '#8c8c8c',
-                lineHeight: 1.5,
+                fontSize: 13,
+                lineHeight: 1.6,
                 wordBreak: 'break-all',
-                border: '1px solid rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.06)',
               }}>
-                {currentItem.context}
+                {reviewMode === 'terms' ? currentItem.source : currentItem.original}
               </div>
             </div>
-          )}
 
-          {/* Editable translation */}
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4 }}>译文</div>
-            <Input.TextArea
-              value={editTarget}
-              onChange={(e) => setEditTarget(e.target.value)}
-              rows={reviewMode === 'entries' ? 3 : 1}
-              placeholder="输入或编辑译文..."
-              style={{ fontSize: 13 }}
-            />
-          </div>
+            {/* Context info for entries */}
+            {reviewMode === 'entries' && currentItem.context && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4, color: '#8c8c8c' }}>上下文</div>
+                <div style={{
+                  padding: '6px 12px',
+                  background: 'rgba(255,255,255,0.02)',
+                  borderRadius: 4,
+                  fontSize: 12,
+                  color: '#8c8c8c',
+                  lineHeight: 1.5,
+                  wordBreak: 'break-all',
+                  border: '1px solid rgba(255,255,255,0.04)',
+                }}>
+                  {currentItem.context}
+                </div>
+              </div>
+            )}
 
-          {/* Category editor for terms */}
-          {reviewMode === 'terms' && (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4 }}>分类</div>
-              <Select
-                value={editCategory}
-                onChange={setEditCategory}
-                style={{ width: 200 }}
-                size="small"
-                options={allCategories.map(c => ({ value: c, label: c }))}
+            {/* Editable translation */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4 }}>译文</div>
+              <Input.TextArea
+                value={editTarget}
+                onChange={(e) => setEditTarget(e.target.value)}
+                rows={reviewMode === 'entries' ? 3 : 1}
+                placeholder="输入或编辑译文..."
+                style={{ fontSize: 13 }}
               />
             </div>
-          )}
-        </Card>
-      ) : (
-        <Empty
-          description={
-            reviewMode === 'terms'
-              ? '所有术语已审核完毕'
-              : '没有待审核的已翻译条目'
-          }
-          style={{ marginTop: 48 }}
-        />
-      )}
+
+            {/* Category editor for terms */}
+            {reviewMode === 'terms' && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4 }}>分类</div>
+                <Select
+                  value={editCategory}
+                  onChange={setEditCategory}
+                  style={{ width: 200 }}
+                  size="small"
+                  options={allCategories.map(c => ({ value: c, label: c }))}
+                />
+              </div>
+            )}
+          </Card>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Empty
+              description={
+                reviewMode === 'terms'
+                  ? '所有术语已审核完毕'
+                  : '没有待审核的已翻译条目'
+              }
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
