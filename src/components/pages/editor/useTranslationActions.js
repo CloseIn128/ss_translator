@@ -99,7 +99,7 @@ export default function useTranslationActions({
 
   // Clear all translations in current scope
   const handleClearTranslations = useCallback(() => {
-    const translatedEntries = filteredEntries.filter(e => e.status !== 'untranslated');
+    const translatedEntries = filteredEntries.filter(e => !e.ignored && e.status !== 'untranslated');
     if (translatedEntries.length === 0) {
       messageApi.info('当前筛选下没有已翻译的条目');
       return;
@@ -126,7 +126,7 @@ export default function useTranslationActions({
 
   // Batch translate all entries in current filter
   const handleBatchTranslate = useCallback(async () => {
-    const targetEntries = filteredEntries;
+    const targetEntries = filteredEntries.filter(e => !e.ignored);
     if (targetEntries.length === 0) {
       messageApi.info('当前筛选下没有条目');
       return;
@@ -215,7 +215,7 @@ export default function useTranslationActions({
 
   // Batch polish all translated
   const handleBatchPolish = useCallback(async () => {
-    const translated = filteredEntries.filter(e => e.status === 'translated');
+    const translated = filteredEntries.filter(e => !e.ignored && e.status === 'translated');
     if (translated.length === 0) {
       messageApi.info('当前筛选下没有可润色的条目');
       return;

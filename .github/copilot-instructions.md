@@ -267,11 +267,15 @@
 
 ### 状态管理（zustand）
 
-- 项目状态通过 `src/store/useProjectStore.js`（zustand store）统一管理
-- Store 包含：`project`、`selectedFile`、`updateEntry`、`batchUpdate`、`updateGlossary`、`updateKeywords`、`updateProjectFields`
-- `App.jsx` 通过 store 管理项目数据和更新逻辑，取代了原来的 props 层层传递
-- `TranslationEditor` 及其子组件直接从 store 读取数据，不再依赖 App.jsx 传递 props
-- 其他页面组件（`GlossaryPanel`、`ReviewPanel` 等）仍接收 store 方法作为 props（后续可逐步迁移）
+- 所有项目状态和 UI 状态通过 `src/store/useProjectStore.js`（zustand store）统一管理
+- Store 包含：
+  - **项目数据**：`project`、`selectedFile`、`updateEntry`、`batchUpdate`、`updateGlossary`、`updateKeywords`、`updateProjectFields`
+  - **UI 状态**：`activeTab`、`zoomLevel`、`logVisible`
+  - **IPC 操作**：`createProject`、`loadProject`、`saveProject`、`autoSave`、`exportMod`
+  - **自动保存**：`startAutoSave`、`stopAutoSave`（3 分钟定时器）
+- `App.jsx` 是极简外壳：渲染布局、提供 message 反馈，不持有项目状态
+- 所有页面组件直接从 store 读取数据，不再通过 App.jsx 传递 props
+- 只有 `messageApi`（Ant Design 消息 API）和少量 UI 回调（`onNewProject`、`onLoadProject` 等含消息提示的包装函数）作为 props 传递
 
 ### 术语未翻译横幅
 
@@ -282,6 +286,21 @@
 
 - EntryRow 的审核按钮支持切换：已翻译/已润色 ↔ 已审核
 - 审核状态通过 `status: 'reviewed'` 标记，取消审核恢复为 `'translated'`
+
+### 条目来源信息
+
+- CSV 条目显示"列: <字段名> | 行ID: <行标识>"，帮助用户定位原文来源
+- JSON 条目显示"属性: <全路径>"（带点号的路径）或"字段: <字段名>"
+- 来源信息以 monospace 字体显示在原文上方
+
+### 条目忽略功能
+
+- 每个条目可标记为"已忽略"（`entry.ignored: true`），忽略的条目视作不存在
+- EntryRow 的操作栏提供忽略/取消忽略按钮（眼睛图标）
+- 界面默认隐藏已忽略条目，EditorHeader 提供"显示已忽略"开关
+- 被忽略的条目不参与：批量翻译、批量润色、清空翻译、MOD 导出、进度统计
+- `ignored` 字段随项目保存/加载持久化
+- FileSidebar 和 LeftNav 的进度统计排除已忽略条目
 
 ### LeftNav 进度
 

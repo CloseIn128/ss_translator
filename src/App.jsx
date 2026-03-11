@@ -19,78 +19,45 @@ const RequestHistory = React.lazy(() => import('./components/pages/RequestHistor
 
 const api = window.electronAPI;
 
-const DEFAULT_ZOOM_LEVEL = 100;
-const AUTO_SAVE_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
-
 function AppInner() {
+  // ---- Read state from store ----
   const project = useProjectStore(s => s.project);
-  const setProject = useProjectStore(s => s.setProject);
-  const selectedFile = useProjectStore(s => s.selectedFile);
-  const setSelectedFile = useProjectStore(s => s.setSelectedFile);
-  const storeUpdateEntry = useProjectStore(s => s.updateEntry);
-  const storeBatchUpdate = useProjectStore(s => s.batchUpdate);
-  const storeUpdateGlossary = useProjectStore(s => s.updateGlossary);
-  const storeUpdateKeywords = useProjectStore(s => s.updateKeywords);
-  const storeUpdateProjectFields = useProjectStore(s => s.updateProjectFields);
+  const activeTab = useProjectStore(s => s.activeTab);
+  const setActiveTab = useProjectStore(s => s.setActiveTab);
+  const logVisible = useProjectStore(s => s.logVisible);
+  const setLogVisible = useProjectStore(s => s.setLogVisible);
+  const zoomLevel = useProjectStore(s => s.zoomLevel);
 
-  const [activeTab, setActiveTab] = useState('editor');
+  // ---- Store actions ----
+  const createProject = useProjectStore(s => s.createProject);
+  const loadProject = useProjectStore(s => s.loadProject);
+  const saveProject = useProjectStore(s => s.saveProject);
+  const autoSave = useProjectStore(s => s.autoSave);
+  const exportMod = useProjectStore(s => s.exportMod);
+  const startAutoSave = useProjectStore(s => s.startAutoSave);
+  const stopAutoSave = useProjectStore(s => s.stopAutoSave);
+
   const [messageApi, contextHolder] = message.useMessage();
-  const [logVisible, setLogVisible] = useState(false);
-  const projectRef = useRef(null);
 
-  // Keep ref in sync with state for use in async callbacks
+  // Apply zoom on mount and when it changes
   useEffect(() => {
-    projectRef.current = project;
-  }, [project]);
-
-  // Zoom level setting (persisted in localStorage)
-  const [zoomLevel, setZoomLevel] = useState(() => {
-    const saved = localStorage.getItem('ss_translator_zoom_level');
-    const num = Number(saved);
-    return Number.isFinite(num) && num >= 50 && num <= 200 ? num : DEFAULT_ZOOM_LEVEL;
-  });
-
-  // Apply zoom via Electron webFrame API
-  useEffect(() => {
-    const factor = zoomLevel / 100;
-    if (window.electronAPI?.setZoomFactor) {
-      window.electronAPI.setZoomFactor(factor);
-    }
-    localStorage.setItem('ss_translator_zoom_level', String(zoomLevel));
+    if (api?.setZoomFactor) api.setZoomFactor(zoomLevel / 100);
   }, [zoomLevel]);
 
-  // Auto-save helper (silent, no dialogs)
-  const doAutoSave = useCallback(async () => {
-    const p = projectRef.current;
-    if (!p) return;
-    // Only auto-save when there's a known save path
-    if (!p.projectFilePath && !p.modPath) return;
-    try {
-      const result = await api.autoSaveProject(p);
-      if (result?.success && result.data?.projectFilePath) {
-        storeUpdateProjectFields({ projectFilePath: result.data.projectFilePath });
-      }
-    } catch {
-      // silent failure for auto-save
-    }
-  }, [storeUpdateProjectFields]);
-
-  // Periodic auto-save timer
+  // Start auto-save timer on mount, stop on unmount
   useEffect(() => {
-    const timer = setInterval(doAutoSave, AUTO_SAVE_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [doAutoSave]);
+    startAutoSave();
+    return () => stopAutoSave();
+  }, [startAutoSave, stopAutoSave]);
 
   // Confirm-before-close handler
   useEffect(() => {
     const handler = api.onBeforeClose(async () => {
-      const p = projectRef.current;
+      const p = useProjectStore.getState().project;
       if (p && (p.projectFilePath || p.modPath)) {
-        // Auto-save then close
-        await doAutoSave();
+        await autoSave();
         api.confirmClose();
       } else if (p) {
-        // Unsaved new project with no path – ask user
         Modal.confirm({
           title: '退出确认',
           content: '当前项目尚未保存，是否直接退出？',
@@ -100,62 +67,49 @@ function AppInner() {
           onOk: () => api.confirmClose(),
         });
       } else {
-        // No project loaded, just close
         api.confirmClose();
       }
     });
     return () => api.removeBeforeCloseListener(handler);
-  }, [doAutoSave]);
+  }, [autoSave]);
 
+  // ---- Project action wrappers (for message feedback) ----
   const handleNewProject = useCallback(async () => {
-    const result = await api.createEmptyProject();
+    const result = await createProject();
     if (result?.success) {
-      setProject(result.data);
-      setSelectedFile(null);
-      setActiveTab('info');
       messageApi.success('已创建新项目，请在基本信息页设置MOD文件夹路径');
     } else {
       messageApi.error(result?.error || '创建项目失败');
     }
-  }, [messageApi, setProject, setSelectedFile]);
+  }, [messageApi, createProject]);
 
   const handleLoadProject = useCallback(async () => {
-    const result = await api.loadProject();
+    const result = await loadProject();
     if (!result) return;
     if (result.success) {
-      setProject(result.data);
-      setSelectedFile(null);
-      setActiveTab('editor');
       messageApi.success('项目加载成功');
     } else {
       messageApi.error(result.error || '加载项目失败');
     }
-  }, [messageApi, setProject, setSelectedFile]);
+  }, [messageApi, loadProject]);
 
   const handleSaveProject = useCallback(async () => {
-    if (!project) return;
-    const result = await api.saveProject(project);
+    const result = await saveProject();
     if (result?.success) {
-      // Update projectFilePath if the backend assigned one (e.g. via save dialog)
-      if (result.data?.projectFilePath) {
-        storeUpdateProjectFields({ projectFilePath: result.data.projectFilePath });
-      }
       messageApi.success('项目保存成功');
     } else if (result) {
       messageApi.error(result?.error || '保存失败');
     }
-    // result is null when user cancels save dialog
-  }, [project, messageApi, storeUpdateProjectFields]);
+  }, [messageApi, saveProject]);
 
   const handleExport = useCallback(async () => {
-    if (!project) return;
-    const result = await api.exportMod({ projectData: project });
+    const result = await exportMod();
     if (result?.success) {
       messageApi.success('MOD导出成功');
     } else if (result) {
       messageApi.error(result.error || '导出失败');
     }
-  }, [project, messageApi]);
+  }, [messageApi, exportMod]);
 
   // Helper to wrap tab content with display:none for inactive tabs
   const tabStyle = (tabKey) => ({
@@ -205,9 +159,6 @@ function AppInner() {
       <div className="app-root">
         <div className="app-layout">
           <LeftNav
-            project={project}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
             onNewProject={handleNewProject}
             onLoadProject={handleLoadProject}
             onSaveProject={handleSaveProject}
@@ -224,64 +175,42 @@ function AppInner() {
             {project && shouldRender('info') && (
               <div className={tabClass('info')} style={tabStyle('info')}>
                 <Suspense fallback={lazyFallback}>
-                  <ProjectInfo
-                    project={project}
-                    onProjectFieldsChange={storeUpdateProjectFields}
-                    messageApi={messageApi}
-                  />
+                  <ProjectInfo messageApi={messageApi} />
                 </Suspense>
               </div>
             )}
             {project && shouldRender('editor') && (
               <div className={tabClass('editor')} style={tabStyle('editor')}>
                 <Suspense fallback={lazyFallback}>
-                  <TranslationEditor
-                    messageApi={messageApi}
-                  />
+                  <TranslationEditor messageApi={messageApi} />
                 </Suspense>
               </div>
             )}
             {project && shouldRender('glossary') && (
               <div className={tabClass('glossary')} style={tabStyle('glossary')}>
                 <Suspense fallback={lazyFallback}>
-                  <GlossaryPanel
-                    project={project}
-                    onUpdateGlossary={storeUpdateGlossary}
-                    onUpdateKeywords={storeUpdateKeywords}
-                    messageApi={messageApi}
-                  />
+                  <GlossaryPanel messageApi={messageApi} />
                 </Suspense>
               </div>
             )}
             {project && shouldRender('review') && (
               <div className={tabClass('review')} style={tabStyle('review')}>
                 <Suspense fallback={lazyFallback}>
-                  <ReviewPanel
-                    project={project}
-                    onUpdateGlossary={storeUpdateGlossary}
-                    onUpdateKeywords={storeUpdateKeywords}
-                    onUpdateEntry={storeUpdateEntry}
-                    messageApi={messageApi}
-                  />
+                  <ReviewPanel messageApi={messageApi} />
                 </Suspense>
               </div>
             )}
             {shouldRender('settings') && (
               <div className={tabClass('settings')} style={tabStyle('settings')}>
                 <Suspense fallback={lazyFallback}>
-                  <SettingsPanel
-                    messageApi={messageApi}
-                  />
+                  <SettingsPanel messageApi={messageApi} />
                 </Suspense>
               </div>
             )}
             {shouldRender('appSettings') && (
               <div className={tabClass('appSettings')} style={tabStyle('appSettings')}>
                 <Suspense fallback={lazyFallback}>
-                  <AppSettingsPanel
-                    zoomLevel={zoomLevel}
-                    onZoomLevelChange={setZoomLevel}
-                  />
+                  <AppSettingsPanel />
                 </Suspense>
               </div>
             )}

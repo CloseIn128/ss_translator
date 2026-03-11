@@ -14,20 +14,21 @@ import {
   HistoryOutlined,
   AuditOutlined,
 } from '@ant-design/icons';
+import useProjectStore from '../../store/useProjectStore';
 
 const MIN_NAV_WIDTH = 160;
 const MAX_NAV_WIDTH = 420;
 const DEFAULT_NAV_WIDTH = 220;
 
 export default function LeftNav({
-  project,
-  activeTab,
-  onTabChange,
   onNewProject,
   onLoadProject,
   onSaveProject,
   onExport,
 }) {
+  const project = useProjectStore(s => s.project);
+  const activeTab = useProjectStore(s => s.activeTab);
+  const setActiveTab = useProjectStore(s => s.setActiveTab);
   const [navWidth, setNavWidth] = useState(DEFAULT_NAV_WIDTH);
   const dragging = useRef(false);
   const startX = useRef(0);
@@ -82,8 +83,8 @@ export default function LeftNav({
     const termTranslated = allTerms.filter(t => t.target && t.target.trim()).length;
     const termReviewed = allTerms.filter(t => t.confirmed).length;
 
-    // Entry stats
-    const entries = project.entries || [];
+    // Entry stats (exclude ignored entries)
+    const entries = (project.entries || []).filter(e => !e.ignored);
     const entryTotal = entries.length;
     const entryTranslated = entries.filter(
       e => e.status !== 'untranslated' && e.status !== 'error'
@@ -140,7 +141,7 @@ export default function LeftNav({
             <div
               key={item.key}
               className={`left-nav-item${activeTab === item.key ? ' active' : ''}${disabled ? ' disabled' : ''}`}
-              onClick={() => !disabled && onTabChange(item.key)}
+              onClick={() => !disabled && setActiveTab(item.key)}
             >
               {item.icon}
               <span>{item.label}</span>

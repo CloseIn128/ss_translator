@@ -194,6 +194,23 @@ body {
   padding: 0;
 }
 
+/* Centered page container: for pages whose content doesn't fill the horizontal width
+   (e.g., ProjectInfo, SettingsPanel, AppSettingsPanel) */
+.centered-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
+}
+
+.centered-page-container > * {
+  width: 100%;
+  max-width: 860px;
+}
+
 /* Table wrapper: fill remaining height with fixed pagination at bottom */
 .keyword-table-wrapper {
   flex: 1;
@@ -387,6 +404,17 @@ body {
   margin-bottom: 4px;
 }
 
+.entry-source-label {
+  font-size: 11px;
+  color: #5a7a9a;
+  margin-bottom: 4px;
+  font-family: monospace;
+}
+
+.entry-ignored {
+  opacity: 0.5;
+}
+
 .entry-actions {
   display: flex;
   flex-direction: column;
@@ -448,6 +476,7 @@ body {
 
 .settings-tab-content {
   max-width: 860px;
+  margin: 0 auto;
 }
 
 .settings-form-grid {

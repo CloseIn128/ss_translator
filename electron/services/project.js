@@ -113,11 +113,14 @@ class ProjectManager {
   _computeStats(entries) {
     const byFile = {};
     const byType = {};
-    let total = entries.length;
+    let total = 0;
     let translated = 0;
     let polished = 0;
 
     for (const entry of entries) {
+      if (entry.ignored) continue;
+
+      total++;
       const file = entry.file;
       if (!byFile[file]) byFile[file] = { total: 0, translated: 0 };
       byFile[file].total++;

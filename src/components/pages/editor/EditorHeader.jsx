@@ -1,5 +1,5 @@
 import React from 'react';
-import { Input, Select, Button } from 'antd';
+import { Input, Select, Button, Switch } from 'antd';
 import {
   HighlightOutlined,
   SearchOutlined,
@@ -17,6 +17,8 @@ export default function EditorHeader({
   categories,
   statusFilter,
   onStatusChange,
+  showIgnored,
+  onShowIgnoredChange,
   batchTranslating,
   isTaskRunning,
   onBatchTranslate,
@@ -60,6 +62,10 @@ export default function EditorHeader({
             { value: 'error', label: '错误' },
           ]}
         />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8c8c8c' }}>
+          <Switch size="small" checked={showIgnored} onChange={onShowIgnoredChange} />
+          显示已忽略
+        </span>
         <Button
           type="primary"
           size="small"

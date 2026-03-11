@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Table, Button, Tag, Modal, Pagination, Descriptions, Tabs, Space, Empty } from 'antd';
+import { Table, Button, Tag, Pagination } from 'antd';
 import {
   ReloadOutlined,
   DeleteOutlined,
@@ -7,8 +7,9 @@ import {
   SyncOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  ClockCircleOutlined,
 } from '@ant-design/icons';
+import ActiveRequestsPanel from './request/ActiveRequestsPanel';
+import RequestDetailModal from './request/RequestDetailModal';
 
 const api = window.electronAPI;
 
@@ -39,199 +40,6 @@ function formatDuration(ms) {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function formatResponseRaw(raw) {
-  if (!raw) return '(空)';
-  try { return JSON.stringify(JSON.parse(raw), null, 2); }
-  catch { return raw; }
-}
-
-// ─── Active Requests Panel ──────────────────────────────────────────
-
-function ActiveRequestsPanel({ activeRequests, onViewDetail }) {
-  if (activeRequests.length === 0) {
-    return (
-      <div style={{ padding: 24, textAlign: 'center', color: '#555' }}>
-        <ClockCircleOutlined style={{ fontSize: 24, marginBottom: 8 }} />
-        <div>当前没有正在进行的请求</div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {activeRequests.map(req => (
-        <div key={req.id} style={{
-          padding: '8px 12px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          cursor: 'pointer',
-        }}
-          onClick={() => onViewDetail(req.id)}
-        >
-          <SyncOutlined spin style={{ color: '#1890ff' }} />
-          <Tag color="processing" style={{ fontSize: 11 }}>#{req.id}</Tag>
-          <Tag style={{ fontSize: 11 }}>{TYPE_LABELS[req.type] || req.type}</Tag>
-          <span style={{ fontSize: 12, color: '#8c8c8c' }}>{req.model}</span>
-          <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto' }}>
-            {formatTime(req.startTime)}
-          </span>
-          <Button size="small" type="text" icon={<EyeOutlined />}
-            onClick={(e) => { e.stopPropagation(); onViewDetail(req.id); }} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Request Detail Modal ──────────────────────────────────────────
-
-function RequestDetailModal({ requestId, open, onClose }) {
-  const [detail, setDetail] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const refreshRef = useRef(null);
-
-  useEffect(() => {
-    if (open && requestId != null) {
-      setLoading(true);
-      api.getRequestDetail(requestId).then(data => {
-        setDetail(data);
-        setLoading(false);
-        // Only start auto-refresh for pending requests
-        if (data && data.status === 'pending') {
-          refreshRef.current = setInterval(async () => {
-            const refreshed = await api.getRequestDetail(requestId);
-            if (refreshed) {
-              setDetail(refreshed);
-              // Stop refreshing once completed
-              if (refreshed.status !== 'pending' && refreshRef.current) {
-                clearInterval(refreshRef.current);
-                refreshRef.current = null;
-              }
-            }
-          }, 2000);
-        }
-      });
-    } else {
-      setDetail(null);
-    }
-    return () => {
-      if (refreshRef.current) {
-        clearInterval(refreshRef.current);
-        refreshRef.current = null;
-      }
-    };
-  }, [open, requestId]);
-
-  const statusInfo = detail ? (STATUS_MAP[detail.status] || STATUS_MAP.pending) : null;
-
-  return (
-    <Modal
-      title={`请求详情 #${requestId || ''}`}
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      width={800}
-      destroyOnClose
-    >
-      {loading && <div style={{ padding: 24, textAlign: 'center', color: '#8c8c8c' }}>加载中...</div>}
-      {!loading && !detail && <Empty description="请求记录未找到" />}
-      {!loading && detail && (
-        <div style={{ maxHeight: '65vh', overflow: 'auto' }}>
-          <Descriptions column={2} size="small" bordered style={{ marginBottom: 16 }}>
-            <Descriptions.Item label="请求ID">#{detail.id}</Descriptions.Item>
-            <Descriptions.Item label="类型">
-              <Tag>{TYPE_LABELS[detail.type] || detail.type}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="状态">
-              <Tag color={statusInfo.color} icon={statusInfo.icon}>{statusInfo.text}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="模型">{detail.model}</Descriptions.Item>
-            <Descriptions.Item label="开始时间">{formatTime(detail.startTime)}</Descriptions.Item>
-            <Descriptions.Item label="结束时间">{formatTime(detail.endTime)}</Descriptions.Item>
-            <Descriptions.Item label="耗时">{formatDuration(detail.durationMs)}</Descriptions.Item>
-            <Descriptions.Item label="API地址">{detail.apiUrl}</Descriptions.Item>
-            {detail.tokenUsage && (
-              <>
-                <Descriptions.Item label="输入Token">{detail.tokenUsage.prompt_tokens ?? '-'}</Descriptions.Item>
-                <Descriptions.Item label="输出Token">{detail.tokenUsage.completion_tokens ?? '-'}</Descriptions.Item>
-              </>
-            )}
-            {detail.error && (
-              <Descriptions.Item label="错误信息" span={2}>
-                <span style={{ color: '#ff4d4f' }}>{detail.error}</span>
-              </Descriptions.Item>
-            )}
-          </Descriptions>
-
-          <Tabs
-            size="small"
-            items={[
-              {
-                key: 'system',
-                label: 'System Prompt',
-                children: (
-                  <pre style={{
-                    background: '#111', padding: 12, borderRadius: 6,
-                    fontSize: 12, maxHeight: 200, overflow: 'auto',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  }}>
-                    {detail.systemPrompt || '(空)'}
-                  </pre>
-                ),
-              },
-              {
-                key: 'user',
-                label: 'User Message',
-                children: (
-                  <pre style={{
-                    background: '#111', padding: 12, borderRadius: 6,
-                    fontSize: 12, maxHeight: 300, overflow: 'auto',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  }}>
-                    {detail.userMessage || '(空)'}
-                  </pre>
-                ),
-              },
-              {
-                key: 'response',
-                label: 'Response',
-                children: (
-                  <pre style={{
-                    background: '#111', padding: 12, borderRadius: 6,
-                    fontSize: 12, maxHeight: 300, overflow: 'auto',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  }}>
-                    {detail.responseContent || detail.error || '(空)'}
-                  </pre>
-                ),
-              },
-              {
-                key: 'raw',
-                label: 'Raw Response',
-                children: (
-                  <pre style={{
-                    background: '#111', padding: 12, borderRadius: 6,
-                    fontSize: 12, maxHeight: 300, overflow: 'auto',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  }}>
-                    {formatResponseRaw(detail.responseRaw)}
-                  </pre>
-                ),
-              },
-            ]}
-          />
-        </div>
-      )}
-    </Modal>
-  );
-}
-
-// ─── Main Page ──────────────────────────────────────────────────────
-
 export default function RequestHistory() {
   const [history, setHistory] = useState([]);
   const [activeRequests, setActiveRequests] = useState([]);
@@ -250,7 +58,7 @@ export default function RequestHistory() {
       api.getActiveRequests(),
     ]);
     if (!mountedRef.current) return;
-    setHistory((historyData || []).reverse()); // newest first
+    setHistory((historyData || []).reverse());
     setActiveRequests(activeData || []);
     setLoading(false);
   };
@@ -258,12 +66,10 @@ export default function RequestHistory() {
   useEffect(() => {
     mountedRef.current = true;
     fetchData();
-    // Auto-refresh every 2s for active requests
     refreshTimerRef.current = setInterval(async () => {
       const activeData = await api.getActiveRequests();
       if (!mountedRef.current) return;
       setActiveRequests(activeData || []);
-      // Also refresh history if there were active requests
       if (activeData && activeData.length > 0) {
         const historyData = await api.getRequestHistory();
         if (!mountedRef.current) return;
@@ -370,7 +176,6 @@ export default function RequestHistory() {
     },
   ];
 
-  // Paginate data manually
   const paginatedHistory = history.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (

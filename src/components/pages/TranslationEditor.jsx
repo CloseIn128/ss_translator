@@ -47,17 +47,28 @@ export default function TranslationEditor({ messageApi }) {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [showIgnored, setShowIgnored] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Build available category list
-  const categories = useMemo(() => {
-    const cats = new Set(project.entries.map(e => e.category).filter(Boolean));
-    return ['all', ...[...cats].sort()];
+  // Active entries = non-ignored entries (used for sidebar stats and category building)
+  const activeEntries = useMemo(() => {
+    return project.entries.filter(e => !e.ignored);
   }, [project.entries]);
+
+  // Build available category list (only from active entries)
+  const categories = useMemo(() => {
+    const cats = new Set(activeEntries.map(e => e.category).filter(Boolean));
+    return ['all', ...[...cats].sort()];
+  }, [activeEntries]);
 
   // Filter entries
   const filteredEntries = useMemo(() => {
     let entries = project.entries;
+
+    // Hide ignored entries by default
+    if (!showIgnored) {
+      entries = entries.filter(e => !e.ignored);
+    }
 
     if (selectedFile) {
       entries = entries.filter(e => e.file === selectedFile);
@@ -79,7 +90,7 @@ export default function TranslationEditor({ messageApi }) {
     }
 
     return entries;
-  }, [project.entries, selectedFile, categoryFilter, statusFilter, searchText]);
+  }, [project.entries, selectedFile, categoryFilter, statusFilter, searchText, showIgnored]);
 
   // Paginate
   const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
@@ -89,12 +100,13 @@ export default function TranslationEditor({ messageApi }) {
   );
 
   // Reset page when filters change
-  useEffect(() => { setCurrentPage(1); }, [selectedFile, categoryFilter, statusFilter, searchText]);
+  useEffect(() => { setCurrentPage(1); }, [selectedFile, categoryFilter, statusFilter, searchText, showIgnored]);
 
-  // Stats for current filter
+  // Stats for current filter (exclude ignored from stats)
   const stats = useMemo(() => {
-    const total = filteredEntries.length;
-    const translated = filteredEntries.filter(
+    const nonIgnored = filteredEntries.filter(e => !e.ignored);
+    const total = nonIgnored.length;
+    const translated = nonIgnored.filter(
       e => e.status !== 'untranslated' && e.status !== 'error'
     ).length;
     return { total, translated };
@@ -122,7 +134,7 @@ export default function TranslationEditor({ messageApi }) {
   return (
     <div className="editor-layout">
       <FileSidebar
-        entries={project.entries}
+        entries={activeEntries}
         selectedFile={selectedFile}
         onSelectFile={setSelectedFile}
       />
@@ -155,6 +167,8 @@ export default function TranslationEditor({ messageApi }) {
           categories={categories}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
+          showIgnored={showIgnored}
+          onShowIgnoredChange={setShowIgnored}
           batchTranslating={batchTranslating}
           isTaskRunning={isTaskRunning}
           onBatchTranslate={handleBatchTranslate}
