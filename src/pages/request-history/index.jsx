@@ -8,8 +8,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import ActiveRequestsPanel from './request/ActiveRequestsPanel';
-import RequestDetailModal from './request/RequestDetailModal';
+import ActiveRequestsPanel from './ActiveRequestsPanel';
+import RequestDetailModal from './RequestDetailModal';
 
 const api = window.electronAPI;
 

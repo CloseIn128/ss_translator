@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Alert, Button } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
-import FileSidebar from './editor/FileSidebar';
-import EditorHeader from './editor/EditorHeader';
-import EntryRow from './editor/EntryRow';
-import FileDiffView from './editor/FileDiffView';
-import useTranslationActions from './editor/useTranslationActions';
+import FileSidebar from './FileSidebar';
+import EditorHeader from './EditorHeader';
+import EntryRow from './EntryRow';
+import FileDiffView from './FileDiffView';
+import useTranslationActions from './useTranslationActions';
 import useProjectStore from '../../store/useProjectStore';
 
 const PAGE_SIZE = 50;

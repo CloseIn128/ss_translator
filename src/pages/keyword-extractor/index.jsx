@@ -8,8 +8,8 @@ import {
   HighlightOutlined,
   CheckOutlined,
 } from '@ant-design/icons';
-import useKeywordActions from './keyword/useKeywordActions';
-import KeywordTable from './keyword/KeywordTable';
+import useKeywordActions from './useKeywordActions';
+import KeywordTable from './KeywordTable';
 
 export default function KeywordExtractor({ messageApi }) {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);

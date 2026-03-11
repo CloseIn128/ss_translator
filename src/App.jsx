@@ -4,18 +4,18 @@ import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/layout/LeftNav';
 import LogPanel from './components/layout/LogPanel';
 import BottomBar from './components/layout/BottomBar';
-import WelcomePage from './components/pages/WelcomePage';
+import WelcomePage from './pages/welcome';
 import { TaskProvider } from './components/context/TaskContext';
 import useProjectStore from './store/useProjectStore';
 
 // Lazy-load page components for faster initial render and tab switching
-const ProjectInfo = React.lazy(() => import('./components/pages/ProjectInfo'));
-const TranslationEditor = React.lazy(() => import('./components/pages/TranslationEditor'));
-const GlossaryPanel = React.lazy(() => import('./components/pages/GlossaryPanel'));
-const SettingsPanel = React.lazy(() => import('./components/pages/SettingsPanel'));
-const AppSettingsPanel = React.lazy(() => import('./components/pages/AppSettingsPanel'));
-const ReviewPanel = React.lazy(() => import('./components/pages/ReviewPanel'));
-const RequestHistory = React.lazy(() => import('./components/pages/RequestHistory'));
+const ProjectInfo = React.lazy(() => import('./pages/project-info'));
+const TranslationEditor = React.lazy(() => import('./pages/translation-editor'));
+const GlossaryPanel = React.lazy(() => import('./pages/glossary'));
+const SettingsPanel = React.lazy(() => import('./pages/settings'));
+const AppSettingsPanel = React.lazy(() => import('./pages/app-settings'));
+const ReviewPanel = React.lazy(() => import('./pages/review'));
+const RequestHistory = React.lazy(() => import('./pages/request-history'));
 
 const api = window.electronAPI;
 

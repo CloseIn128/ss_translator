@@ -12,8 +12,8 @@ import {
   CheckOutlined,
   ClearOutlined,
 } from '@ant-design/icons';
-import { useTask } from '../../context/TaskContext';
-import useProjectStore from '../../../store/useProjectStore';
+import { useTask } from '../../components/context/TaskContext';
+import useProjectStore from '../../store/useProjectStore';
 
 const api = window.electronAPI;
 const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '战舰系统', '游戏术语', '人名/地名', '其他'];

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Tabs } from 'antd';
 import { ApiOutlined, MessageOutlined } from '@ant-design/icons';
-import ModelConfigTab from './settings/ModelConfigTab';
-import PromptConfigTab from './settings/PromptConfigTab';
+import ModelConfigTab from './ModelConfigTab';
+import PromptConfigTab from './PromptConfigTab';
 
 export default function SettingsPanel({ messageApi }) {
   const tabItems = [

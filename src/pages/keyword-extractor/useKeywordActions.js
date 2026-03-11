@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from 'antd';
-import { useTask } from '../../context/TaskContext';
-import useProjectStore from '../../../store/useProjectStore';
+import { useTask } from '../../components/context/TaskContext';
+import useProjectStore from '../../store/useProjectStore';
 
 const api = window.electronAPI;
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Tabs } from 'antd';
 import { BookOutlined } from '@ant-design/icons';
-import ProjectGlossaryTab from './glossary/ProjectGlossaryTab';
-import PublicGlossaryTab from './glossary/PublicGlossaryTab';
+import ProjectGlossaryTab from './ProjectGlossaryTab';
+import PublicGlossaryTab from './PublicGlossaryTab';
 
 export default function GlossaryPanel({ messageApi }) {
   const tabItems = [
