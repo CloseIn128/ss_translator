@@ -267,7 +267,7 @@ export function tokenizeJson(text) {
     }
     // Numbers, booleans, null
     const rest = text.slice(i);
-    const numMatch = rest.match(/^-?(\d+\.?\d*([eE][+-]?\d+)?)/);
+    const numMatch = rest.match(/^-?\d+(\.\d+)?([eE][+-]?\d+)?/);
     if (numMatch) {
       tokens.push({ type: 'number', value: numMatch[0] });
       i += numMatch[0].length;
