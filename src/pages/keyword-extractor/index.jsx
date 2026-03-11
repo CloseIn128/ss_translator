@@ -126,20 +126,22 @@ export default function KeywordExtractor({ messageApi }) {
 
       {/* Empty state */}
       {keywords.length === 0 && !extracting && (
-        <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
-          <SearchOutlined style={{ fontSize: 32, marginBottom: 12 }} />
-          <div style={{ marginBottom: 8 }}>在基本信息页设置MOD文件夹后提取关键词</div>
-          <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-            点击"提取关键词"将执行<b>结构提取</b>，开启AI提取开关时同时执行<b>AI智能提取</b>
-          </div>
-          <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-            结构提取基于MOD文件结构快速识别舰船名、武器名、势力名等字段
-          </div>
-          <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-            AI智能提取通过AI分析文本内容，识别隐藏在描述和对话中的专有名词
-          </div>
-          <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
-            提取完成后，可选择关键词进行<b>翻译</b>，再添加到词库
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', color: '#555' }}>
+            <SearchOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+            <div style={{ marginBottom: 8 }}>在基本信息页设置MOD文件夹后提取关键词</div>
+            <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+              点击"提取关键词"将执行<b>结构提取</b>，开启AI提取开关时同时执行<b>AI智能提取</b>
+            </div>
+            <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+              结构提取基于MOD文件结构快速识别舰船名、武器名、势力名等字段
+            </div>
+            <div style={{ fontSize: 12, color: '#8c8c8c' }}>
+              AI智能提取通过AI分析文本内容，识别隐藏在描述和对话中的专有名词
+            </div>
+            <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
+              提取完成后，可选择关键词进行<b>翻译</b>，再添加到词库
+            </div>
           </div>
         </div>
       )}

@@ -20,9 +20,11 @@ export default function ProjectInfo({ messageApi }) {
 
   if (!project) {
     return (
-      <div style={{ textAlign: 'center', padding: 60, color: '#555' }}>
-        <InfoCircleOutlined style={{ fontSize: 32, marginBottom: 12 }} />
-        <div>请先新建或打开一个翻译项目</div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#555' }}>
+          <InfoCircleOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+          <div>请先新建或打开一个翻译项目</div>
+        </div>
       </div>
     );
   }

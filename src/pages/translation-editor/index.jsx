@@ -213,7 +213,7 @@ export default function TranslationEditor({ messageApi }) {
                 ))}
 
                 {pageEntries.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: 40, color: '#8c8c8c' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200, color: '#8c8c8c' }}>
                     没有匹配的条目
                   </div>
                 )}

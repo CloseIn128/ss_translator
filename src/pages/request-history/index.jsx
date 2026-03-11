@@ -207,7 +207,7 @@ export default function RequestHistory() {
       )}
 
       {/* History table with independent pagination */}
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div className="keyword-table-wrapper">
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <Table
             dataSource={paginatedHistory}

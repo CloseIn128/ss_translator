@@ -220,6 +220,65 @@ body {
   flex-direction: column;
 }
 
+/* Center Ant Design table empty placeholders vertically */
+.keyword-table-wrapper .ant-table-empty .ant-table-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyword-table-wrapper .ant-table-empty .ant-table-placeholder {
+  flex: 1;
+}
+
+.keyword-table-wrapper .ant-table-empty .ant-table-placeholder td {
+  border: none;
+}
+
+/* Ensure inner scroll area fills wrapper */
+.keyword-table-wrapper > div:first-child {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make table fill its container for proper empty state centering */
+.keyword-table-wrapper > div:first-child .ant-table-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.keyword-table-wrapper > div:first-child .ant-table-wrapper .ant-spin-nested-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.keyword-table-wrapper > div:first-child .ant-table-wrapper .ant-spin-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.keyword-table-wrapper > div:first-child .ant-table-wrapper .ant-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.keyword-table-wrapper > div:first-child .ant-table-wrapper .ant-table-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.keyword-table-wrapper > div:first-child .ant-table-wrapper .ant-table-body {
+  flex: 1;
+}
+
 /* Ensure Ant Design Tabs content fills available space for glossary panels */
 .ant-tabs {
   min-height: 0;
