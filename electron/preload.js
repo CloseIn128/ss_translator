@@ -63,6 +63,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Export
   exportMod: (data) => ipcRenderer.invoke('export:mod', data),
+  getExportPreview: (data) => ipcRenderer.invoke('export:preview', data),
 
   // System notification
   sendNotification: (title, body) => ipcRenderer.invoke('app:notify', { title, body }),

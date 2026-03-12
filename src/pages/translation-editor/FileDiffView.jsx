@@ -115,7 +115,7 @@ export default function FileDiffView({ modPath, selectedFile, entries, fullPage 
               original={original}
               translated={translated}
               fileType={fileType}
-              maxHeight="360px"
+              height="360px"
             />
           )}
         </div>

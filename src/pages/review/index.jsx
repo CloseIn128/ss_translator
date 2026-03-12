@@ -283,7 +283,7 @@ export default function ReviewPanel({ messageApi }) {
                 original={diffOriginal}
                 translated={diffTranslated}
                 fileType={detectFileType(currentItem.file)}
-                maxHeight="200px"
+                height="200px"
               />
             )}
           </div>

@@ -39,6 +39,65 @@ function register(ctx) {
       return { success: false, error: err.message };
     }
   });
+
+  /**
+   * Generate previews for all files that have translations.
+   * Returns { files: [{ relFile, original, translated, fileType }] }
+   */
+  ipcMain.handle('export:preview', async (event, { modPath, entries }) => {
+    try {
+      if (!modPath) {
+        return { success: false, error: 'No mod path configured' };
+      }
+
+      // Group entries by file, skip ignored and untranslated
+      const fileEntryMap = {};
+      for (const entry of entries) {
+        if (entry.ignored) continue;
+        if (!entry.translated || entry.status === 'untranslated') continue;
+        if (!fileEntryMap[entry.file]) fileEntryMap[entry.file] = [];
+        fileEntryMap[entry.file].push(entry);
+      }
+
+      const files = [];
+      for (const [relFile, fileEntries] of Object.entries(fileEntryMap)) {
+        const absPath = path.join(modPath, relFile);
+        if (!fs.existsSync(absPath)) continue;
+
+        try {
+          const original = fs.readFileSync(absPath, 'utf-8');
+          const ext = path.extname(relFile);
+          const fileName = path.basename(relFile);
+          let translated = original;
+
+          if (ext === '.csv') {
+            translated = applyCSVPreview(original, fileEntries, fileName);
+          } else {
+            translated = applyJsonPreview(original, fileEntries);
+          }
+
+          // Only include files that actually changed
+          if (original !== translated) {
+            const lower = relFile.toLowerCase();
+            let fileType = 'text';
+            if (lower.endsWith('.csv')) fileType = 'csv';
+            else if (lower.endsWith('.json') || lower.endsWith('.faction') ||
+                     lower.endsWith('.ship') || lower.endsWith('.skin') ||
+                     lower.endsWith('.variant') || lower.endsWith('.skill')) fileType = 'json';
+
+            files.push({ relFile, original, translated, fileType });
+          }
+        } catch (err) {
+          // Skip files that fail to preview
+          console.warn(`Failed to preview ${relFile}: ${err.message}`);
+        }
+      }
+
+      return { success: true, files };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
 }
 
 function applyCSVPreview(content, entries, fileName) {
