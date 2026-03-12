@@ -1,10 +1,70 @@
-import { diffLines } from 'diff';
-
 /** Number of unchanged context lines to show around each change */
 export const CONTEXT_LINES = 3;
 
 /**
- * Compute a side-by-side aligned diff using the `diff` library.
+ * Local line-based diff implementation using LCS.
+ * Produces output compatible with the `diff` package's `diffLines` format:
+ *   { value: string, added?: boolean, removed?: boolean }
+ */
+function diffLines(oldText, newText) {
+  const oldLines = oldText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  const newLines = newText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+
+  const m = oldLines.length;
+  const n = newLines.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (oldLines[i - 1] === newLines[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = dp[i - 1][j] >= dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
+      }
+    }
+  }
+
+  const raw = [];
+  let i = m;
+  let j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && oldLines[i - 1] === newLines[j - 1]) {
+      raw.push({ value: oldLines[i - 1], added: undefined, removed: undefined });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      raw.push({ value: newLines[j - 1], added: true, removed: undefined });
+      j--;
+    } else if (i > 0) {
+      raw.push({ value: oldLines[i - 1], added: undefined, removed: true });
+      i--;
+    }
+  }
+  raw.reverse();
+
+  // Merge consecutive segments of the same type
+  const merged = [];
+  for (const part of raw) {
+    const prev = merged[merged.length - 1];
+    if (prev && prev.added === part.added && prev.removed === part.removed) {
+      prev.value += '\n' + part.value;
+    } else {
+      merged.push({ ...part });
+    }
+  }
+
+  // Append trailing '\n' to each segment's value to mimic typical diff output
+  for (const seg of merged) {
+    if (seg.value.length > 0) {
+      seg.value += '\n';
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Compute a side-by-side aligned diff using LCS.
  * Returns an array of rows:
  *   { type: 'same'|'modified'|'removed'|'added', leftNum, rightNum, left, right }
  *
@@ -13,6 +73,9 @@ export const CONTEXT_LINES = 3;
 export function computeAlignedDiff(originalText, translatedText) {
   const orig = normalizeEndings(originalText);
   const trans = normalizeEndings(translatedText);
+
+  // Both empty → no content
+  if (!orig && !trans) return [];
 
   if (orig === trans) {
     const lines = orig.split('\n');
@@ -26,9 +89,9 @@ export function computeAlignedDiff(originalText, translatedText) {
   let leftNum = 1;
   let rightNum = 1;
 
-  let i = 0;
-  while (i < changes.length) {
-    const change = changes[i];
+  let idx = 0;
+  while (idx < changes.length) {
+    const change = changes[idx];
 
     if (!change.added && !change.removed) {
       // Unchanged hunk
@@ -36,11 +99,11 @@ export function computeAlignedDiff(originalText, translatedText) {
       for (const line of lines) {
         rows.push({ type: 'same', left: line, right: line, leftNum: leftNum++, rightNum: rightNum++ });
       }
-      i++;
-    } else if (change.removed && i + 1 < changes.length && changes[i + 1].added) {
+      idx++;
+    } else if (change.removed && idx + 1 < changes.length && changes[idx + 1].added) {
       // Paired removed+added → align side-by-side as "modified"
       const removedLines = stripTrailingNewline(change.value).split('\n');
-      const addedLines = stripTrailingNewline(changes[i + 1].value).split('\n');
+      const addedLines = stripTrailingNewline(changes[idx + 1].value).split('\n');
       const maxLen = Math.max(removedLines.length, addedLines.length);
       for (let k = 0; k < maxLen; k++) {
         const hasLeft = k < removedLines.length;
@@ -59,20 +122,20 @@ export function computeAlignedDiff(originalText, translatedText) {
           rows.push({ type: 'added', left: '', right: addedLines[k], leftNum: null, rightNum: rightNum++ });
         }
       }
-      i += 2;
+      idx += 2;
     } else if (change.removed) {
       const lines = stripTrailingNewline(change.value).split('\n');
       for (const line of lines) {
         rows.push({ type: 'removed', left: line, right: '', leftNum: leftNum++, rightNum: null });
       }
-      i++;
+      idx++;
     } else {
       // added
       const lines = stripTrailingNewline(change.value).split('\n');
       for (const line of lines) {
         rows.push({ type: 'added', left: '', right: line, leftNum: null, rightNum: rightNum++ });
       }
-      i++;
+      idx++;
     }
   }
   return rows;
@@ -116,25 +179,23 @@ export function collapseDiffRows(rows) {
 
 /**
  * Parse CSV text into rows and detect headers.
- * Simple parser: handles quoted fields with commas/newlines.
+ * Stateful parser: handles quoted fields with commas and embedded newlines.
  */
 export function parseCsvForDiff(text) {
   if (!text || !text.trim()) return { headers: [], rows: [] };
-  const lines = normalizeEndings(text).split('\n');
-  const parsedRows = lines.map(line => parseCsvLine(line));
-  if (parsedRows.length === 0) return { headers: [], rows: [] };
-  return { headers: parsedRows[0], rows: parsedRows.slice(1) };
-}
 
-function parseCsvLine(line) {
-  const fields = [];
+  const normalized = normalizeEndings(text);
+  const rows = [];
+  let fields = [];
   let current = '';
   let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+
+  for (let i = 0; i < normalized.length; i++) {
+    const ch = normalized[i];
+
     if (inQuotes) {
       if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
+        if (i + 1 < normalized.length && normalized[i + 1] === '"') {
           current += '"';
           i++;
         } else {
@@ -149,13 +210,25 @@ function parseCsvLine(line) {
       } else if (ch === ',') {
         fields.push(current);
         current = '';
+      } else if (ch === '\n') {
+        fields.push(current);
+        rows.push(fields);
+        fields = [];
+        current = '';
       } else {
         current += ch;
       }
     }
   }
-  fields.push(current);
-  return fields;
+
+  // Flush the last field/row if there is remaining data
+  if (current.length > 0 || fields.length > 0) {
+    fields.push(current);
+    rows.push(fields);
+  }
+
+  if (rows.length === 0) return { headers: [], rows: [] };
+  return { headers: rows[0], rows: rows.slice(1) };
 }
 
 /**

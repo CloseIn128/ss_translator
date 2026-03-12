@@ -62,10 +62,9 @@ describe('computeAlignedDiff', () => {
     expect(removedRow.left).toBe('line2');
   });
 
-  it('handles empty input', () => {
+  it('returns empty array for empty input', () => {
     const result = computeAlignedDiff('', '');
-    expect(result).toHaveLength(1);
-    expect(result[0].type).toBe('same');
+    expect(result).toHaveLength(0);
   });
 
   it('normalizes CRLF to LF', () => {
@@ -132,6 +131,23 @@ describe('parseCsvForDiff', () => {
     const result = parseCsvForDiff('');
     expect(result.headers).toEqual([]);
     expect(result.rows).toEqual([]);
+  });
+
+  it('handles multiline quoted fields', () => {
+    const csv = 'name,desc\nfoo,"line1\nline2"\nbar,baz';
+    const result = parseCsvForDiff(csv);
+    expect(result.headers).toEqual(['name', 'desc']);
+    expect(result.rows).toHaveLength(2);
+    expect(result.rows[0]).toEqual(['foo', 'line1\nline2']);
+    expect(result.rows[1]).toEqual(['bar', 'baz']);
+  });
+
+  it('does not produce phantom row from trailing newline', () => {
+    const csv = 'name,value\nfoo,bar\n';
+    const result = parseCsvForDiff(csv);
+    expect(result.headers).toEqual(['name', 'value']);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toEqual(['foo', 'bar']);
   });
 });
 

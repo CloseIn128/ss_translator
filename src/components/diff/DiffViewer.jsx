@@ -78,9 +78,11 @@ function TextDiffView({
     return translated;
   }, [translated, isJson, jsonHighlight]);
 
+  const isEmpty = !effectiveOriginal && !effectiveTranslated;
+
   const diffRows = useMemo(
-    () => computeAlignedDiff(effectiveOriginal, effectiveTranslated),
-    [effectiveOriginal, effectiveTranslated],
+    () => isEmpty ? [] : computeAlignedDiff(effectiveOriginal, effectiveTranslated),
+    [effectiveOriginal, effectiveTranslated, isEmpty],
   );
 
   const changeCount = useMemo(
