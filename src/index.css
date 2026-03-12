@@ -1120,3 +1120,49 @@ body {
   min-height: 0;
 }
 
+/* ─── Export Preview Modal ───────────────────────────────────────── */
+
+.export-preview-layout {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.export-preview-sidebar {
+  width: 260px;
+  min-width: 200px;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.export-preview-sidebar-title {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.export-preview-sidebar .ant-tree {
+  background: transparent;
+  padding: 4px;
+}
+
+.export-preview-sidebar .ant-tree .ant-tree-node-content-wrapper {
+  font-size: 12px;
+}
+
+.export-preview-diff {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.export-preview-diff .diff-viewer {
+  flex: 1;
+  min-height: 0;
+}
+

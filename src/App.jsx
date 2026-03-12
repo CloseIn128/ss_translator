@@ -5,6 +5,7 @@ import LeftNav from './components/layout/LeftNav';
 import LogPanel from './components/layout/LogPanel';
 import BottomBar from './components/layout/BottomBar';
 import WelcomePage from './pages/welcome';
+import ExportPreviewModal from './components/ExportPreviewModal';
 import { TaskProvider } from './components/context/TaskContext';
 import useProjectStore from './store/useProjectStore';
 
@@ -38,6 +39,7 @@ function AppInner() {
   const stopAutoSave = useProjectStore(s => s.stopAutoSave);
 
   const [messageApi, contextHolder] = message.useMessage();
+  const [exportPreviewOpen, setExportPreviewOpen] = useState(false);
 
   // Apply zoom on mount and when it changes
   useEffect(() => {
@@ -103,6 +105,12 @@ function AppInner() {
   }, [messageApi, saveProject]);
 
   const handleExport = useCallback(async () => {
+    // Open the export preview modal instead of immediately exporting
+    setExportPreviewOpen(true);
+  }, []);
+
+  const handleExportConfirm = useCallback(async () => {
+    setExportPreviewOpen(false);
     const result = await exportMod();
     if (result?.success) {
       messageApi.success('MOD导出成功');
@@ -226,6 +234,12 @@ function AppInner() {
         <LogPanel visible={logVisible} />
         <BottomBar logVisible={logVisible} onToggleLog={() => setLogVisible(v => !v)} />
       </div>
+      <ExportPreviewModal
+        open={exportPreviewOpen}
+        project={project}
+        onClose={() => setExportPreviewOpen(false)}
+        onConfirm={handleExportConfirm}
+      />
     </>
   );
 }
