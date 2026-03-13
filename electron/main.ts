@@ -1,46 +1,57 @@
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
-const path = require('path');
-const { parseModFolder } = require('./services/modParser');
-const { GlossaryManager } = require('./services/glossary');
-const { TranslationService } = require('./services/translator');
-const { ProjectManager } = require('./services/project');
-const { ConfigManager } = require('./services/configManager');
-const { LegacyTranslationService } = require('./services/legacyTranslation');
-const { exportMod } = require('./services/exporter');
+import { app, BrowserWindow, Menu, ipcMain } from 'electron';
+import * as path from 'path';
+import { parseModFolder } from './services/modParser';
+import { GlossaryManager } from './services/glossary';
+import { TranslationService } from './services/translator';
+import { ProjectManager } from './services/project';
+import { ConfigManager } from './services/configManager';
+import { LegacyTranslationService } from './services/legacyTranslation';
+import { exportMod } from './services/exporter';
+import type { IPCContext } from '../types/ipc';
+import type { Project } from '../types/project';
 
 // IPC handler modules
-const dialogHandlers = require('./ipc/dialogHandlers');
-const projectHandlers = require('./ipc/projectHandlers');
-const glossaryHandlers = require('./ipc/glossaryHandlers');
-const aiHandlers = require('./ipc/aiHandlers');
-const exportHandlers = require('./ipc/exportHandlers');
-const keywordHandlers = require('./ipc/keywordHandlers');
-const notificationHandlers = require('./ipc/notificationHandlers');
-const legacyHandlers = require('./ipc/legacyHandlers');
-const fileHandlers = require('./ipc/fileHandlers');
+import * as dialogHandlers from './ipc/dialogHandlers';
+import * as projectHandlers from './ipc/projectHandlers';
+import * as glossaryHandlers from './ipc/glossaryHandlers';
+import * as aiHandlers from './ipc/aiHandlers';
+import * as exportHandlers from './ipc/exportHandlers';
+import * as keywordHandlers from './ipc/keywordHandlers';
+import * as notificationHandlers from './ipc/notificationHandlers';
+import * as legacyHandlers from './ipc/legacyHandlers';
+import * as fileHandlers from './ipc/fileHandlers';
 
-let mainWindow;
-let glossaryManager;
-let translationService;
-let projectManager;
-let configManager;
-let legacyTranslationService;
+let mainWindow: BrowserWindow | null;
+let glossaryManager: GlossaryManager;
+let translationService: TranslationService;
+let projectManager: ProjectManager;
+let configManager: ConfigManager;
+let legacyTranslationService: LegacyTranslationService;
 let isQuitting = false;
 
-/** Returns the directory where user config files are persisted. */
-function getConfigDir() {
+/**
+ * Returns the directory where user config files are persisted.
+ * In packaged app: config/ next to executable
+ * In dev: config/ in project root
+ */
+function getConfigDir(): string {
   if (app.isPackaged) {
     return path.join(path.dirname(process.execPath), 'config');
   }
   return path.join(app.getAppPath(), 'config');
 }
 
-/** Returns the directory containing bundled read-only data. */
-function getDataDir() {
+/**
+ * Returns the directory containing bundled read-only data.
+ */
+function getDataDir(): string {
   return path.join(__dirname, 'data');
 }
 
-function createWindow() {
+/**
+ * Create the main application window
+ */
+function createWindow(): void {
   // Hide the default native menu bar
   Menu.setApplicationMenu(null);
 
@@ -81,8 +92,8 @@ app.whenReady().then(() => {
   createWindow();
 
   // Shared context for IPC handler modules
-  const ctx = {
-    getMainWindow: () => mainWindow,
+  const ctx: IPCContext = {
+    getMainWindow: () => mainWindow!,
     glossaryManager,
     translationService,
     projectManager,
@@ -102,8 +113,11 @@ app.whenReady().then(() => {
   legacyHandlers.register(ctx);
   fileHandlers.register(ctx);
 
-  // Auto-save project data sent from renderer
-  ipcMain.handle('project:autoSave', async (_, projectData) => {
+  /**
+   * Auto-save project data sent from renderer
+   * Used by auto-save timer and before-close handler
+   */
+  ipcMain.handle('project:autoSave', async (_, projectData: Project) => {
     try {
       if (!projectData || (!projectData.projectFilePath && !projectData.modPath)) {
         return { success: false, error: 'no_path' };
@@ -111,17 +125,20 @@ app.whenReady().then(() => {
       const saved = await projectManager.saveProject(projectData);
       return { success: true, data: { projectFilePath: saved.projectFilePath } };
     } catch (err) {
-      return { success: false, error: err.message };
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, error: message };
     }
   });
 
-  // Confirm-before-close: renderer responds with whether to proceed
-  // Safety timeout: force close after 5 seconds if renderer is unresponsive
-  let closeTimer = null;
-  mainWindow.on('close', (e) => {
+  /**
+   * Confirm-before-close: renderer responds with whether to proceed
+   * Safety timeout: force close after 5 seconds if renderer is unresponsive
+   */
+  let closeTimer: NodeJS.Timeout | null = null;
+  mainWindow!.on('close', (e) => {
     if (isQuitting) return;
     e.preventDefault();
-    mainWindow.webContents.send('app:before-close');
+    mainWindow!.webContents.send('app:before-close');
     closeTimer = setTimeout(() => {
       isQuitting = true;
       if (mainWindow) mainWindow.close();
@@ -142,4 +159,3 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
-

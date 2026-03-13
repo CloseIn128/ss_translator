@@ -6,12 +6,15 @@
  * glossary, and AI configuration.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { parseModFolder } = require('./modParser');
-const { v4: uuidv4 } = require('./uuid');
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseModFolder } from './modParser';
+import { v4 as uuidv4 } from './uuid';
+import type { Project, ProjectStats, TranslationEntry, ParsedModData } from '../../types/project';
 
 class ProjectManager {
+  private currentProject: Project | null;
+
   constructor() {
     this.currentProject = null;
   }
@@ -20,8 +23,8 @@ class ProjectManager {
    * Create a new empty project (no mod folder yet).
    * The user can later set modPath via the project info page.
    */
-  createEmptyProject() {
-    const project = {
+  createEmptyProject(): Project {
+    const project: Project = {
       id: uuidv4(),
       version: '1.0',
       createdAt: Date.now(),
@@ -48,10 +51,10 @@ class ProjectManager {
   /**
    * Create a new project from a mod folder
    */
-  async createProject(modPath) {
-    const parsed = await parseModFolder(modPath);
+  async createProject(modPath: string): Promise<Project> {
+    const parsed = await parseModFolder(modPath) as ParsedModData;
 
-    const project = {
+    const project: Project = {
       id: uuidv4(),
       version: '1.0',
       createdAt: Date.now(),
@@ -78,7 +81,7 @@ class ProjectManager {
   /**
    * Save project to file
    */
-  async saveProject(projectData) {
+  async saveProject(projectData: Project): Promise<Project> {
     if (!projectData.projectFilePath) {
       // Generate default save path next to mod folder
       const modDir = path.dirname(projectData.modPath);
@@ -100,9 +103,9 @@ class ProjectManager {
   /**
    * Load project from file
    */
-  async loadProject(filePath) {
+  async loadProject(filePath: string): Promise<Project> {
     const content = fs.readFileSync(filePath, 'utf-8');
-    const project = JSON.parse(content);
+    const project: Project = JSON.parse(content);
     project.projectFilePath = filePath;
     project.stats = this._computeStats(project.entries);
 
@@ -110,9 +113,9 @@ class ProjectManager {
     return project;
   }
 
-  _computeStats(entries) {
-    const byFile = {};
-    const byType = {};
+  private _computeStats(entries: TranslationEntry[]): ProjectStats {
+    const byFile: Record<string, { total: number; translated: number }> = {};
+    const byType: Record<string, { total: number; translated: number }> = {};
     let total = 0;
     let translated = 0;
     let polished = 0;
@@ -145,3 +148,4 @@ class ProjectManager {
 
 module.exports = { ProjectManager };
 
+export { ProjectManager };

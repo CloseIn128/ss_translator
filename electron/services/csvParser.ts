@@ -9,17 +9,27 @@
  * - Empty rows are allowed
  */
 
+export interface CSVRow {
+  [key: string]: any;
+  _lineIndex?: number;
+  _empty?: boolean;
+  _comment?: string;
+}
+
+export interface ParsedCSV {
+  headers: string[];
+  rows: CSVRow[];
+}
+
 /**
  * Parse a CSV string into rows of objects
- * @param {string} text - CSV file content
- * @returns {{ headers: string[], rows: object[] }}
  */
-function parseCSV(text) {
+export function parseCSV(text: string): ParsedCSV {
   const lines = splitCSVLines(text);
   if (lines.length === 0) return { headers: [], rows: [] };
 
   const headers = parseCSVRow(lines[0]);
-  const rows = [];
+  const rows: CSVRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -35,7 +45,7 @@ function parseCSV(text) {
     }
 
     const values = parseCSVRow(lines[i]);
-    const row = { _lineIndex: i };
+    const row: CSVRow = { _lineIndex: i };
     for (let j = 0; j < headers.length; j++) {
       row[headers[j]] = values[j] || '';
     }
@@ -48,8 +58,8 @@ function parseCSV(text) {
 /**
  * Split CSV text into lines, respecting quoted fields that span multiple lines
  */
-function splitCSVLines(text) {
-  const lines = [];
+function splitCSVLines(text: string): string[] {
+  const lines: string[] = [];
   let current = '';
   let inQuotes = false;
 
@@ -82,8 +92,8 @@ function splitCSVLines(text) {
 /**
  * Parse a single CSV row into an array of values
  */
-function parseCSVRow(line) {
-  const values = [];
+export function parseCSVRow(line: string): string[] {
+  const values: string[] = [];
   let current = '';
   let inQuotes = false;
   let i = 0;
@@ -129,10 +139,8 @@ function parseCSVRow(line) {
 
 /**
  * Serialize parsed CSV back to string
- * @param {{ headers: string[], rows: object[] }} data
- * @returns {string}
  */
-function serializeCSV(data) {
+export function serializeCSV(data: ParsedCSV): string {
   const { headers, rows } = data;
   const lines = [headers.join(',')];
 
@@ -145,7 +153,7 @@ function serializeCSV(data) {
       lines.push(row._comment);
       continue;
     }
-    const values = headers.map(h => {
+    const values = headers.map((h) => {
       const val = row[h] || '';
       // Quote fields that contain commas, quotes, or newlines
       if (val.includes(',') || val.includes('"') || val.includes('\n')) {
@@ -159,5 +167,7 @@ function serializeCSV(data) {
   return lines.join('\n');
 }
 
+// CommonJS compatibility
 module.exports = { parseCSV, serializeCSV, parseCSVRow };
+
 

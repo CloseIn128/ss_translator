@@ -2,12 +2,12 @@
  * Parse CSV text into rows and detect headers.
  * Stateful parser: handles quoted fields with commas and embedded newlines.
  */
-export function parseCsvForDiff(text) {
+export function parseCsvForDiff(text: string): { headers: string[]; rows: string[][] } {
   if (!text || !text.trim()) return { headers: [], rows: [] };
 
   const normalized = normalizeEndings(text);
-  const rows = [];
-  let fields = [];
+  const rows: string[][] = [];
+  let fields: string[] = [];
   let current = '';
   let inQuotes = false;
 
@@ -52,6 +52,6 @@ export function parseCsvForDiff(text) {
   return { headers: rows[0], rows: rows.slice(1) };
 }
 
-function normalizeEndings(text) {
+function normalizeEndings(text: string): string {
   return (text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }

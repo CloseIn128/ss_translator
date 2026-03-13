@@ -9,12 +9,14 @@
  *   config/builtin_glossary.json - User-editable public/built-in glossary
  */
 
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'fs';
+import * as path from 'path';
+import type { TranslationConfig } from '../../types/translator';
+import type { GlossaryEntry } from '../../types/project';
 
 // Default AI model configuration – prompts are stored in full so the config
 // file is always self-contained and directly editable by the user.
-const DEFAULT_MODEL_CONFIG = {
+const DEFAULT_MODEL_CONFIG: TranslationConfig = {
   provider: 'openai',
   apiKey: '',
   apiUrl: 'https://api.openai.com/v1/chat/completions',
@@ -69,12 +71,18 @@ const DEFAULT_MODEL_CONFIG = {
 分类可选值：势力名称、舰船名称、武器名称、人名、星球/星系名、游戏术语、物品名称、其他`,
 };
 
-class ConfigManager {
+export class ConfigManager {
+  private configDir: string;
+  private dataDir: string;
+  private modelConfigPath: string;
+  private builtinGlossaryPath: string;
+  private defaultGlossaryPath: string;
+
   /**
-   * @param {string} configDir - Directory where config files are stored
-   * @param {string} dataDir   - Read-only directory with bundled defaults
+   * @param configDir - Directory where config files are stored
+   * @param dataDir   - Read-only directory with bundled defaults
    */
-  constructor(configDir, dataDir) {
+  constructor(configDir: string, dataDir: string) {
     this.configDir = configDir;
     this.dataDir = dataDir;
     this.modelConfigPath = path.join(configDir, 'model_config.json');
@@ -87,7 +95,7 @@ class ConfigManager {
    * Creates missing files with defaults; for existing files, ensures all
    * expected fields are present (migration for newly added config keys).
    */
-  initialize() {
+  initialize(): void {
     if (!fs.existsSync(this.configDir)) {
       fs.mkdirSync(this.configDir, { recursive: true });
     }
@@ -109,18 +117,18 @@ class ConfigManager {
    * persisted config file.  This keeps the on-disk file complete even
    * after the application adds new config keys in an update.
    */
-  _ensureModelConfigComplete() {
+  private _ensureModelConfigComplete(): void {
     try {
       const data = JSON.parse(fs.readFileSync(this.modelConfigPath, 'utf-8'));
       const merged = { ...DEFAULT_MODEL_CONFIG, ...data };
       // Fill empty prompt fields with defaults so the file always has actual content
       for (const key of Object.keys(DEFAULT_MODEL_CONFIG)) {
-        if (key.endsWith('Prompt') && !merged[key]) {
-          merged[key] = DEFAULT_MODEL_CONFIG[key];
+        if (key.endsWith('Prompt') && !merged[key as keyof TranslationConfig]) {
+          merged[key as keyof TranslationConfig] = DEFAULT_MODEL_CONFIG[key as keyof TranslationConfig];
         }
       }
       this._writeJson(this.modelConfigPath, merged);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to migrate model config, resetting to defaults:', err.message);
       this._writeJson(this.modelConfigPath, DEFAULT_MODEL_CONFIG);
     }
@@ -128,7 +136,7 @@ class ConfigManager {
 
   // ─── Model Config ─────────────────────────────────────────────────
 
-  getModelConfig() {
+  getModelConfig(): TranslationConfig {
     try {
       const data = JSON.parse(fs.readFileSync(this.modelConfigPath, 'utf-8'));
       return { ...DEFAULT_MODEL_CONFIG, ...data };
@@ -137,7 +145,7 @@ class ConfigManager {
     }
   }
 
-  saveModelConfig(config) {
+  saveModelConfig(config: Partial<TranslationConfig>): void {
     // Save all fields; if apiKey is blank (user didn't re-enter it), keep existing
     const existing = this.getModelConfig();
     const toSave = { ...existing, ...config };
@@ -148,14 +156,14 @@ class ConfigManager {
     this._writeJson(this.modelConfigPath, toSave);
   }
 
-  resetModelConfig() {
+  resetModelConfig(): TranslationConfig {
     this._writeJson(this.modelConfigPath, DEFAULT_MODEL_CONFIG);
     return { ...DEFAULT_MODEL_CONFIG };
   }
 
   // ─── Built-in / Public Glossary ───────────────────────────────────
 
-  getBuiltinGlossary() {
+  getBuiltinGlossary(): GlossaryEntry[] {
     try {
       return JSON.parse(fs.readFileSync(this.builtinGlossaryPath, 'utf-8'));
     } catch {
@@ -163,12 +171,12 @@ class ConfigManager {
     }
   }
 
-  saveBuiltinGlossary(entries) {
+  saveBuiltinGlossary(entries: GlossaryEntry[]): { success: boolean } {
     this._writeJson(this.builtinGlossaryPath, entries);
     return { success: true };
   }
 
-  resetBuiltinGlossary() {
+  resetBuiltinGlossary(): GlossaryEntry[] {
     const defaults = this._readDefaultGlossary();
     this._writeJson(this.builtinGlossaryPath, defaults);
     return defaults;
@@ -176,7 +184,7 @@ class ConfigManager {
 
   // ─── Helpers ──────────────────────────────────────────────────────
 
-  _readDefaultGlossary() {
+  private _readDefaultGlossary(): GlossaryEntry[] {
     try {
       return JSON.parse(fs.readFileSync(this.defaultGlossaryPath, 'utf-8'));
     } catch {
@@ -184,9 +192,11 @@ class ConfigManager {
     }
   }
 
-  _writeJson(filePath, data) {
+  private _writeJson(filePath: string, data: any): void {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   }
 }
 
+// CommonJS compatibility
 module.exports = { ConfigManager, DEFAULT_MODEL_CONFIG };
+export { DEFAULT_MODEL_CONFIG };

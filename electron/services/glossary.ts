@@ -5,11 +5,30 @@
  * Each project has its own glossary.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('./uuid');
+import * as fs from 'fs';
+import * as path from 'path';
+import { v4 as uuidv4 } from './uuid';
+import type { GlossaryEntry } from '../../types/project';
+import type { GlossaryImportEntry } from '../../types/glossary';
 
-class GlossaryManager {
+interface AddEntryInput {
+  projectId: string;
+  source: string;
+  target: string;
+  category?: string;
+}
+
+interface UpdateEntryInput {
+  projectId: string;
+  id: string;
+  source: string;
+  target: string;
+  category: string;
+}
+
+export class GlossaryManager {
+  private glossaries: Map<string, GlossaryEntry[]>;
+
   constructor() {
     this.glossaries = new Map(); // projectId -> entries[]
   }
@@ -17,38 +36,38 @@ class GlossaryManager {
   /**
    * Get all glossary entries for a project
    */
-  getAll(projectId) {
+  getAll(projectId: string): GlossaryEntry[] {
     return this.glossaries.get(projectId) || [];
   }
 
   /**
    * Add a new glossary entry
    */
-  add(entry) {
+  add(entry: AddEntryInput): GlossaryEntry {
     const { projectId, source, target, category = '通用' } = entry;
     if (!this.glossaries.has(projectId)) {
       this.glossaries.set(projectId, []);
     }
-    const newEntry = {
+    const newEntry: GlossaryEntry = {
       id: uuidv4(),
       source,
       target,
       category,
       createdAt: Date.now(),
     };
-    this.glossaries.get(projectId).push(newEntry);
+    this.glossaries.get(projectId)!.push(newEntry);
     return newEntry;
   }
 
   /**
    * Update an existing glossary entry
    */
-  update(entry) {
+  update(entry: UpdateEntryInput): GlossaryEntry | null {
     const { projectId, id, source, target, category } = entry;
     const entries = this.glossaries.get(projectId);
     if (!entries) return null;
 
-    const idx = entries.findIndex(e => e.id === id);
+    const idx = entries.findIndex((e) => e.id === id);
     if (idx === -1) return null;
 
     entries[idx] = { ...entries[idx], source, target, category };
@@ -58,9 +77,9 @@ class GlossaryManager {
   /**
    * Remove a glossary entry
    */
-  remove(id) {
+  remove(id: string): boolean {
     for (const [projectId, entries] of this.glossaries) {
-      const idx = entries.findIndex(e => e.id === id);
+      const idx = entries.findIndex((e) => e.id === id);
       if (idx !== -1) {
         entries.splice(idx, 1);
         return true;
@@ -73,29 +92,29 @@ class GlossaryManager {
    * Import glossary from CSV file
    * Expected format: source,target,category
    */
-  async importFromCSV(csvPath, projectId) {
+  async importFromCSV(csvPath: string, projectId: string): Promise<{ imported: number; entries: GlossaryEntry[] }> {
     const content = fs.readFileSync(csvPath, 'utf-8');
-    const lines = content.split('\n').filter(l => l.trim());
-    const imported = [];
+    const lines = content.split('\n').filter((l) => l.trim());
+    const imported: GlossaryEntry[] = [];
 
     // Skip header if it looks like one
-    const start = (lines[0] && lines[0].includes('source')) ? 1 : 0;
+    const start = lines[0] && lines[0].includes('source') ? 1 : 0;
 
     if (!this.glossaries.has(projectId)) {
       this.glossaries.set(projectId, []);
     }
 
     for (let i = start; i < lines.length; i++) {
-      const parts = lines[i].split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+      const parts = lines[i].split(',').map((s) => s.trim().replace(/^"|"$/g, ''));
       if (parts.length >= 2 && parts[0] && parts[1]) {
-        const newEntry = {
+        const newEntry: GlossaryEntry = {
           id: uuidv4(),
           source: parts[0],
           target: parts[1],
           category: parts[2] || '通用',
           createdAt: Date.now(),
         };
-        this.glossaries.get(projectId).push(newEntry);
+        this.glossaries.get(projectId)!.push(newEntry);
         imported.push(newEntry);
       }
     }
@@ -106,7 +125,7 @@ class GlossaryManager {
   /**
    * Export glossary to CSV file
    */
-  async exportToCSV(csvPath, projectId) {
+  async exportToCSV(csvPath: string, projectId: string): Promise<{ exported: number }> {
     const entries = this.glossaries.get(projectId) || [];
     const lines = ['source,target,category'];
     for (const entry of entries) {
@@ -121,18 +140,18 @@ class GlossaryManager {
   /**
    * Load glossary data (used when loading a project)
    */
-  loadForProject(projectId, entries) {
+  loadForProject(projectId: string, entries: GlossaryEntry[]): void {
     this.glossaries.set(projectId, entries || []);
   }
 
   /**
    * Get glossary as prompt-ready text for AI translation
    */
-  getAsPromptText(projectId) {
+  getAsPromptText(projectId: string): string {
     const entries = this.glossaries.get(projectId) || [];
     if (entries.length === 0) return '';
 
-    const grouped = {};
+    const grouped: Record<string, GlossaryEntry[]> = {};
     for (const e of entries) {
       if (!grouped[e.category]) grouped[e.category] = [];
       grouped[e.category].push(e);
@@ -149,5 +168,5 @@ class GlossaryManager {
   }
 }
 
+// CommonJS compatibility
 module.exports = { GlossaryManager };
-
