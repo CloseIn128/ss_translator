@@ -2,7 +2,7 @@
  * IPC API types for communication between renderer and main process
  */
 
-import { Project, GlossaryEntry, KeywordEntry } from './project';
+import { Project, GlossaryEntry, KeywordEntry, TranslationEntry } from './project';
 
 export interface ApiResult<T = any> {
   success: boolean;
@@ -30,6 +30,13 @@ export interface KeywordTranslateOptions {
 export interface KeywordPolishOptions {
   keywords: KeywordEntry[];
   extraGlossary?: GlossaryEntry[];
+}
+
+export interface ExportPreviewFile {
+  relFile: string;
+  original: string;
+  translated: string;
+  fileType: 'text' | 'csv' | 'json';
 }
 
 export interface ElectronAPI {
@@ -66,7 +73,7 @@ export interface ElectronAPI {
 
   // Export
   exportMod: (options: { projectData: Project }) => Promise<ApiResult<{ outputPath: string }>>;
-  getExportPreview: (project: Project) => Promise<ApiResult<Array<{ file: string; changes: number }>>>;
+  getExportPreview: (options: { modPath: string; entries: TranslationEntry[] }) => Promise<ApiResult<{ files: ExportPreviewFile[] }>>;
 
   // Legacy translation
   loadLegacyTranslation: (legacyModPath: string) => Promise<ApiResult>;

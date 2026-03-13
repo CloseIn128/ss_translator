@@ -1,26 +1,22 @@
-import React, { useMemo, useRef, useEffect } from 'react';
-import { DiffEditor } from '@monaco-editor/react';
+import { useMemo, useRef, useEffect } from 'react';
+import { DiffEditor, type MonacoDiffEditor } from '@monaco-editor/react';
 import { parseCsvForDiff } from './diffUtils';
 
-/**
- * Shared DiffViewer component.
- *
- * For CSV files: renders a table diff with cell-level change highlighting.
- * For JSON/text files: uses Monaco Editor's built-in diff view.
- *
- * @param {string}  original       – Original file text
- * @param {string}  translated     – Translated / modified file text
- * @param {string}  [fileType]     – 'csv' | 'json' | (anything else = text)
- * @param {boolean} [fullPage]     – If true, grows to fill available space
- * @param {string}  [height]       – CSS height for Monaco (default '360px')
- */
+interface DiffViewerProps {
+  original?: string;
+  translated?: string;
+  fileType?: string;
+  fullPage?: boolean;
+  height?: string;
+}
+
 export default function DiffViewer({
   original = '',
   translated = '',
   fileType,
   fullPage = false,
   height = '360px',
-}) {
+}: DiffViewerProps) {
   const isCsv = fileType === 'csv';
 
   if (isCsv) {
@@ -47,9 +43,11 @@ export default function DiffViewer({
 
 /* ── Monaco Diff View ──────────────────────────────────────────────── */
 
-function MonacoDiffView({ original, translated, fileType, fullPage, height }) {
+function MonacoDiffView({ original, translated, fileType, fullPage, height }: {
+  original: string; translated: string; fileType?: string; fullPage: boolean; height: string;
+}) {
   const language = fileType === 'json' ? 'json' : 'plaintext';
-  const editorRef = useRef(null);
+  const editorRef = useRef<MonacoDiffEditor | null>(null);
 
   const isEmpty = !original && !translated;
   const noChanges = original === translated;
@@ -103,7 +101,9 @@ function MonacoDiffView({ original, translated, fileType, fullPage, height }) {
 
 /* ── CSV Table Diff View ───────────────────────────────────────────── */
 
-function CsvDiffView({ original, translated, fullPage, height }) {
+function CsvDiffView({ original, translated, fullPage, height }: {
+  original: string; translated: string; fullPage: boolean; height: string;
+}) {
   const origData = useMemo(() => parseCsvForDiff(original), [original]);
   const transData = useMemo(() => parseCsvForDiff(translated), [translated]);
 
