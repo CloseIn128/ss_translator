@@ -44,6 +44,10 @@ export interface KeywordEntry {
   target: string;
   category: string;
   confirmed?: boolean;
+  key?: string;
+  extractType?: string;
+  context?: string;
+  file?: string;
 }
 
 export interface ProjectStats {

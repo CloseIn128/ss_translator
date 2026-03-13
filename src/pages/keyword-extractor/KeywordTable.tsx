@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Table, Input, Tag, Tooltip, Pagination, Select } from 'antd';
 import { CheckOutlined, EditOutlined } from '@ant-design/icons';
+import type { KeywordEntry } from '../../../types/project';
 
 const CATEGORY_OPTIONS = ['通用', '势力名称', '舰船名称', '武器名称', '人名', '星球/星系名', '游戏术语', '物品名称', '其他'];
+
+interface KeywordTableProps {
+  keywords: KeywordEntry[];
+  selectedRowKeys: React.Key[];
+  onSelectedRowKeysChange: (keys: React.Key[]) => void;
+  toggleConfirmed: (key: string) => void;
+  updateKeyword: (key: string, field: string, value: string) => void;
+}
 
 export default function KeywordTable({
   keywords,
@@ -10,21 +19,21 @@ export default function KeywordTable({
   onSelectedRowKeysChange,
   toggleConfirmed,
   updateKeyword,
-}) {
+}: KeywordTableProps) {
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState('');
-  const [editingKey, setEditingKey] = useState(null);
-  const [editingField, setEditingField] = useState(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editingField, setEditingField] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
     setCurrentPage(1);
   };
 
-  const startEdit = (record, field) => {
-    setEditingKey(record.key);
+  const startEdit = (record: KeywordEntry, field: string) => {
+    setEditingKey(record.key ?? null);
     setEditingField(field);
     setEditingValue(field === 'target' ? (record.target || '') : (record.category || '通用'));
   };
@@ -42,7 +51,7 @@ export default function KeywordTable({
   };
 
   const filteredKeywords = searchText.trim()
-    ? keywords.filter(kw =>
+    ? keywords.filter((kw: KeywordEntry) =>
         kw.source.toLowerCase().includes(searchText.toLowerCase()) ||
         (kw.target || '').toLowerCase().includes(searchText.toLowerCase()) ||
         (kw.context || '').toLowerCase().includes(searchText.toLowerCase())
@@ -54,8 +63,8 @@ export default function KeywordTable({
       title: '原文关键词',
       dataIndex: 'source',
       key: 'source',
-      sorter: (a, b) => a.source.localeCompare(b.source),
-      render: (text, record) => (
+      sorter: (a: KeywordEntry, b: KeywordEntry) => a.source.localeCompare(b.source),
+      render: (text: string, record: KeywordEntry) => (
         <span style={{ fontSize: 12 }}>
           {record.confirmed && <CheckOutlined style={{ color: '#52c41a', marginRight: 4, fontSize: 10 }} />}
           {text}
@@ -66,7 +75,7 @@ export default function KeywordTable({
       title: '译文',
       dataIndex: 'target',
       key: 'target',
-      render: (text, record) => {
+      render: (text: string, record: KeywordEntry) => {
         if (editingKey === record.key && editingField === 'target') {
           return (
             <Input
@@ -98,8 +107,8 @@ export default function KeywordTable({
       key: 'category',
       width: 120,
       filters: CATEGORY_OPTIONS.map(c => ({ text: c, value: c })),
-      onFilter: (value, record) => record.category === value,
-      render: (text, record) => {
+      onFilter: (value: any, record: KeywordEntry) => record.category === value,
+      render: (text: string, record: KeywordEntry) => {
         if (editingKey === record.key && editingField === 'category') {
           return (
             <Select
@@ -134,13 +143,13 @@ export default function KeywordTable({
         { text: '已确认', value: true },
         { text: '未确认', value: false },
       ],
-      onFilter: (value, record) => !!record.confirmed === value,
-      render: (_, record) => (
+      onFilter: (value: any, record: KeywordEntry) => !!record.confirmed === value,
+      render: (_: any, record: KeywordEntry) => (
         <Tooltip title={record.confirmed ? '点击取消确认' : '点击标记为已确认'}>
           <Tag
             color={record.confirmed ? 'success' : 'default'}
             style={{ fontSize: 11, cursor: 'pointer' }}
-            onClick={() => toggleConfirmed(record.key)}
+            onClick={() => toggleConfirmed(record.key!)}
           >
             {record.confirmed ? '已确认' : '未确认'}
           </Tag>
@@ -155,8 +164,8 @@ export default function KeywordTable({
         { text: '结构', value: 'structure' },
         { text: 'AI', value: 'ai' },
       ],
-      onFilter: (value, record) => record.extractType === value,
-      render: (_, record) => (
+      onFilter: (value: any, record: KeywordEntry) => record.extractType === value,
+      render: (_: any, record: KeywordEntry) => (
         <Tag color={record.extractType === 'ai' ? 'blue' : 'default'} style={{ fontSize: 11 }}>
           {record.extractType === 'ai' ? 'AI' : '结构'}
         </Tag>
@@ -165,7 +174,7 @@ export default function KeywordTable({
     {
       title: '上下文/文件',
       key: 'info',
-      render: (_, record) => {
+      render: (_: any, record: KeywordEntry) => {
         if (record.file) {
           return (
             <Tooltip title={record.file}>
@@ -197,7 +206,7 @@ export default function KeywordTable({
           />
           <span style={{ marginLeft: 'auto', fontSize: 12, color: '#8c8c8c' }}>
             共 {filteredKeywords.length} 个关键词
-            {keywords.some(kw => kw.confirmed) && ` | 已确认 ${keywords.filter(kw => kw.confirmed).length}`}
+            {keywords.some((kw: KeywordEntry) => kw.confirmed) && ` | 已确认 ${keywords.filter((kw: KeywordEntry) => kw.confirmed).length}`}
           </span>
         </div>
       )}

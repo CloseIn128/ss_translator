@@ -68,8 +68,19 @@ export interface ElectronAPI {
 
   // Keywords
   extractKeywords: (entries: any[], builtinGlossary: GlossaryEntry[], projectGlossary: GlossaryEntry[]) => Promise<void>;
-  translateKeywords: (options: KeywordTranslateOptions) => Promise<void>;
-  polishKeywords: (options: KeywordPolishOptions) => Promise<void>;
+  extractAllKeywords: (data: any) => Promise<ApiResult<any>>;
+  translateKeywords: (options: KeywordTranslateOptions) => Promise<ApiResult<KeywordEntry[]>>;
+  polishKeywords: (options: KeywordPolishOptions) => Promise<ApiResult<KeywordEntry[]>>;
+
+  // Keyword event listeners
+  onKeywordBatch: (callback: (data: any) => void) => void;
+  removeKeywordBatchListener: (callback: (data: any) => void) => void;
+  onKeywordLog: (callback: (data: any) => void) => void;
+  removeKeywordLogListener: (callback: (data: any) => void) => void;
+
+  // Glossary CRUD
+  addGlossaryEntry: (entry: any) => Promise<GlossaryEntry | null>;
+  updateGlossaryEntry: (entry: any) => Promise<GlossaryEntry | null>;
 
   // Export
   exportMod: (options: { projectData: Project }) => Promise<ApiResult<{ outputPath: string }>>;
