@@ -6,7 +6,7 @@
  */
 import {
   parseCsvForDiff,
-} from '../../../src/components/diff/diffUtils.js';
+} from '../../../src/components/diff/diffUtils';
 
 describe('parseCsvForDiff', () => {
   it('parses simple CSV', () => {

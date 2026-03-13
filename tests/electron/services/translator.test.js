@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const { TranslationService } = require('../../../electron/services/translator');
+import { TranslationService } from '../../../electron/services/translator';
 
 describe('TranslationService', () => {
   let ts;
@@ -448,8 +445,8 @@ describe('TranslationService', () => {
       ts.configure({ batchSize: 1, concurrentRequests: 2, rateLimitMs: 0 });
 
       const entries = [
-        { id: '1', original: 'Text A', translated: '文本A' },
-        { id: '2', original: 'Text B', translated: '文本B' },
+        { id: '1', original: 'Text A', target: '文本A' },
+        { id: '2', original: 'Text B', target: '文本B' },
       ];
       const results = await ts.polishBatch(entries);
       expect(results).toHaveLength(2);
@@ -471,9 +468,9 @@ describe('TranslationService', () => {
       ts.configure({ batchSize: 2, rateLimitMs: 0 });
 
       const entries = [
-        { id: '1', original: 'A', translated: 'a' },
-        { id: '2', original: 'B', translated: 'b' },
-        { id: '3', original: 'C', translated: 'c' },
+        { id: '1', original: 'A', target: 'a' },
+        { id: '2', original: 'B', target: 'b' },
+        { id: '3', original: 'C', target: 'c' },
       ];
       const results = await ts.polishBatch(entries);
       expect(results).toHaveLength(3);
@@ -486,8 +483,8 @@ describe('TranslationService', () => {
       ts.configure({ batchSize: 2, rateLimitMs: 0 });
 
       const entries = [
-        { id: '1', original: 'A', translated: 'a' },
-        { id: '2', original: 'B', translated: 'b' },
+        { id: '1', original: 'A', target: 'a' },
+        { id: '2', original: 'B', target: 'b' },
       ];
       const results = await ts.polishBatch(entries);
       expect(results).toHaveLength(2);
@@ -508,7 +505,7 @@ describe('TranslationService', () => {
       ts.configure({ batchSize: 5, rateLimitMs: 0 });
 
       const glossary = [{ source: 'Test', target: '测试' }];
-      const entries = [{ id: '1', original: 'A', translated: 'a' }];
+      const entries = [{ id: '1', original: 'A', target: 'a' }];
       const results = await ts.polishBatch(entries, glossary, {}, 'my mod prompt');
       expect(results[0].translated).toContain('1 glossary');
       expect(results[0].translated).toContain('mod=my mod prompt');

@@ -1,10 +1,7 @@
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-const require = createRequire(import.meta.url);
-
-const { ProjectManager } = require('../../../electron/services/project');
+import { ProjectManager } from '../../../electron/services/project';
 
 describe('ProjectManager – keywords persistence', () => {
   let pm;

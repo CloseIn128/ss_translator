@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const { relaxedJsonToJson, parseRelaxedJson } = require('../../../electron/services/relaxedJson');
+import { relaxedJsonToJson, parseRelaxedJson } from '../../../electron/services/relaxedJson';
 
 describe('relaxedJsonToJson', () => {
   it('strips line comments starting with #', () => {

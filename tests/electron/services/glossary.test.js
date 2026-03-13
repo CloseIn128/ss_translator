@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const { GlossaryManager } = require('../../../electron/services/glossary');
+import { GlossaryManager } from '../../../electron/services/glossary';
 
 describe('GlossaryManager', () => {
   let gm;

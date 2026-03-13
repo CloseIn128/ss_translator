@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const { LegacyTranslationService } = require('../../../electron/services/legacyTranslation');
+import { LegacyTranslationService } from '../../../electron/services/legacyTranslation';
 
 describe('LegacyTranslationService', () => {
   let service;

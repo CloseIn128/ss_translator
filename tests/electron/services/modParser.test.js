@@ -1,10 +1,7 @@
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-
-const require = createRequire(import.meta.url);
-const { parseModFolder } = require('../../../electron/services/modParser');
+import { parseModFolder } from '../../../electron/services/modParser';
 
 // Helper to create a temporary mod folder with specific files
 function createTempMod(files) {
