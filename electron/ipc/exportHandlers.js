@@ -1,4 +1,4 @@
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, shell } = require('electron');
 
 /**
  * Register export-related IPC handlers.
@@ -12,8 +12,12 @@ function register(ctx) {
         title: '选择导出目录',
       });
       if (result.canceled) return null;
-      await ctx.exportMod(projectData, result.filePaths[0]);
-      return { success: true };
+      const exportResult = await ctx.exportMod(projectData, result.filePaths[0]);
+      // Open the exported directory in the system file manager
+      if (exportResult?.outputPath) {
+        shell.openPath(exportResult.outputPath).catch(() => {});
+      }
+      return { success: true, outputPath: exportResult?.outputPath };
     } catch (err) {
       return { success: false, error: err.message };
     }

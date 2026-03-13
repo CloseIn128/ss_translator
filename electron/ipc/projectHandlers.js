@@ -34,12 +34,15 @@ function register(ctx) {
 
   ipcMain.handle('project:save', async (_, projectData) => {
     try {
-      // New empty project: no save path and no MOD configured – prompt for save location
-      if (!projectData.projectFilePath && !projectData.modPath) {
+      // No save path yet – prompt the user to choose where to save
+      if (!projectData.projectFilePath) {
+        const modName = projectData.modInfo?.name || projectData.modInfo?.id || 'new_project';
+        const safeName = modName.replace(/[^a-zA-Z0-9_\-\u4e00-\u9fff]/g, '_');
+        const defaultName = `${safeName}_translation.sst`;
         const result = await dialog.showSaveDialog(ctx.getMainWindow(), {
           filters: [{ name: '翻译项目', extensions: ['sst'] }],
           title: '保存翻译项目',
-          defaultPath: 'new_project.sst',
+          defaultPath: defaultName,
         });
         if (result.canceled) return null;
         projectData.projectFilePath = result.filePath;

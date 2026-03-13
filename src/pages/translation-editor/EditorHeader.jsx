@@ -5,6 +5,7 @@ import {
   SearchOutlined,
   RobotOutlined,
   DeleteOutlined,
+  DiffOutlined,
 } from '@ant-design/icons';
 
 export default function EditorHeader({
@@ -24,6 +25,8 @@ export default function EditorHeader({
   onBatchTranslate,
   onBatchPolish,
   onClearTranslations,
+  diffMode,
+  onDiffModeChange,
 }) {
   return (
     <div className="editor-header">
@@ -65,6 +68,11 @@ export default function EditorHeader({
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8c8c8c' }}>
           <Switch size="small" checked={showIgnored} onChange={onShowIgnoredChange} />
           显示已忽略
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8c8c8c' }}>
+          <DiffOutlined />
+          <Switch size="small" checked={diffMode} onChange={onDiffModeChange} />
+          差异对比
         </span>
         <Button
           type="primary"

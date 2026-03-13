@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Alert, Button } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
-import FileSidebar from './editor/FileSidebar';
-import EditorHeader from './editor/EditorHeader';
-import EntryRow from './editor/EntryRow';
-import FileDiffView from './editor/FileDiffView';
-import useTranslationActions from './editor/useTranslationActions';
+import FileSidebar from './FileSidebar';
+import EditorHeader from './EditorHeader';
+import EntryRow from './EntryRow';
+import FileDiffView from './FileDiffView';
+import useTranslationActions from './useTranslationActions';
 import useProjectStore from '../../store/useProjectStore';
 
 const PAGE_SIZE = 50;
@@ -16,6 +16,9 @@ export default function TranslationEditor({ messageApi }) {
   const setSelectedFile = useProjectStore(s => s.setSelectedFile);
   const updateEntry = useProjectStore(s => s.updateEntry);
   const batchUpdate = useProjectStore(s => s.batchUpdate);
+
+  // Toggle between entry editing and diff comparison mode
+  const [diffMode, setDiffMode] = useState(false);
 
   // Merge project glossary with keywords — only confirmed (reviewed) terms are included
   const mergedGlossary = useMemo(() => {
@@ -174,49 +177,63 @@ export default function TranslationEditor({ messageApi }) {
           onBatchTranslate={handleBatchTranslate}
           onBatchPolish={handleBatchPolish}
           onClearTranslations={handleClearTranslations}
+          diffMode={diffMode}
+          onDiffModeChange={setDiffMode}
         />
 
-        {/* File diff view (when a specific file is selected) */}
-        <FileDiffView
-          modPath={project.modPath}
-          selectedFile={selectedFile}
-          entries={project.entries}
-        />
+        {diffMode ? (
+          /* Full diff comparison mode — replaces entry list */
+          <FileDiffView
+            modPath={project.modPath}
+            selectedFile={selectedFile}
+            entries={project.entries}
+            fullPage
+          />
+        ) : (
+          <>
+            {/* Compact file diff view (when a specific file is selected) */}
+            <FileDiffView
+              modPath={project.modPath}
+              selectedFile={selectedFile}
+              entries={project.entries}
+            />
 
-        {/* Scrollable entries area */}
-        <div className="editor-entries">
-          <div className="translation-table">
-            {pageEntries.map(entry => (
-              <EntryRow
-                key={entry.id}
-                entry={entry}
-                isTranslating={translatingIds.has(entry.id)}
-                onUpdateEntry={updateEntry}
-                onTranslate={handleTranslate}
-                onPolish={handlePolish}
-              />
-            ))}
+            {/* Scrollable entries area */}
+            <div className="editor-entries">
+              <div className="translation-table">
+                {pageEntries.map(entry => (
+                  <EntryRow
+                    key={entry.id}
+                    entry={entry}
+                    isTranslating={translatingIds.has(entry.id)}
+                    onUpdateEntry={updateEntry}
+                    onTranslate={handleTranslate}
+                    onPolish={handlePolish}
+                  />
+                ))}
 
-            {pageEntries.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 40, color: '#8c8c8c' }}>
-                没有匹配的条目
+                {pageEntries.length === 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200, color: '#8c8c8c' }}>
+                    没有匹配的条目
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
-              <Button size="small" disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}>上一页</Button>
-              <span style={{ fontSize: 13, lineHeight: '24px', color: '#8c8c8c' }}>
-                {currentPage} / {totalPages}
-              </span>
-              <Button size="small" disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}>下一页</Button>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: 16 }}>
+                  <Button size="small" disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => p - 1)}>上一页</Button>
+                  <span style={{ fontSize: 13, lineHeight: '24px', color: '#8c8c8c' }}>
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button size="small" disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(p => p + 1)}>下一页</Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

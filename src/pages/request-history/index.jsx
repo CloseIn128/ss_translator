@@ -8,8 +8,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import ActiveRequestsPanel from './request/ActiveRequestsPanel';
-import RequestDetailModal from './request/RequestDetailModal';
+import ActiveRequestsPanel from './ActiveRequestsPanel';
+import RequestDetailModal from './RequestDetailModal';
 
 const api = window.electronAPI;
 
@@ -207,7 +207,7 @@ export default function RequestHistory() {
       )}
 
       {/* History table with independent pagination */}
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div className="keyword-table-wrapper">
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <Table
             dataSource={paginatedHistory}
