@@ -1,9 +1,12 @@
 /**
  * AI Translation Service
- * 
+ *
  * Supports OpenAI-compatible APIs (OpenAI, DeepSeek, local LLMs, etc.)
  * for translating and polishing Starsector mod text.
  */
+
+import type { TranslationConfig, TranslateEntryInput, TranslateEntryOutput, PolishEntryInput } from '../../types/translator';
+import type { GlossaryEntry, KeywordEntry } from '../../types/project';
 
 const LOG_SYSTEM_PROMPT_LEN = 80;
 const LOG_USER_MSG_LEN = 200;
@@ -12,29 +15,97 @@ const MAX_REQUEST_HISTORY = 200;
 
 let _requestIdCounter = 0;
 
+interface TextSample {
+  text: string;
+  context?: string;
+}
+
+interface Keyword {
+  source: string;
+  target: string;
+  category: string;
+}
+
+interface KeywordExtractInput {
+  source: string;
+  category: string;
+}
+
+interface TranslationResult {
+  id: string;
+  translated: string;
+  status: 'translated' | 'polished' | 'error';
+  error?: string;
+}
+
+interface RequestRecord {
+  id: number;
+  type: string;
+  status: 'pending' | 'success' | 'error';
+  startTime: string;
+  endTime: string | null;
+  durationMs: number | null;
+  model: string;
+  apiUrl: string;
+  systemPrompt: string;
+  userMessage: string;
+  responseContent: string | null;
+  responseRaw: string | null;
+  tokenUsage: any | null;
+  error: string | null;
+}
+
+interface RequestHistoryItem {
+  id: number;
+  type: string;
+  status: 'pending' | 'success' | 'error';
+  startTime: string;
+  endTime: string | null;
+  durationMs: number | null;
+  model: string;
+  error: string | null;
+  promptPreview: string;
+  responsePreview: string;
+  tokenUsage: any | null;
+}
+
+interface ActiveRequestItem {
+  id: number;
+  type: string;
+  status: 'pending' | 'success' | 'error';
+  startTime: string;
+  model: string;
+  promptPreview: string;
+}
+
 class TranslationService {
+  private _defaultSystemPrompt: string;
+  private _defaultPolishPrompt: string;
+  private config: TranslationConfig;
+  private _requestHistory: RequestRecord[];
+  private _activeRequests: Map<number, RequestRecord>;
+
   constructor() {
     this._defaultSystemPrompt = this.getDefaultSystemPrompt();
     this._defaultPolishPrompt = this.getDefaultPolishPrompt();
     this.config = {
-      provider: 'openai', // openai | deepseek | custom
+      provider: 'openai',
       apiKey: '',
       apiUrl: 'https://api.openai.com/v1/chat/completions',
       model: 'gpt-4o-mini',
       maxTokens: 4096,
       temperature: 0.3,
       batchSize: 5,
-      concurrentRequests: 1, // number of parallel API requests
+      concurrentRequests: 1,
       rateLimitMs: 500,
       systemPrompt: this._defaultSystemPrompt,
       polishPrompt: this._defaultPolishPrompt,
     };
-    // Request history tracking
-    this._requestHistory = [];  // Array of request records
-    this._activeRequests = new Map(); // id → request record (in-progress)
+    this._requestHistory = [];
+    this._activeRequests = new Map();
   }
 
-  getDefaultSystemPrompt() {
+  getDefaultSystemPrompt(): string {
     return `你是一位专业的游戏本地化翻译专家，正在将太空策略游戏"远行星号"(Starsector)的MOD内容从英文翻译为简体中文。
 
 翻译要求：
@@ -49,7 +120,7 @@ class TranslationService {
 9. 如果遇到单独占一行的"OR"，不要翻译，保留原文`;
   }
 
-  getDefaultPolishPrompt() {
+  getDefaultPolishPrompt(): string {
     return `你是一位专业的游戏本地化润色专家。请对以下已翻译的游戏文本进行润色优化。
 
 润色要求：
@@ -61,9 +132,8 @@ class TranslationService {
 6. 确保太空科幻的氛围感`;
   }
 
-  configure(config) {
+  configure(config: Partial<TranslationConfig>): void {
     this.config = { ...this.config, ...config };
-    // Set API URL based on provider
     if (config.provider === 'deepseek' && !config.apiUrl) {
       this.config.apiUrl = 'https://api.deepseek.com/v1/chat/completions';
       this.config.model = config.model || 'deepseek-chat';
@@ -72,15 +142,14 @@ class TranslationService {
     }
   }
 
-  getConfig() {
-    // Return config without exposing the API key value
+  getConfig(): TranslationConfig {
     return {
       ...this.config,
       apiKey: '',
     };
   }
 
-  getDefaultPrompts() {
+  getDefaultPrompts(): { systemPrompt: string; polishPrompt: string; keywordPrompt: string } {
     return {
       systemPrompt: this.getDefaultSystemPrompt(),
       polishPrompt: this.getDefaultPolishPrompt(),
@@ -88,7 +157,7 @@ class TranslationService {
     };
   }
 
-  getDefaultKeywordPrompt() {
+  getDefaultKeywordPrompt(): string {
     return `你是一位专业的游戏本地化术语提取专家，擅长从游戏文本中识别和提取关键术语。你正在处理太空策略游戏"远行星号"(Starsector)的MOD文本。
 
 请从提供的游戏文本中提取所有专有名词和关键术语，包括但不限于：
@@ -115,25 +184,20 @@ class TranslationService {
 分类可选值：势力名称、舰船名称、武器名称、人名、星球/星系名、游戏术语、物品名称、其他`;
   }
 
-  /**
-   * AI-powered keyword extraction from game text
-   * Inspired by KeywordGacha: uses NER via LLM to identify proper nouns and key terms
-   * @param {Array} textSamples - Array of { text, context } objects
-   * @param {object} config - Optional config override
-   * @param {Function} onBatchProgress - Optional callback(batchKeywords) called after each batch
-   * @returns {Array} - Array of { source, category }
-   */
-  async extractKeywords(textSamples, config = {}, onBatchProgress = null) {
+  async extractKeywords(
+    textSamples: TextSample[],
+    config: Partial<TranslationConfig> = {},
+    onBatchProgress: ((keywords: Keyword[]) => void) | null = null
+  ): Promise<Keyword[]> {
     const cfg = { ...this.config, ...config };
-    const allKeywords = [];
-    const seen = new Set();
+    const allKeywords: Keyword[] = [];
+    const seen = new Set<string>();
 
-    // Process text samples in batches
     for (let i = 0; i < textSamples.length; i += cfg.batchSize) {
       const batch = textSamples.slice(i, i + cfg.batchSize);
       try {
         const keywords = await this._extractKeywordsBatch(batch, cfg);
-        const newKeywords = [];
+        const newKeywords: Keyword[] = [];
         for (const kw of keywords) {
           const key = kw.source.toLowerCase();
           if (!seen.has(key)) {
@@ -142,16 +206,14 @@ class TranslationService {
             newKeywords.push(kw);
           }
         }
-        // Report batch progress to caller
         if (onBatchProgress && newKeywords.length > 0) {
           onBatchProgress(newKeywords);
         }
       } catch (err) {
-        // Continue with next batch on error
-        console.error('AI keyword extraction batch error:', err.message);
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('AI keyword extraction batch error:', message);
       }
 
-      // Rate limiting between batches
       if (i + cfg.batchSize < textSamples.length) {
         await sleep(cfg.rateLimitMs);
       }
@@ -160,7 +222,7 @@ class TranslationService {
     return allKeywords;
   }
 
-  async _extractKeywordsBatch(textSamples, cfg) {
+  private async _extractKeywordsBatch(textSamples: TextSample[], cfg: TranslationConfig): Promise<Keyword[]> {
     const textsFormatted = textSamples.map((s, i) =>
       `[${i + 1}] (${s.context || ''})\n${s.text}`
     ).join('\n\n---\n\n');
@@ -174,42 +236,38 @@ ${textsFormatted}`;
     return this._parseKeywordResponse(response);
   }
 
-  _parseKeywordResponse(text) {
+  private _parseKeywordResponse(text: string): Keyword[] {
     try {
-      // Try to extract JSON array from response
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed)) {
           return parsed
-            .filter(item => item.source && typeof item.source === 'string')
-            .map(item => ({
+            .filter((item: any) => item.source && typeof item.source === 'string')
+            .map((item: any) => ({
               source: item.source.trim(),
-              target: '',  // Extraction only – never include translations
+              target: '',
               category: item.category || '其他',
             }));
         }
       }
     } catch (err) {
-      // If JSON parsing fails, try line-by-line fallback
-      console.error('Failed to parse AI keyword response as JSON:', err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Failed to parse AI keyword response as JSON:', message);
     }
 
-    // Fallback: try to extract keywords line by line
-    const keywords = [];
+    const keywords: Keyword[] = [];
     const lines = text.split('\n').filter(l => l.trim());
     for (const line of lines) {
-      // Try patterns like: "word" (category) or "word" → "translation" (category)
       const matchWithTarget = line.match(/"([^"]+)"\s*[→>-]+\s*"([^"]*)"(?:\s*[（(]([^)）]+)[)）])?/);
       if (matchWithTarget) {
         keywords.push({
           source: matchWithTarget[1].trim(),
-          target: '',  // Extraction only – discard any translations
+          target: '',
           category: matchWithTarget[3] || '其他',
         });
         continue;
       }
-      // Try pattern without target: "word" (category)
       const matchNoTarget = line.match(/"([^"]+)"(?:\s*[（(]([^)）]+)[)）])?/);
       if (matchNoTarget) {
         keywords.push({
@@ -222,31 +280,19 @@ ${textsFormatted}`;
     return keywords;
   }
 
-  /**
-   * Translate a batch of keywords (separate from extraction)
-   * @param {Array} keywords - Array of { source, category }
-   * @param {Array} glossary - Optional glossary entries for context
-   * @param {object} config - Optional config override
-   * @returns {Array} - Array of { source, target }
-   */
-  /**
-   * Translate a batch of keywords (separate from extraction)
-   * @param {Array} keywords - Array of { source, category }
-   * @param {Array} glossary - Optional glossary entries for context
-   * @param {object} config - Optional config override
-   * @param {Function} onLog - Optional callback(level, message) for logging
-   * @returns {Array} - Array of { source, target }
-   */
-  async translateKeywords(keywords, glossary = [], config = {}, onLog = null) {
+  async translateKeywords(
+    keywords: KeywordExtractInput[],
+    glossary: GlossaryEntry[] = [],
+    config: Partial<TranslationConfig> = {},
+    onLog: ((level: string, message: string) => void) | null = null
+  ): Promise<Array<{ source: string; target: string }>> {
     const cfg = { ...this.config, ...config };
-    const results = [];
+    const results: Array<{ source: string; target: string }> = [];
 
-    // Person names and planet/system names should not be translated
     const NO_TRANSLATE_CATEGORIES = new Set(['人名', '星球/星系名']);
-    const toTranslate = [];
+    const toTranslate: KeywordExtractInput[] = [];
     for (const kw of keywords) {
       if (NO_TRANSLATE_CATEGORIES.has(kw.category)) {
-        // Keep original – no translation for person/planet names
         results.push({ source: kw.source, target: kw.source });
       } else {
         toTranslate.push(kw);
@@ -257,8 +303,7 @@ ${textsFormatted}`;
       onLog('info', `跳过 ${keywords.length - toTranslate.length} 个人名/星球名（保留原文）`);
     }
 
-    // Build batches
-    const batches = [];
+    const batches: KeywordExtractInput[][] = [];
     for (let i = 0; i < toTranslate.length; i += cfg.batchSize) {
       batches.push(toTranslate.slice(i, i + cfg.batchSize));
     }
@@ -278,9 +323,10 @@ ${textsFormatted}`;
         }
         return batchRes;
       } catch (err) {
-        console.error('Keyword translation batch error:', err.message);
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Keyword translation batch error:', message);
         if (onLog) {
-          onLog('error', `批次 ${batchNum} 翻译失败: ${err.message}`);
+          onLog('error', `批次 ${batchNum} 翻译失败: ${message}`);
         }
         return batch.map(kw => ({ source: kw.source, target: '' }));
       }
@@ -293,23 +339,18 @@ ${textsFormatted}`;
     return results;
   }
 
-  /**
-   * Polish/refine keyword translations for consistency
-   * @param {Array} keywords - Array of { source, target, category }
-   * @param {Array} glossary - Optional glossary entries for context
-   * @param {object} config - Optional config override
-   * @param {Function} onLog - Optional callback(level, message) for logging
-   * @returns {Array} - Array of { source, target }
-   */
-  async polishKeywords(keywords, glossary = [], config = {}, onLog = null) {
+  async polishKeywords(
+    keywords: Keyword[],
+    glossary: GlossaryEntry[] = [],
+    config: Partial<TranslationConfig> = {},
+    onLog: ((level: string, message: string) => void) | null = null
+  ): Promise<Array<{ source: string; target: string }>> {
     const cfg = { ...this.config, ...config };
-    const results = [];
+    const results: Array<{ source: string; target: string }> = [];
 
-    // Only polish keywords that have translations
     const toPolish = keywords.filter(kw => kw.target && kw.target.trim());
     const noTarget = keywords.filter(kw => !kw.target || !kw.target.trim());
 
-    // Pass through untranslated keywords unchanged
     results.push(...noTarget.map(kw => ({ source: kw.source, target: kw.target || '' })));
 
     if (toPolish.length === 0) {
@@ -317,8 +358,7 @@ ${textsFormatted}`;
       return results;
     }
 
-    // Build batches
-    const batches = [];
+    const batches: Keyword[][] = [];
     for (let i = 0; i < toPolish.length; i += cfg.batchSize) {
       batches.push(toPolish.slice(i, i + cfg.batchSize));
     }
@@ -340,9 +380,10 @@ ${textsFormatted}`;
         }
         return batchRes;
       } catch (err) {
-        console.error('Keyword polish batch error:', err.message);
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('Keyword polish batch error:', message);
         if (onLog) {
-          onLog('error', `批次 ${batchNum} 润色失败: ${err.message}`);
+          onLog('error', `批次 ${batchNum} 润色失败: ${message}`);
         }
         return batch.map(kw => ({ source: kw.source, target: kw.target }));
       }
@@ -355,7 +396,12 @@ ${textsFormatted}`;
     return results;
   }
 
-  async _polishKeywordsBatch(keywords, glossary, cfg, onLog = null) {
+  private async _polishKeywordsBatch(
+    keywords: Keyword[],
+    glossary: GlossaryEntry[],
+    cfg: TranslationConfig,
+    onLog: ((level: string, message: string) => void) | null = null
+  ): Promise<Array<{ source: string; target: string }>> {
     const glossaryText = glossary && glossary.length > 0
       ? this._buildGlossaryPrompt(glossary) + '\n\n'
       : '';
@@ -397,8 +443,8 @@ ${keywordsText}
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed)) {
-          const polishMap = new Map();
-          for (const item of parsed) {
+          const polishMap = new Map<string, string>();
+          for (const item of parsed as any[]) {
             if (item.source && item.target) {
               polishMap.set(item.source.trim().toLowerCase(), item.target.trim());
             }
@@ -410,13 +456,19 @@ ${keywordsText}
         }
       }
     } catch (err) {
-      console.error('Failed to parse keyword polish response:', err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Failed to parse keyword polish response:', message);
     }
 
     return keywords.map(kw => ({ source: kw.source, target: kw.target }));
   }
 
-  async _translateKeywordsBatch(keywords, glossary, cfg, onLog = null) {
+  private async _translateKeywordsBatch(
+    keywords: KeywordExtractInput[],
+    glossary: GlossaryEntry[],
+    cfg: TranslationConfig,
+    onLog: ((level: string, message: string) => void) | null = null
+  ): Promise<Array<{ source: string; target: string }>> {
     const glossaryText = glossary && glossary.length > 0
       ? this._buildGlossaryPrompt(glossary) + '\n\n'
       : '';
@@ -457,14 +509,12 @@ ${keywordsText}
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed)) {
-          // Build a lookup map from the response
-          const translationMap = new Map();
-          for (const item of parsed) {
+          const translationMap = new Map<string, string>();
+          for (const item of parsed as any[]) {
             if (item.source && item.target) {
               translationMap.set(item.source.trim().toLowerCase(), item.target.trim());
             }
           }
-          // Match back to original keywords to preserve order
           return keywords.map(kw => ({
             source: kw.source,
             target: translationMap.get(kw.source.toLowerCase()) || '',
@@ -472,27 +522,24 @@ ${keywordsText}
         }
       }
     } catch (err) {
-      console.error('Failed to parse keyword translation response:', err.message);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('Failed to parse keyword translation response:', message);
     }
 
     return keywords.map(kw => ({ source: kw.source, target: '' }));
   }
 
-  /**
-   * Translate a batch of entries
-   * @param {Array} entries - Array of { id, original, context }
-   * @param {Array} glossary - Glossary entries for prompt
-   * @param {object} config - Optional config override
-   * @param {string} modPrompt - Optional mod-level context prompt
-   * @param {Function} onProgress - Optional (completedCount, totalCount, batchResults) callback
-   * @returns {Array} - Array of { id, translated }
-   */
-  async translateBatch(entries, glossary = [], config = {}, modPrompt = '', onProgress = null) {
+  async translateBatch(
+    entries: TranslateEntryInput[],
+    glossary: GlossaryEntry[] = [],
+    config: Partial<TranslationConfig> = {},
+    modPrompt: string = '',
+    onProgress: ((completedCount: number, totalCount: number, batchResults: TranslationResult[]) => void) | null = null
+  ): Promise<TranslationResult[]> {
     const cfg = { ...this.config, ...config };
-    const results = [];
+    const results: TranslationResult[] = [];
 
-    // Build batches
-    const batches = [];
+    const batches: TranslateEntryInput[][] = [];
     for (let i = 0; i < entries.length; i += cfg.batchSize) {
       batches.push(entries.slice(i, i + cfg.batchSize));
     }
@@ -514,12 +561,17 @@ ${keywordsText}
     return results;
   }
 
-  async _translateBatchRequest(entries, glossary, cfg, modPrompt) {
+  private async _translateBatchRequest(
+    entries: TranslateEntryInput[],
+    glossary: GlossaryEntry[],
+    cfg: TranslationConfig,
+    modPrompt: string
+  ): Promise<TranslationResult[]> {
     const modPromptText = this._buildModPromptText(modPrompt);
     const glossaryText = this._buildGlossaryPrompt(glossary);
 
     const textsToTranslate = entries.map((e, i) =>
-      `[${i + 1}] (${e.context || ''})\n${e.original}`
+      `[${i + 1}] (${e.context || ''})\n${e.source}`
     ).join('\n\n---\n\n');
 
     const userMessage = `${modPromptText}${glossaryText ? glossaryText + '\n\n' : ''}请翻译以下${entries.length}段游戏文本为简体中文。请按照相同的编号格式返回翻译结果，每段翻译用 --- 分隔：
@@ -533,32 +585,34 @@ ${textsToTranslate}`;
       return entries.map((entry, i) => ({
         id: entry.id,
         translated: translations[i] || '',
-        status: translations[i] ? 'translated' : 'error',
+        status: (translations[i] ? 'translated' : 'error') as 'translated' | 'error',
       }));
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       return entries.map(entry => ({
         id: entry.id,
         translated: '',
-        status: 'error',
-        error: err.message,
+        status: 'error' as const,
+        error: message,
       }));
     }
   }
 
-  /**
-   * Polish/refine an existing translation
-   * @param {string} modPrompt - Optional mod-level context prompt
-   */
-  async polish(entry, glossary = [], config = {}, modPrompt = '') {
+  async polish(
+    entry: PolishEntryInput,
+    glossary: GlossaryEntry[] = [],
+    config: Partial<TranslationConfig> = {},
+    modPrompt: string = ''
+  ): Promise<TranslationResult> {
     const cfg = { ...this.config, ...config };
     const modPromptText = this._buildModPromptText(modPrompt);
     const glossaryText = this._buildGlossaryPrompt(glossary);
 
     const userMessage = `${modPromptText}${glossaryText ? glossaryText + '\n\n' : ''}原文：
-${entry.original}
+${(entry as any).original || (entry as any).source}
 
 当前翻译：
-${entry.translated}
+${entry.target}
 
 请对上述翻译进行润色优化，直接返回润色后的文本，不要添加任何说明。`;
 
@@ -570,30 +624,27 @@ ${entry.translated}
         status: 'polished',
       };
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       return {
         id: entry.id,
-        translated: entry.translated,
+        translated: entry.target,
         status: 'error',
-        error: err.message,
+        error: message,
       };
     }
   }
 
-  /**
-   * Polish a batch of entries with concurrency support
-   * @param {Array} entries - Array of { id, original, translated }
-   * @param {Array} glossary - Glossary entries for prompt
-   * @param {object} config - Optional config override
-   * @param {string} modPrompt - Optional mod-level context prompt
-   * @param {Function} onProgress - Optional (completedCount, totalCount, batchResults) callback
-   * @returns {Array} - Array of { id, translated, status }
-   */
-  async polishBatch(entries, glossary = [], config = {}, modPrompt = '', onProgress = null) {
+  async polishBatch(
+    entries: PolishEntryInput[],
+    glossary: GlossaryEntry[] = [],
+    config: Partial<TranslationConfig> = {},
+    modPrompt: string = '',
+    onProgress: ((completedCount: number, totalCount: number, batchResults: TranslationResult[]) => void) | null = null
+  ): Promise<TranslationResult[]> {
     const cfg = { ...this.config, ...config };
-    const results = [];
+    const results: TranslationResult[] = [];
 
-    // Build batches
-    const batches = [];
+    const batches: PolishEntryInput[][] = [];
     for (let i = 0; i < entries.length; i += cfg.batchSize) {
       batches.push(entries.slice(i, i + cfg.batchSize));
     }
@@ -615,12 +666,17 @@ ${entry.translated}
     return results;
   }
 
-  async _polishBatchRequest(entries, glossary, cfg, modPrompt) {
+  private async _polishBatchRequest(
+    entries: PolishEntryInput[],
+    glossary: GlossaryEntry[],
+    cfg: TranslationConfig,
+    modPrompt: string
+  ): Promise<TranslationResult[]> {
     const modPromptText = this._buildModPromptText(modPrompt);
     const glossaryText = this._buildGlossaryPrompt(glossary);
 
     const textsToPolish = entries.map((e, i) =>
-      `[${i + 1}] (${e.context || ''})\n原文：${e.original}\n当前翻译：${e.translated}`
+      `[${i + 1}] (${e.context || ''})\n原文：${(e as any).original || (e as any).source}\n当前翻译：${e.target}`
     ).join('\n\n---\n\n');
 
     const userMessage = `${modPromptText}${glossaryText ? glossaryText + '\n\n' : ''}请对以下${entries.length}段已翻译的游戏文本进行润色优化。请按照相同的编号格式返回润色结果，每段用 --- 分隔，只返回润色后的译文，不要添加任何说明：
@@ -633,20 +689,21 @@ ${textsToPolish}`;
 
       return entries.map((entry, i) => ({
         id: entry.id,
-        translated: polished[i] || entry.translated,
-        status: polished[i] ? 'polished' : 'error',
+        translated: polished[i] || entry.target,
+        status: (polished[i] ? 'polished' : 'error') as 'polished' | 'error',
       }));
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       return entries.map(entry => ({
         id: entry.id,
-        translated: entry.translated,
-        status: 'error',
-        error: err.message,
+        translated: entry.target,
+        status: 'error' as const,
+        error: message,
       }));
     }
   }
 
-  _buildGlossaryPrompt(glossary) {
+  private _buildGlossaryPrompt(glossary: GlossaryEntry[]): string {
     if (!glossary || glossary.length === 0) return '';
 
     let text = '【名词对照表】\n';
@@ -658,25 +715,20 @@ ${textsToPolish}`;
     return text;
   }
 
-  _buildModPromptText(modPrompt) {
+  private _buildModPromptText(modPrompt: string): string {
     if (!modPrompt || !modPrompt.trim()) return '';
     return `【MOD设定说明】\n${modPrompt.trim()}\n\n`;
   }
 
-  /**
-   * Run batch operations concurrently up to cfg.concurrentRequests limit.
-   * Results are returned in original batch order.
-   * @param {Array} batches - Array of batch data
-   * @param {object} cfg - Config with concurrentRequests and rateLimitMs
-   * @param {Function} processFn - async (batch, batchNum) => result
-   * @returns {Array} - Array of results in original order
-   */
-  async _runConcurrentBatches(batches, cfg, processFn) {
+  private async _runConcurrentBatches<T, R>(
+    batches: T[],
+    cfg: TranslationConfig,
+    processFn: (batch: T, batchNum: number) => Promise<R>
+  ): Promise<R[]> {
     const concurrency = Math.max(1, cfg.concurrentRequests || 1);
-    const results = new Array(batches.length);
+    const results = new Array<R>(batches.length);
 
     if (concurrency <= 1) {
-      // Sequential processing (original behavior)
       for (let i = 0; i < batches.length; i++) {
         results[i] = await processFn(batches[i], i + 1);
         if (i + 1 < batches.length) {
@@ -686,9 +738,8 @@ ${textsToPolish}`;
       return results;
     }
 
-    // Concurrent processing
     let nextIndex = 0;
-    const workers = [];
+    const workers: Promise<void>[] = [];
 
     for (let w = 0; w < concurrency; w++) {
       workers.push((async () => {
@@ -707,9 +758,7 @@ ${textsToPolish}`;
     return results;
   }
 
-  // ── Request history API ─────────────────────────────────────────────
-
-  getRequestHistory() {
+  getRequestHistory(): RequestHistoryItem[] {
     return this._requestHistory.map(r => ({
       id: r.id,
       type: r.type,
@@ -725,12 +774,12 @@ ${textsToPolish}`;
     }));
   }
 
-  getRequestDetail(id) {
+  getRequestDetail(id: number): RequestRecord | null {
     return this._requestHistory.find(r => r.id === id) ||
            this._activeRequests.get(id) || null;
   }
 
-  getActiveRequests() {
+  getActiveRequests(): ActiveRequestItem[] {
     return Array.from(this._activeRequests.values()).map(r => ({
       id: r.id,
       type: r.type,
@@ -741,13 +790,13 @@ ${textsToPolish}`;
     }));
   }
 
-  clearRequestHistory() {
+  clearRequestHistory(): void {
     this._requestHistory = [];
   }
 
-  async _callAPI(systemPrompt, userMessage, cfg, requestType = 'unknown') {
+  private async _callAPI(systemPrompt: string, userMessage: string, cfg: TranslationConfig, requestType: string = 'unknown'): Promise<string> {
     const reqId = ++_requestIdCounter;
-    const record = {
+    const record: RequestRecord = {
       id: reqId,
       type: requestType,
       status: 'pending',
@@ -800,7 +849,7 @@ ${textsToPolish}`;
         throw err;
       }
 
-      const data = await response.json();
+      const data = await response.json() as any;
       const content = data.choices?.[0]?.message?.content || '';
 
       record.status = 'success';
@@ -816,8 +865,9 @@ ${textsToPolish}`;
       return content;
     } catch (err) {
       if (record.status !== 'error') {
+        const message = err instanceof Error ? err.message : String(err);
         record.status = 'error';
-        record.error = err.message;
+        record.error = message;
         record.endTime = new Date().toISOString();
         record.durationMs = Date.now() - startMs;
         this._activeRequests.delete(reqId);
@@ -827,31 +877,27 @@ ${textsToPolish}`;
     }
   }
 
-  _addToHistory(record) {
+  private _addToHistory(record: RequestRecord): void {
     this._requestHistory.push(record);
     if (this._requestHistory.length > MAX_REQUEST_HISTORY) {
       this._requestHistory = this._requestHistory.slice(-MAX_REQUEST_HISTORY);
     }
   }
 
-  _parseBatchResponse(text, expectedCount) {
-    // Split response by --- separator or numbered entries
+  private _parseBatchResponse(text: string, expectedCount: number): string[] {
     const parts = text.split(/\n---\n|\n-{3,}\n/);
 
     if (parts.length >= expectedCount) {
       return parts.slice(0, expectedCount).map(p => {
-        // Remove leading [n] markers
         return p.replace(/^\s*\[\d+\]\s*(\([^)]*\)\s*)?/m, '').trim();
       });
     }
 
-    // Fallback: try to split by numbered patterns [1] [2] etc.
     const numbered = text.split(/\n\s*\[\d+\]/);
     if (numbered.length > 1) {
       return numbered.slice(1, expectedCount + 1).map(p => p.trim());
     }
 
-    // If only one entry expected, return the whole thing
     if (expectedCount === 1) {
       return [text.replace(/^\s*\[\d+\]\s*(\([^)]*\)\s*)?/m, '').trim()];
     }
@@ -860,9 +906,10 @@ ${textsToPolish}`;
   }
 }
 
-function sleep(ms) {
+function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = { TranslationService };
 
+export { TranslationService };

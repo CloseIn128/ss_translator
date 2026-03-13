@@ -9,9 +9,45 @@
  *   2. Structural match – same csvFileName/fileType + rowId + field (handles path changes)
  */
 
-const { parseModFolder } = require('./modParser');
+import { parseModFolder } from './modParser';
+import type { TranslationEntry, ModInfo, ParsedModData } from '../../types/project';
+import type { LegacyMatchResult } from '../../types/legacy';
+
+interface LegacyInfo {
+  modInfo: ModInfo;
+  modPath: string;
+  entryCount: number;
+}
+
+interface LoadLegacyResult {
+  modInfo: ModInfo;
+  entryCount: number;
+}
+
+interface UnmatchedEntry {
+  entryId: string;
+  original: string;
+  context?: string;
+}
+
+interface MatchEntry {
+  entryId: string;
+  matchType: 'exact' | 'structural';
+  legacyText: string;
+  legacyFile: string;
+  legacyContext?: string;
+}
+
+interface MatchResult {
+  matches: MatchEntry[];
+  unmatched: UnmatchedEntry[];
+}
 
 class LegacyTranslationService {
+  private legacyEntries: TranslationEntry[];
+  private legacyModInfo: ModInfo | null;
+  private legacyModPath: string | null;
+
   constructor() {
     this.legacyEntries = [];
     this.legacyModInfo = null;
@@ -20,11 +56,11 @@ class LegacyTranslationService {
 
   /**
    * Load and parse an old translated mod folder.
-   * @param {string} modPath - Absolute path to the legacy (translated) mod folder
-   * @returns {object} - { modInfo, entryCount }
+   * @param modPath - Absolute path to the legacy (translated) mod folder
+   * @returns { modInfo, entryCount }
    */
-  async loadLegacyMod(modPath) {
-    const parsed = await parseModFolder(modPath);
+  async loadLegacyMod(modPath: string): Promise<LoadLegacyResult> {
+    const parsed = await parseModFolder(modPath) as ParsedModData;
     this.legacyEntries = parsed.entries;
     this.legacyModInfo = parsed.modInfo;
     this.legacyModPath = modPath;
@@ -36,17 +72,17 @@ class LegacyTranslationService {
 
   /**
    * Match new project entries against legacy translations.
-   * @param {Array} newEntries - Entries from the current (new) project
+   * @param newEntries - Entries from the current (new) project
    * @returns {{ matches: Array, unmatched: Array }}
    */
-  matchEntries(newEntries) {
+  matchEntries(newEntries: TranslationEntry[]): MatchResult {
     if (!this.legacyEntries.length) {
       return { matches: [], unmatched: newEntries.map(e => ({ entryId: e.id, original: e.original, context: e.context })) };
     }
 
     // Build lookup maps from legacy entries
-    const byId = new Map();
-    const byRowField = new Map();
+    const byId = new Map<string, TranslationEntry>();
+    const byRowField = new Map<string, TranslationEntry>();
 
     for (const entry of this.legacyEntries) {
       byId.set(entry.id, entry);
@@ -67,12 +103,12 @@ class LegacyTranslationService {
       }
     }
 
-    const matches = [];
-    const unmatched = [];
+    const matches: MatchEntry[] = [];
+    const unmatched: UnmatchedEntry[] = [];
 
     for (const newEntry of newEntries) {
       let legacy = byId.get(newEntry.id);
-      let matchType = 'exact';
+      let matchType: 'exact' | 'structural' = 'exact';
 
       if (!legacy) {
         matchType = 'structural';
@@ -115,10 +151,10 @@ class LegacyTranslationService {
    * Return summary information about the currently loaded legacy mod.
    * @returns {object|null}
    */
-  getLegacyInfo() {
+  getLegacyInfo(): LegacyInfo | null {
     if (!this.legacyModPath) return null;
     return {
-      modInfo: this.legacyModInfo,
+      modInfo: this.legacyModInfo!,
       modPath: this.legacyModPath,
       entryCount: this.legacyEntries.length,
     };
@@ -128,12 +164,12 @@ class LegacyTranslationService {
    * Get all legacy entries (for building translation context).
    * @returns {Array}
    */
-  getLegacyEntries() {
+  getLegacyEntries(): TranslationEntry[] {
     return this.legacyEntries;
   }
 
   /** Clear loaded legacy data. */
-  clear() {
+  clear(): void {
     this.legacyEntries = [];
     this.legacyModInfo = null;
     this.legacyModPath = null;

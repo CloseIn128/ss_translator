@@ -15,12 +15,17 @@ export interface ModInfo {
 export interface TranslationEntry {
   id: string;
   file: string;
-  type: 'csv' | 'json' | 'faction' | 'ship' | 'skin';
+  fileType: string;  // 'csv', 'json', 'json_array', 'json_config', 'json_flat_map', 'json_ranks', 'json_strings', 'json_tooltips', 'json_mission', 'json_skill', 'mod_info', etc.
+  category: string;
   field: string;
+  csvFileName?: string;  // For CSV entries, the file name
   rowId?: string;
-  source: string;
-  target: string;
-  status: 'untranslated' | 'translated' | 'polished' | 'reviewed';
+  arrayIndex?: number;
+  objectKey?: string;
+  section?: string;
+  original: string;  // Source text
+  translated: string;  // Target text
+  status: 'untranslated' | 'translated' | 'polished' | 'reviewed' | 'error';
   context?: string;
   ignored?: boolean;
 }
@@ -46,8 +51,8 @@ export interface ProjectStats {
   translated: number;
   polished: number;
   reviewed?: number;
-  byFile: Record<string, { total: number; translated: number; polished: number; reviewed?: number }>;
-  byType: Record<string, { total: number; translated: number; polished: number; reviewed?: number }>;
+  byFile: Record<string, { total: number; translated: number }>;
+  byType: Record<string, { total: number; translated: number }>;
 }
 
 export interface Project {

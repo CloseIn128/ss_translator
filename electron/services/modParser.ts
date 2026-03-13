@@ -5,15 +5,49 @@
  * from CSV files, relaxed JSON files (.faction, .ship, .skin, etc.)
  */
 
-const fs = require('fs');
-const path = require('path');
-const { parseRelaxedJson } = require('./relaxedJson');
-const { parseCSV } = require('./csvParser');
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseRelaxedJson } from './relaxedJson';
+import { parseCSV } from './csvParser';
+import type { TranslationEntry, ModInfo, ParsedModData, ProjectStats } from '../../types/project';
+
+// ─── Type definitions ────────────────────────────────────────────────
+
+interface CSVConfig {
+  columns: string[];
+  idColumn: string;
+  typeColumn?: string;
+}
+
+interface JSONArrayConfig {
+  path: string;
+  category: string;
+}
+
+interface JSONConfigFile {
+  fields: string[];
+  category: string;
+}
+
+interface JSONFlatMapConfig {
+  category: string;
+}
+
+interface CSVRow {
+  [key: string]: string | boolean | undefined;
+  _empty?: boolean;
+  _comment?: boolean;
+}
+
+interface CSVData {
+  headers: string[];
+  rows: CSVRow[];
+}
 
 // ─── File type definitions ───────────────────────────────────────────
 
 /** CSV files and their translatable columns */
-const CSV_TRANSLATABLE = {
+const CSV_TRANSLATABLE: Record<string, CSVConfig> = {
   'descriptions.csv': { columns: ['text1', 'text2', 'text3', 'text4'], idColumn: 'id', typeColumn: 'type' },
   'ship_data.csv': { columns: ['name', 'designation'], idColumn: 'id' },
   'wing_data.csv': { columns: ['name', 'designation'], idColumn: 'id' },
@@ -40,7 +74,7 @@ const CSV_TRANSLATABLE = {
 };
 
 /** Category labels for CSV files */
-const CSV_CATEGORY = {
+const CSV_CATEGORY: Record<string, string | null> = {
   'descriptions.csv': null, // derived from 'type' column at parse time
   'ship_data.csv': '舰船',
   'wing_data.csv': '飞行队',
@@ -67,7 +101,7 @@ const CSV_CATEGORY = {
 };
 
 /** descriptions.csv `type` column values → Chinese category */
-const DESCRIPTIONS_TYPE_CATEGORY = {
+const DESCRIPTIONS_TYPE_CATEGORY: Record<string, string> = {
   SHIP: '舰船描述',
   WEAPON: '武器描述',
   STATION: '空间站描述',
@@ -78,7 +112,7 @@ const DESCRIPTIONS_TYPE_CATEGORY = {
 };
 
 /** JSON-like files and their translatable fields */
-const JSON_TRANSLATABLE_FIELDS = {
+const JSON_TRANSLATABLE_FIELDS: Record<string, string[]> = {
   '.faction': ['displayName', 'displayNameWithArticle', 'displayNameLong', 'displayNameLongWithArticle', 'entityNamePrefix', 'personNamePrefix'],
   '.ship': ['hullName'],
   '.skin': ['hullName', 'descriptionPrefix'],
@@ -86,7 +120,7 @@ const JSON_TRANSLATABLE_FIELDS = {
 };
 
 /** Category labels for JSON file extensions */
-const JSON_EXT_CATEGORY = {
+const JSON_EXT_CATEGORY: Record<string, string> = {
   '.faction': '势力',
   '.ship': '舰船',
   '.skin': '舰船皮肤',
@@ -94,13 +128,13 @@ const JSON_EXT_CATEGORY = {
 };
 
 /** Simple JSON files with array of strings */
-const JSON_STRING_ARRAYS = {
+const JSON_STRING_ARRAYS: Record<string, JSONArrayConfig> = {
   'tips.json': { path: 'tips', category: '游戏提示' },
   'ship_names.json': { path: '*', category: '舰船名称' },
 };
 
 /** JSON config files: top-level keys are IDs, each value is an object with translatable fields */
-const JSON_CONFIG_FILES = {
+const JSON_CONFIG_FILES: Record<string, JSONConfigFile> = {
   'planets.json': { fields: ['name'], category: '星球类型' },
   'battle_objectives.json': { fields: ['name'], category: '战斗目标' },
   'contact_tag_data.json': { fields: ['name'], category: '联络人标签' },
@@ -109,7 +143,7 @@ const JSON_CONFIG_FILES = {
 };
 
 /** JSON files where all top-level key→value pairs are translatable strings */
-const JSON_FLAT_STRING_MAP = {
+const JSON_FLAT_STRING_MAP: Record<string, JSONFlatMapConfig> = {
   'default_fleet_type_names.json': { category: '舰队类型' },
 };
 
@@ -117,10 +151,10 @@ const JSON_FLAT_STRING_MAP = {
 
 /**
  * Parse entire mod folder and return translatable entries
- * @param {string} modPath - Absolute path to the mod folder
- * @returns {Promise<object>} - Parsed project data
+ * @param modPath - Absolute path to the mod folder
+ * @returns Parsed project data
  */
-async function parseModFolder(modPath) {
+async function parseModFolder(modPath: string): Promise<ParsedModData> {
   // Validate mod_info.json exists
   const modInfoPath = path.join(modPath, 'mod_info.json');
   if (!fs.existsSync(modInfoPath)) {
@@ -128,9 +162,9 @@ async function parseModFolder(modPath) {
   }
 
   const modInfoRaw = fs.readFileSync(modInfoPath, 'utf-8');
-  const modInfo = parseRelaxedJson(modInfoRaw);
+  const modInfo = parseRelaxedJson(modInfoRaw) as any;
 
-  const entries = [];
+  const entries: TranslationEntry[] = [];
 
   // 1) Parse mod_info.json itself
   const modInfoEntries = extractModInfoEntries(modInfo, modInfoPath, modPath);
@@ -215,7 +249,8 @@ async function parseModFolder(modPath) {
         continue;
       }
     } catch (err) {
-      console.warn(`Warning: Failed to parse ${relPath}: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`Warning: Failed to parse ${relPath}: ${message}`);
     }
   }
 
@@ -236,9 +271,9 @@ async function parseModFolder(modPath) {
 
 // ─── Individual parsers ──────────────────────────────────────────────
 
-function extractModInfoEntries(modInfo, filePath, modPath) {
+function extractModInfoEntries(modInfo: any, filePath: string, modPath: string): TranslationEntry[] {
   const relPath = path.relative(modPath, filePath).replace(/\\/g, '/');
-  const entries = [];
+  const entries: TranslationEntry[] = [];
   const translatableFields = ['name', 'description'];
 
   for (const field of translatableFields) {
@@ -259,22 +294,22 @@ function extractModInfoEntries(modInfo, filePath, modPath) {
   return entries;
 }
 
-function parseCSVFile(filePath, relPath, fileName) {
+function parseCSVFile(filePath: string, relPath: string, fileName: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
   const config = CSV_TRANSLATABLE[fileName];
-  const { headers, rows } = parseCSV(content);
-  const entries = [];
+  const csvData = parseCSV(content) as CSVData;
+  const entries: TranslationEntry[] = [];
   const baseCategory = CSV_CATEGORY[fileName];
 
-  for (const row of rows) {
+  for (const row of csvData.rows) {
     if (row._empty || row._comment) continue;
 
-    const rowId = row[config.idColumn] || '';
+    const rowId = (row[config.idColumn] as string) || '';
     if (!rowId) continue; // skip rows without ID
 
     for (const col of config.columns) {
-      if (!headers.includes(col)) continue;
-      const value = row[col];
+      if (!csvData.headers.includes(col)) continue;
+      const value = row[col] as string;
       if (!value || !value.trim()) continue;
 
       // For rules.csv script column, extract only AddText content
@@ -287,16 +322,16 @@ function parseCSVFile(filePath, relPath, fileName) {
       // Derive category: use type column for descriptions.csv
       let category = baseCategory;
       if (fileName === 'descriptions.csv' && config.typeColumn) {
-        const typeVal = (row[config.typeColumn] || '').toUpperCase();
+        const typeVal = ((row[config.typeColumn] as string) || '').toUpperCase();
         category = DESCRIPTIONS_TYPE_CATEGORY[typeVal] || '其他描述';
       }
 
-      const typeInfo = config.typeColumn ? ` [${row[config.typeColumn] || ''}]` : '';
+      const typeInfo = config.typeColumn ? ` [${(row[config.typeColumn] as string) || ''}]` : '';
       entries.push({
         id: `${relPath}::${rowId}::${col}`,
         file: relPath,
         fileType: 'csv',
-        category,
+        category: category || '其他',
         csvFileName: fileName,
         field: col,
         rowId,
@@ -315,8 +350,8 @@ function parseCSVFile(filePath, relPath, fileName) {
  * Extract AddText string content from rules.csv script column
  * rules.csv scripts contain commands like: AddText "some text here"
  */
-function extractAddTextFromScript(script, rowId, relPath) {
-  const entries = [];
+function extractAddTextFromScript(script: string, rowId: string, relPath: string): TranslationEntry[] {
+  const entries: TranslationEntry[] = [];
   // Match AddText "..." patterns (with "" escaping inside)
   const regex = /AddText\s+""((?:[^"]|"")*)""/g;
   let match;
@@ -345,10 +380,10 @@ function extractAddTextFromScript(script, rowId, relPath) {
   return entries;
 }
 
-function parseJsonStringArrayFile(filePath, relPath, fileName) {
+function parseJsonStringArrayFile(filePath: string, relPath: string, fileName: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
-  const entries = [];
+  const data = parseRelaxedJson(content) as any;
+  const entries: TranslationEntry[] = [];
   const config = JSON_STRING_ARRAYS[fileName];
   const category = config.category || '其他';
 
@@ -400,12 +435,12 @@ function parseJsonStringArrayFile(filePath, relPath, fileName) {
   return entries;
 }
 
-function parseRelaxedJsonFile(filePath, relPath, ext) {
+function parseRelaxedJsonFile(filePath: string, relPath: string, ext: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
+  const data = parseRelaxedJson(content) as any;
   const fields = JSON_TRANSLATABLE_FIELDS[ext];
   const category = JSON_EXT_CATEGORY[ext] || '其他';
-  const entries = [];
+  const entries: TranslationEntry[] = [];
 
   for (const field of fields) {
     if (data[field] && typeof data[field] === 'string' && data[field].trim()) {
@@ -427,16 +462,17 @@ function parseRelaxedJsonFile(filePath, relPath, ext) {
   return entries;
 }
 
-function parseJsonConfigFile(filePath, relPath, fileName) {
+function parseJsonConfigFile(filePath: string, relPath: string, fileName: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
+  const data = parseRelaxedJson(content) as any;
   const config = JSON_CONFIG_FILES[fileName];
-  const entries = [];
+  const entries: TranslationEntry[] = [];
 
   for (const [key, obj] of Object.entries(data)) {
     if (typeof obj !== 'object' || obj === null) continue;
+    const objAny = obj as any;
     for (const field of config.fields) {
-      if (obj[field] && typeof obj[field] === 'string' && obj[field].trim()) {
+      if (objAny[field] && typeof objAny[field] === 'string' && objAny[field].trim()) {
         entries.push({
           id: `${relPath}::${key}::${field}`,
           file: relPath,
@@ -444,7 +480,7 @@ function parseJsonConfigFile(filePath, relPath, fileName) {
           category: config.category,
           field,
           objectKey: key,
-          original: obj[field],
+          original: objAny[field],
           translated: '',
           status: 'untranslated',
           context: `${fileName} - ${key}.${field}`,
@@ -456,11 +492,11 @@ function parseJsonConfigFile(filePath, relPath, fileName) {
   return entries;
 }
 
-function parseJsonFlatStringMap(filePath, relPath, fileName) {
+function parseJsonFlatStringMap(filePath: string, relPath: string, fileName: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
+  const data = parseRelaxedJson(content) as any;
   const config = JSON_FLAT_STRING_MAP[fileName];
-  const entries = [];
+  const entries: TranslationEntry[] = [];
 
   for (const [key, value] of Object.entries(data)) {
     if (typeof value === 'string' && value.trim()) {
@@ -481,10 +517,10 @@ function parseJsonFlatStringMap(filePath, relPath, fileName) {
   return entries;
 }
 
-function parseDefaultRanksFile(filePath, relPath) {
+function parseDefaultRanksFile(filePath: string, relPath: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
-  const entries = [];
+  const data = parseRelaxedJson(content) as any;
+  const entries: TranslationEntry[] = [];
 
   for (const section of ['ranks', 'posts']) {
     const sectionData = data[section];
@@ -492,7 +528,8 @@ function parseDefaultRanksFile(filePath, relPath) {
 
     for (const [key, obj] of Object.entries(sectionData)) {
       if (typeof obj !== 'object' || obj === null) continue;
-      if (obj.name && typeof obj.name === 'string' && obj.name.trim()) {
+      const objAny = obj as any;
+      if (objAny.name && typeof objAny.name === 'string' && objAny.name.trim()) {
         entries.push({
           id: `${relPath}::${section}::${key}::name`,
           file: relPath,
@@ -501,7 +538,7 @@ function parseDefaultRanksFile(filePath, relPath) {
           field: 'name',
           section,
           objectKey: key,
-          original: obj.name,
+          original: objAny.name,
           translated: '',
           status: 'untranslated',
           context: `default_ranks.json - ${section}.${key}.name`,
@@ -513,12 +550,12 @@ function parseDefaultRanksFile(filePath, relPath) {
   return entries;
 }
 
-function parseStringsFile(filePath, relPath) {
+function parseStringsFile(filePath: string, relPath: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
-  const entries = [];
+  const data = parseRelaxedJson(content) as any;
+  const entries: TranslationEntry[] = [];
 
-  function walk(obj, pathParts) {
+  function walk(obj: any, pathParts: string[]): void {
     for (const [key, value] of Object.entries(obj)) {
       const currentPath = [...pathParts, key];
       if (typeof value === 'string' && value.trim()) {
@@ -543,29 +580,29 @@ function parseStringsFile(filePath, relPath) {
   return entries;
 }
 
-function parseTooltipsFile(filePath, relPath) {
+function parseTooltipsFile(filePath: string, relPath: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
-  const entries = [];
+  const data = parseRelaxedJson(content) as any;
+  const entries: TranslationEntry[] = [];
   const tooltipFields = ['title', 'body'];
 
-  function walk(obj, pathParts) {
+  function walk(obj: any, pathParts: string[]): void {
     for (const [key, value] of Object.entries(obj)) {
       if (typeof value !== 'object' || value === null || Array.isArray(value)) continue;
       const currentPath = [...pathParts, key];
 
       // Check if this is a tooltip leaf (has title or body)
-      const hasTooltipField = tooltipFields.some(f => typeof value[f] === 'string');
+      const hasTooltipField = tooltipFields.some(f => typeof (value as any)[f] === 'string');
       if (hasTooltipField) {
         for (const field of tooltipFields) {
-          if (typeof value[field] === 'string' && value[field].trim()) {
+          if (typeof (value as any)[field] === 'string' && (value as any)[field].trim()) {
             entries.push({
               id: `${relPath}::${currentPath.join('.')}.${field}`,
               file: relPath,
               fileType: 'json_tooltips',
               category: '提示信息',
               field: `${currentPath.join('.')}.${field}`,
-              original: value[field],
+              original: (value as any)[field],
               translated: '',
               status: 'untranslated',
               context: `tooltips.json - ${currentPath.join('.')}.${field}`,
@@ -582,10 +619,10 @@ function parseTooltipsFile(filePath, relPath) {
   return entries;
 }
 
-function parseMissionDescriptor(filePath, relPath) {
+function parseMissionDescriptor(filePath: string, relPath: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
-  const entries = [];
+  const data = parseRelaxedJson(content) as any;
+  const entries: TranslationEntry[] = [];
   const fields = ['title', 'difficulty'];
 
   for (const field of fields) {
@@ -607,10 +644,10 @@ function parseMissionDescriptor(filePath, relPath) {
   return entries;
 }
 
-function parseSkillFile(filePath, relPath) {
+function parseSkillFile(filePath: string, relPath: string): TranslationEntry[] {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const data = parseRelaxedJson(content);
-  const entries = [];
+  const data = parseRelaxedJson(content) as any;
+  const entries: TranslationEntry[] = [];
 
   if (Array.isArray(data.effectGroups)) {
     for (let i = 0; i < data.effectGroups.length; i++) {
@@ -637,7 +674,7 @@ function parseSkillFile(filePath, relPath) {
 
 // ─── Utility ─────────────────────────────────────────────────────────
 
-function getAllFiles(dirPath, fileList = []) {
+function getAllFiles(dirPath: string, fileList: string[] = []): string[] {
   const items = fs.readdirSync(dirPath);
   for (const item of items) {
     const fullPath = path.join(dirPath, item);
@@ -655,10 +692,10 @@ function getAllFiles(dirPath, fileList = []) {
   return fileList;
 }
 
-function computeStats(entries) {
-  const byFile = {};
-  const byType = {};
-  let total = entries.length;
+function computeStats(entries: TranslationEntry[]): ProjectStats {
+  const byFile: Record<string, { total: number; translated: number }> = {};
+  const byType: Record<string, { total: number; translated: number }> = {};
+  const total = entries.length;
   let translated = 0;
   let polished = 0;
 
@@ -687,3 +724,4 @@ function computeStats(entries) {
 
 module.exports = { parseModFolder };
 
+export { parseModFolder };

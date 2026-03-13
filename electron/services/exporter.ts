@@ -5,17 +5,27 @@
  * and replacing translatable text with translations.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { parseRelaxedJson, relaxedJsonToJson } = require('./relaxedJson');
-const { parseCSV, serializeCSV } = require('./csvParser');
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseRelaxedJson, relaxedJsonToJson } from './relaxedJson';
+import { parseCSV, serializeCSV } from './csvParser';
+import type { Project, TranslationEntry } from '../../types/project';
+
+interface ExportResult {
+  outputPath: string;
+}
+
+interface CSVData {
+  headers: string[];
+  rows: Array<Record<string, string | boolean>>;
+}
 
 /**
  * Export translated mod to output directory
- * @param {object} projectData - Full project data with entries
- * @param {string} outputDir - Output directory path
+ * @param projectData - Full project data with entries
+ * @param outputDir - Output directory path
  */
-async function exportMod(projectData, outputDir) {
+async function exportMod(projectData: Project, outputDir: string): Promise<ExportResult> {
   const { modPath, entries, modInfo } = projectData;
   const modFolderName = path.basename(modPath) + '_translated';
   const destPath = path.join(outputDir, modFolderName);
@@ -24,7 +34,7 @@ async function exportMod(projectData, outputDir) {
   copyDirSync(modPath, destPath);
 
   // 2) Build a lookup map: file -> entries (skip ignored entries)
-  const fileEntryMap = {};
+  const fileEntryMap: Record<string, TranslationEntry[]> = {};
   for (const entry of entries) {
     if (entry.ignored) continue;
     if (!entry.translated || entry.status === 'untranslated') continue;
@@ -47,7 +57,8 @@ async function exportMod(projectData, outputDir) {
         applyJsonTranslations(absPath, fileEntries);
       }
     } catch (err) {
-      console.warn(`Failed to apply translations to ${relFile}: ${err.message}`);
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`Failed to apply translations to ${relFile}: ${message}`);
     }
   }
 
@@ -57,9 +68,9 @@ async function exportMod(projectData, outputDir) {
 /**
  * Apply translations to a CSV file
  */
-function applyCSVTranslations(filePath, entries, fileName) {
+function applyCSVTranslations(filePath: string, entries: TranslationEntry[], fileName: string): void {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const csvData = parseCSV(content);
+  const csvData = parseCSV(content) as CSVData;
 
   for (const entry of entries) {
     if (entry.field === 'script(AddText)') {
@@ -82,7 +93,7 @@ function applyCSVTranslations(filePath, entries, fileName) {
   fs.writeFileSync(filePath, serializeCSV(csvData), 'utf-8');
 }
 
-function applyRulesCSVAddText(csvData, entry) {
+function applyRulesCSVAddText(csvData: CSVData, entry: TranslationEntry): void {
   // For rules.csv, we need to replace the AddText content in the script column
   for (const row of csvData.rows) {
     if (row._empty || row._comment) continue;
@@ -90,7 +101,7 @@ function applyRulesCSVAddText(csvData, entry) {
     const idCol = 'id';
     if (row[idCol] !== entry.rowId) continue;
 
-    const script = row['script'] || '';
+    const script = (row['script'] as string) || '';
     // Replace the original AddText content with translation
     // This is tricky - we match the original text within AddText "" ""
     const escapedOriginal = entry.original.replace(/"/g, '""');
@@ -106,7 +117,7 @@ function applyRulesCSVAddText(csvData, entry) {
  * Apply translations to a JSON-like file
  * Uses string replacement to preserve comments and formatting
  */
-function applyJsonTranslations(filePath, entries) {
+function applyJsonTranslations(filePath: string, entries: TranslationEntry[]): void {
   let content = fs.readFileSync(filePath, 'utf-8');
 
   for (const entry of entries) {
@@ -130,7 +141,7 @@ function applyJsonTranslations(filePath, entries) {
   fs.writeFileSync(filePath, content, 'utf-8');
 }
 
-function escapeForJsonSearch(str) {
+function escapeForJsonSearch(str: string): string {
   return str
     .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
@@ -140,8 +151,8 @@ function escapeForJsonSearch(str) {
     .replace(/[.*+?^${}()|[\]]/g, '\\$&');
 }
 
-function getIdColumn(fileName) {
-  const map = {
+function getIdColumn(fileName: string): string {
+  const map: Record<string, string> = {
     'descriptions.csv': 'id',
     'ship_data.csv': 'id',
     'wing_data.csv': 'id',
@@ -172,7 +183,7 @@ function getIdColumn(fileName) {
 /**
  * Recursively copy directory
  */
-function copyDirSync(src, dest) {
+function copyDirSync(src: string, dest: string): void {
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest, { recursive: true });
   }
@@ -191,4 +202,3 @@ function copyDirSync(src, dest) {
 }
 
 module.exports = { exportMod, getIdColumn };
-
