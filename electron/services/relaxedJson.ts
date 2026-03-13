@@ -182,5 +182,8 @@ export function parseRelaxedJson(text: string): any {
 
 export { relaxedJsonToJson };
 
+// CommonJS compatibility
+module.exports = { parseRelaxedJson, relaxedJsonToJson };
+
 
 

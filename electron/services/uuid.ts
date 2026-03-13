@@ -9,3 +9,6 @@ export function v4(): string {
   });
 }
 
+// CommonJS compatibility
+module.exports = { v4 };
+

@@ -167,4 +167,7 @@ export function serializeCSV(data: ParsedCSV): string {
   return lines.join('\n');
 }
 
+// CommonJS compatibility
+module.exports = { parseCSV, serializeCSV, parseCSVRow };
+
 

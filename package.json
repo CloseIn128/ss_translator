@@ -8,6 +8,8 @@
     "dev:electron": "wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
     "dev": "concurrently \"pnpm dev:vite\" \"pnpm dev:electron\"",
     "build": "vite build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "vite build && electron-builder",

@@ -5,3 +5,5 @@ example/
 test_parse.js
 *.sst
 package-lock.json
+electron-build/
+config/
