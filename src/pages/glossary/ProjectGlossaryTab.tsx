@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Tag, Pagination, Tooltip, Switch, Divider } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -14,28 +15,37 @@ import {
 } from '@ant-design/icons';
 import { useTask } from '../../components/context/TaskContext';
 import useProjectStore from '../../store/useProjectStore';
+import type { GlossaryEntry, KeywordEntry } from '../../../types/project';
 
 const api = window.electronAPI;
 const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '战舰系统', '游戏术语', '人名/地名', '其他'];
 const KEYWORD_CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '人名', '星球/星系名', '游戏术语', '物品名称', '其他'];
 
-export default function ProjectGlossaryTab({ messageApi }) {
+type GlossaryRow = GlossaryEntry & { _type: 'glossary'; _rowKey: string };
+type KeywordRow = KeywordEntry & { _type: 'extracted'; _rowKey: string };
+type UnifiedRow = GlossaryRow | KeywordRow;
+
+interface ProjectGlossaryTabProps {
+  messageApi: MessageInstance;
+}
+
+export default function ProjectGlossaryTab({ messageApi }: ProjectGlossaryTabProps) {
   const project = useProjectStore(s => s.project);
   const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
   const onUpdateKeywords = useProjectStore(s => s.updateKeywords);
-  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning, isTaskCancelled } = useTask();
+  const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null);
+  const [editingEntry, setEditingEntry] = useState<UnifiedRow | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const handleSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // Inline editing state
-  const [inlineEditKey, setInlineEditKey] = useState(null);
-  const [inlineEditField, setInlineEditField] = useState(null);
+  const [inlineEditKey, setInlineEditKey] = useState<string | null>(null);
+  const [inlineEditField, setInlineEditField] = useState<string | null>(null);
   const [inlineEditValue, setInlineEditValue] = useState('');
 
   // Extraction state
@@ -44,32 +54,32 @@ export default function ProjectGlossaryTab({ messageApi }) {
   const [enableAI, setEnableAI] = useState(true);
   const [extractPhase, setExtractPhase] = useState('');
   const keyCounterRef = useRef(project?.keywords?.length || 0);
-  const batchHandlerRef = useRef(null);
-  const logHandlerRef = useRef(null);
+  const batchHandlerRef = useRef<(() => void) | null>(null);
+  const logHandlerRef = useRef<(() => void) | null>(null);
 
   // View filter: 'all' | 'glossary' | 'extracted'
   const [viewFilter, setViewFilter] = useState('all');
 
-  const glossary = project.glossary || [];
-  const keywords = project.keywords || [];
+  const glossary = project?.glossary || [];
+  const keywords = project?.keywords || [];
   const keywordsRef = useRef(keywords);
   useEffect(() => { keywordsRef.current = keywords; }, [keywords]);
 
   // Build unified table data
-  const unifiedData = React.useMemo(() => {
-    const items = [];
+  const unifiedData: UnifiedRow[] = React.useMemo(() => {
+    const items: UnifiedRow[] = [];
     for (const g of glossary) {
       items.push({
         ...g,
-        _type: 'glossary',
+        _type: 'glossary' as const,
         _rowKey: `g_${g.id}`,
       });
     }
     for (const kw of keywords) {
       items.push({
         ...kw,
-        _type: 'extracted',
-        _rowKey: kw.key || `k_${kw.source}`,
+        _type: 'extracted' as const,
+        _rowKey: (kw as any).key || `k_${kw.source}`,
       });
     }
     return items;
@@ -95,7 +105,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
 
   // ─── Keyword batch/log event listeners ─────────────────────────────
   useEffect(() => {
-    const handler = api.onKeywordBatch((data) => {
+    const handler = (api as any).onKeywordBatch((data: any) => {
       if (data.phase === 'complete') {
         setExtracting(false);
         setExtractPhase('');
@@ -104,7 +114,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
       setExtractPhase(data.phase);
       if (data.keywords && data.keywords.length > 0) {
         const counter = keyCounterRef.current;
-        const newItems = data.keywords.map((kw, i) => ({
+        const newItems: KeywordEntry[] = data.keywords.map((kw: any, i: number) => ({
           ...kw,
           key: `${kw.extractType}_${counter + i}`,
           target: kw.target || '',
@@ -118,20 +128,20 @@ export default function ProjectGlossaryTab({ messageApi }) {
     batchHandlerRef.current = handler;
     return () => {
       if (batchHandlerRef.current) {
-        api.removeKeywordBatchListener(batchHandlerRef.current);
+        (api as any).removeKeywordBatchListener(batchHandlerRef.current);
         batchHandlerRef.current = null;
       }
     };
   }, [onUpdateKeywords, addLog]);
 
   useEffect(() => {
-    const handler = api.onKeywordLog((data) => {
+    const handler = (api as any).onKeywordLog((data: any) => {
       addLog(data.level, data.message, '术语管理');
     });
     logHandlerRef.current = handler;
     return () => {
       if (logHandlerRef.current) {
-        api.removeKeywordLogListener(logHandlerRef.current);
+        (api as any).removeKeywordLogListener(logHandlerRef.current);
         logHandlerRef.current = null;
       }
     };
@@ -151,7 +161,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (record) => {
+  const handleEdit = (record: UnifiedRow) => {
     setEditingEntry(record);
     form.setFieldsValue({ source: record.source, target: record.target, category: record.category });
     setIsModalOpen(true);
@@ -165,7 +175,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
           onUpdateGlossary(glossary.map(g => g.id === editingEntry.id ? { ...g, ...values } : g));
         } else {
           const updated = keywords.map(kw =>
-            kw.key === editingEntry.key ? { ...kw, ...values } : kw
+            (kw as any).key === (editingEntry as any).key ? { ...kw, ...values } : kw
           );
           onUpdateKeywords(updated);
         }
@@ -182,11 +192,11 @@ export default function ProjectGlossaryTab({ messageApi }) {
     } catch (err) { /* form validation */ }
   };
 
-  const handleDelete = (record) => {
+  const handleDelete = (record: UnifiedRow) => {
     if (record._type === 'glossary') {
       onUpdateGlossary(glossary.filter(g => g.id !== record.id));
     } else {
-      onUpdateKeywords(keywords.filter(kw => kw.key !== record.key));
+      onUpdateKeywords(keywords.filter(kw => (kw as any).key !== (record as any).key));
     }
     messageApi.success('术语已删除');
   };
@@ -201,14 +211,14 @@ export default function ProjectGlossaryTab({ messageApi }) {
       cancelText: '取消',
       okButtonProps: { danger: true },
       async onOk() {
-        const glossaryToDelete = [];
-        const keywordKeysToDelete = new Set();
+        const glossaryToDelete: (string | undefined)[] = [];
+        const keywordKeysToDelete = new Set<string>();
         for (const item of unifiedData) {
           if (selectedSet.has(item._rowKey)) {
             if (item._type === 'glossary') {
               glossaryToDelete.push(item.id);
             } else {
-              keywordKeysToDelete.add(item.key);
+              keywordKeysToDelete.add((item as any).key);
             }
           }
         }
@@ -217,7 +227,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
           onUpdateGlossary(glossary.filter(g => !deleteSet.has(g.id)));
         }
         if (keywordKeysToDelete.size > 0) {
-          onUpdateKeywords(keywords.filter(kw => !keywordKeysToDelete.has(kw.key)));
+          onUpdateKeywords(keywords.filter(kw => !keywordKeysToDelete.has((kw as any).key)));
         }
         setSelectedRowKeys([]);
         messageApi.success(`已删除 ${selectedRowKeys.length} 个术语`);
@@ -226,17 +236,17 @@ export default function ProjectGlossaryTab({ messageApi }) {
   };
 
   const handleImport = async () => {
-    const result = await api.importGlossary(project.id);
+    const result = await (api as any).importGlossary(project?.id);
     if (result) { onUpdateGlossary([...glossary, ...result.entries]); messageApi.success('导入 ' + result.imported + ' 条术语'); }
   };
 
   const handleExport = async () => {
-    const result = await api.exportGlossary(project.id);
+    const result = await (api as any).exportGlossary(project?.id);
     if (result) { messageApi.success('导出 ' + result.exported + ' 条术语'); }
   };
 
   // ─── Inline editing helpers ────────────────────────────────────────
-  const startInlineEdit = (record, field) => {
+  const startInlineEdit = (record: UnifiedRow, field: string) => {
     setInlineEditKey(record._rowKey);
     setInlineEditField(field);
     setInlineEditValue(field === 'target' ? (record.target || '') : (record.category || '通用'));
@@ -248,11 +258,11 @@ export default function ProjectGlossaryTab({ messageApi }) {
     if (!record) { cancelInlineEdit(); return; }
     if (record._type === 'glossary') {
       onUpdateGlossary(glossary.map(g =>
-        g.id === record.id ? { ...g, [inlineEditField]: inlineEditValue } : g
+        g.id === record.id ? { ...g, [inlineEditField!]: inlineEditValue } : g
       ));
     } else {
       onUpdateKeywords(keywords.map(kw =>
-        kw.key === record.key ? { ...kw, [inlineEditField]: inlineEditValue } : kw
+        (kw as any).key === (record as any).key ? { ...kw, [inlineEditField!]: inlineEditValue } : kw
       ));
     }
     cancelInlineEdit();
@@ -265,14 +275,14 @@ export default function ProjectGlossaryTab({ messageApi }) {
   };
 
   // ─── Confirmed status toggle ──────────────────────────────────────
-  const toggleConfirmed = (record) => {
+  const toggleConfirmed = (record: UnifiedRow) => {
     if (record._type === 'glossary') {
       onUpdateGlossary(glossary.map(g =>
         g.id === record.id ? { ...g, confirmed: !g.confirmed } : g
       ));
     } else {
       onUpdateKeywords(keywords.map(kw =>
-        kw.key === record.key ? { ...kw, confirmed: !kw.confirmed } : kw
+        (kw as any).key === (record as any).key ? { ...kw, confirmed: !kw.confirmed } : kw
       ));
     }
   };
@@ -295,9 +305,9 @@ export default function ProjectGlossaryTab({ messageApi }) {
     keyCounterRef.current = 0;
     setExtractPhase('structure');
     addLog('info', `开始提取术语: ${targetPath}`, '术语管理');
-    updateTaskProgress('结构提取中...');
+    updateTaskProgress('', '结构提取中...');
     try {
-      const result = await api.extractAllKeywords({
+      const result: any = await (api as any).extractAllKeywords({
         modPath: targetPath,
         glossary: project?.glossary || [],
         skipAI: !enableAI,
@@ -313,10 +323,11 @@ export default function ProjectGlossaryTab({ messageApi }) {
         failTask(errMsg);
         messageApi.error(errMsg);
       }
-    } catch (err) {
-      addLog('error', `提取出错: ${err.message}`, '术语管理');
-      failTask(`提取出错: ${err.message}`);
-      messageApi.error('提取出错: ' + err.message);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `提取出错: ${errMsg}`, '术语管理');
+      failTask(`提取出错: ${errMsg}`);
+      messageApi.error('提取出错: ' + errMsg);
       setExtracting(false);
       setExtractPhase('');
     }
@@ -363,12 +374,12 @@ export default function ProjectGlossaryTab({ messageApi }) {
       .filter(kw => kw.confirmed && kw.target && kw.target.trim())
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category }));
     try {
-      const result = await api.translateKeywords({
-        keywords: unconfirmedKeywords.map(kw => ({ source: kw.source, category: kw.category })),
+      const result: any = await api.translateKeywords({
+        keywords: unconfirmedKeywords.map(kw => ({ source: kw.source, target: kw.target, category: kw.category })),
         extraGlossary: confirmedGlossary,
       });
       if (result?.success) {
-        const translationMap = new Map();
+        const translationMap = new Map<string, string>();
         for (const item of result.data) {
           if (item.source && item.target) {
             translationMap.set(item.source.toLowerCase(), item.target);
@@ -379,7 +390,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
           return translation ? { ...kw, target: translation } : kw;
         });
         onUpdateKeywords(updatedKws);
-        const translated = result.data.filter(d => d.target).length;
+        const translated = result.data.filter((d: any) => d.target).length;
         const msg = `已翻译 ${translated} 个术语`;
         addLog('success', msg, '术语管理');
         completeTask(msg);
@@ -390,10 +401,11 @@ export default function ProjectGlossaryTab({ messageApi }) {
         failTask(errMsg);
         messageApi.error(errMsg);
       }
-    } catch (err) {
-      addLog('error', `翻译出错: ${err.message}`, '术语管理');
-      failTask(`翻译出错: ${err.message}`);
-      messageApi.error('翻译出错: ' + err.message);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `翻译出错: ${errMsg}`, '术语管理');
+      failTask(`翻译出错: ${errMsg}`);
+      messageApi.error('翻译出错: ' + errMsg);
     } finally {
       setTranslating(false);
     }
@@ -409,7 +421,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
     });
     onUpdateGlossary(updatedGlossary);
     const updatedKw = keywords.map(kw => {
-      const rowKey = kw.key || `k_${kw.source}`;
+      const rowKey = (kw as any).key || `k_${kw.source}`;
       return selectedSet.has(rowKey) ? { ...kw, confirmed: true } : kw;
     });
     onUpdateKeywords(updatedKw);
@@ -437,14 +449,14 @@ export default function ProjectGlossaryTab({ messageApi }) {
   // ─── Table columns ────────────────────────────────────────────────
   const allCategories = [...new Set([...CATEGORIES, ...KEYWORD_CATEGORIES])];
 
-  const columns = [
+  const columns: import('antd/es/table').ColumnsType<UnifiedRow> = [
     {
       title: '原文',
       dataIndex: 'source',
       key: 'source',
       width: '25%',
-      sorter: (a, b) => a.source.localeCompare(b.source),
-      render: (text, record) => (
+      sorter: (a: UnifiedRow, b: UnifiedRow) => a.source.localeCompare(b.source),
+      render: (text: string, record: UnifiedRow) => (
         <span style={{ fontSize: 12 }}>
           {record.confirmed && (
             <CheckOutlined style={{ color: '#52c41a', marginRight: 4, fontSize: 10 }} />
@@ -458,7 +470,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
       dataIndex: 'target',
       key: 'target',
       width: '25%',
-      render: (text, record) => {
+      render: (text: string, record: UnifiedRow) => {
         if (inlineEditKey === record._rowKey && inlineEditField === 'target') {
           return (
             <Input
@@ -490,8 +502,8 @@ export default function ProjectGlossaryTab({ messageApi }) {
       key: 'category',
       width: '12%',
       filters: allCategories.map(c => ({ text: c, value: c })),
-      onFilter: (value, record) => record.category === value,
-      render: (text, record) => {
+      onFilter: (value: React.Key | boolean, record: UnifiedRow) => record.category === value,
+      render: (text: string, record: UnifiedRow) => {
         if (inlineEditKey === record._rowKey && inlineEditField === 'category') {
           return (
             <Select
@@ -525,8 +537,8 @@ export default function ProjectGlossaryTab({ messageApi }) {
         { text: '手动', value: 'glossary' },
         { text: '提取', value: 'extracted' },
       ],
-      onFilter: (value, record) => record._type === value,
-      render: (_, record) => (
+      onFilter: (value: React.Key | boolean, record: UnifiedRow) => record._type === value,
+      render: (_: unknown, record: UnifiedRow) => (
         <Tag
           color={record._type === 'glossary' ? 'green' : 'blue'}
           style={{ fontSize: 11 }}
@@ -539,7 +551,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
       title: '操作',
       key: 'actions',
       width: '10%',
-      render: (_, record) => (
+      render: (_: unknown, record: UnifiedRow) => (
         <Space size={4}>
           <Button size="small" type="text" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Tooltip title={record.confirmed ? '取消审核' : '标记已审核'}>
@@ -664,7 +676,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
           <RobotOutlined spin style={{ color: '#1677ff' }} />
           <span style={{ fontSize: 13, color: '#8c8c8c' }}>
             {extractPhase === 'structure' && '正在进行结构化提取...'}
-            {extractPhase === 'ai' && `AI智能提取中... 已发现 ${keywords.filter(k => k.extractType === 'ai').length} 个术语`}
+            {extractPhase === 'ai' && `AI智能提取中... 已发现 ${keywords.filter(k => (k as any).extractType === 'ai').length} 个术语`}
           </span>
         </div>
       )}
@@ -672,7 +684,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
       {/* Table */}
       <div className="keyword-table-wrapper">
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <Table
+          <Table<UnifiedRow>
             dataSource={filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
             columns={columns}
             rowKey="_rowKey"
@@ -681,7 +693,7 @@ export default function ProjectGlossaryTab({ messageApi }) {
             tableLayout="fixed"
             rowSelection={{
               selectedRowKeys,
-              onChange: setSelectedRowKeys,
+              onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
               preserveSelectedRowKeys: true,
             }}
           />

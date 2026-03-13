@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Table, Button, Input, Select, Space, Modal, Form, Popconfirm, Pagination } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -8,18 +9,25 @@ import {
   EditOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
+import type { GlossaryEntry } from '../../../types/project';
 
 const api = window.electronAPI;
 const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '战舰系统', '游戏术语', '人名/地名', '其他'];
 
-export default function PublicGlossaryTab({ messageApi }) {
-  const [entries, setEntries] = useState([]);
+type EntryWithIdx = GlossaryEntry & { _origIdx: number };
+
+interface PublicGlossaryTabProps {
+  messageApi: MessageInstance;
+}
+
+export default function PublicGlossaryTab({ messageApi }: PublicGlossaryTabProps) {
+  const [entries, setEntries] = useState<GlossaryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null);
+  const [editingEntry, setEditingEntry] = useState<EntryWithIdx | null>(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  const handleSearchChange = (e) => { setSearchText(e.target.value); setCurrentPage(1); };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => { setSearchText(e.target.value); setCurrentPage(1); };
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -27,13 +35,13 @@ export default function PublicGlossaryTab({ messageApi }) {
     (async () => {
       setLoading(true);
       const data = await api.getBuiltinGlossary();
-      setEntries(data || []);
+      setEntries((data as any) || []);
       setLoading(false);
     })();
   }, []);
 
-  const filtered = (() => {
-    const base = searchText.trim()
+  const filtered: EntryWithIdx[] = (() => {
+    const base: EntryWithIdx[] = searchText.trim()
       ? entries
           .map((e, i) => ({ ...e, _origIdx: i }))
           .filter(e =>
@@ -51,7 +59,7 @@ export default function PublicGlossaryTab({ messageApi }) {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (record) => {
+  const handleEdit = (record: EntryWithIdx) => {
     setEditingEntry(record);
     form.setFieldsValue({ source: record.source, target: record.target, category: record.category });
     setIsModalOpen(true);
@@ -73,7 +81,7 @@ export default function PublicGlossaryTab({ messageApi }) {
     } catch {}
   };
 
-  const handleDelete = async (origIdx) => {
+  const handleDelete = async (origIdx: number) => {
     const newEntries = entries.filter((_, i) => i !== origIdx);
     await api.saveBuiltinGlossary(newEntries);
     setEntries(newEntries);
@@ -81,7 +89,7 @@ export default function PublicGlossaryTab({ messageApi }) {
   };
 
   const handleImport = async () => {
-    const result = await api.importBuiltinGlossary();
+    const result: any = await (api as any).importBuiltinGlossary();
     if (result?.success) {
       setEntries(result.data);
       messageApi.success(`导入成功，共 ${result.data.length} 条`);
@@ -89,7 +97,7 @@ export default function PublicGlossaryTab({ messageApi }) {
   };
 
   const handleExport = async () => {
-    const result = await api.exportBuiltinGlossary();
+    const result: any = await (api as any).exportBuiltinGlossary();
     if (result?.success) messageApi.success(`已导出 ${result.exported} 条术语`);
   };
 
@@ -101,7 +109,7 @@ export default function PublicGlossaryTab({ messageApi }) {
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk: async () => {
-        const result = await api.resetBuiltinGlossary();
+        const result: any = await (api as any).resetBuiltinGlossary();
         if (result?.success) {
           setEntries(result.data || []);
           messageApi.success('公共术语表已重置为默认值');
@@ -110,14 +118,14 @@ export default function PublicGlossaryTab({ messageApi }) {
     });
   };
 
-  const columns = [
-    { title: '原文', dataIndex: 'source', key: 'source', width: '30%', sorter: (a, b) => a.source.localeCompare(b.source) },
-    { title: '译文', dataIndex: 'target', key: 'target', width: '30%', sorter: (a, b) => a.target.localeCompare(b.target) },
+  const columns: import('antd/es/table').ColumnsType<EntryWithIdx> = [
+    { title: '原文', dataIndex: 'source', key: 'source', width: '30%', sorter: (a: EntryWithIdx, b: EntryWithIdx) => a.source.localeCompare(b.source) },
+    { title: '译文', dataIndex: 'target', key: 'target', width: '30%', sorter: (a: EntryWithIdx, b: EntryWithIdx) => a.target.localeCompare(b.target) },
     { title: '分类', dataIndex: 'category', key: 'category', width: '20%',
       filters: CATEGORIES.map(c => ({ text: c, value: c })),
-      onFilter: (value, record) => record.category === value },
+      onFilter: (value: React.Key | boolean, record: EntryWithIdx) => record.category === value },
     { title: '操作', key: 'actions', width: '20%',
-      render: (_, record) => (
+      render: (_: unknown, record: EntryWithIdx) => (
         <Space size={4}>
           <Button size="small" type="text" icon={<EditOutlined />}
             onClick={() => handleEdit(record)} />

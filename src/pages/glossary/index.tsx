@@ -1,10 +1,14 @@
-import React from 'react';
 import { Tabs } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import { BookOutlined } from '@ant-design/icons';
 import ProjectGlossaryTab from './ProjectGlossaryTab';
 import PublicGlossaryTab from './PublicGlossaryTab';
 
-export default function GlossaryPanel({ messageApi }) {
+interface GlossaryPanelProps {
+  messageApi: MessageInstance;
+}
+
+export default function GlossaryPanel({ messageApi }: GlossaryPanelProps) {
   const tabItems = [
     {
       key: 'project',
