@@ -12,7 +12,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { TranslationConfig } from '../../types/translator';
-import type { GlossaryEntry } from '../../types/glossary';
+import type { GlossaryEntry } from '../../types/project';
 
 // Default AI model configuration – prompts are stored in full so the config
 // file is always self-contained and directly editable by the user.

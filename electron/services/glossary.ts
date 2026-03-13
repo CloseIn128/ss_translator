@@ -8,7 +8,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from './uuid';
-import type { GlossaryEntry, GlossaryImportEntry } from '../../types/glossary';
+import type { GlossaryEntry } from '../../types/project';
+import type { GlossaryImportEntry } from '../../types/glossary';
 
 interface AddEntryInput {
   projectId: string;

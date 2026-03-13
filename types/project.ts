@@ -26,9 +26,11 @@ export interface TranslationEntry {
 }
 
 export interface GlossaryEntry {
+  id?: string;
   source: string;
   target: string;
   category: string;
+  createdAt?: number;
   confirmed?: boolean;
 }
 
