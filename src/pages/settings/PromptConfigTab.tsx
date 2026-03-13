@@ -1,20 +1,24 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Input, Button, Card, Modal } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import type { MessageInstance } from 'antd/es/message/interface';
 
 const api = window.electronAPI;
 
-export default function PromptConfigTab({ messageApi }) {
+interface PromptConfigTabProps {
+  messageApi: MessageInstance;
+}
+
+export default function PromptConfigTab({ messageApi }: PromptConfigTabProps) {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [defaults, setDefaults] = useState({ systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
-  const saveTimerRef = useRef(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
       const [config, defaultPrompts] = await Promise.all([
-        api.getAIConfig(),
+        api.getConfig(),
         api.getDefaultPrompts(),
       ]);
       setDefaults(defaultPrompts || { systemPrompt: '', polishPrompt: '', keywordPrompt: '' });
@@ -34,7 +38,7 @@ export default function PromptConfigTab({ messageApi }) {
     saveTimerRef.current = setTimeout(async () => {
       try {
         const values = await form.validateFields();
-        await api.configureAI(values);
+        await api.configure(values);
       } catch { /* validation error */ }
     }, 1000);
   }, [form]);
@@ -124,7 +128,7 @@ export default function PromptConfigTab({ messageApi }) {
                   setTimeout(async () => {
                     try {
                       const values = await form.validateFields();
-                      await api.configureAI(values);
+                      await api.configure(values);
                       messageApi.success('提示词已重置并保存');
                     } catch { /* ignore */ }
                   }, 100);

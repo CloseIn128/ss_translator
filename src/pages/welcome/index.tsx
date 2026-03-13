@@ -1,8 +1,12 @@
-import React from 'react';
 import { Button } from 'antd';
 import { PlusOutlined, FolderOpenOutlined } from '@ant-design/icons';
 
-export default function WelcomePage({ onNewProject, onLoadProject }) {
+interface WelcomePageProps {
+  onNewProject: () => void;
+  onLoadProject: () => void;
+}
+
+export default function WelcomePage({ onNewProject, onLoadProject }: WelcomePageProps) {
   return (
     <div className="welcome-page">
       <h1>🚀 远行星号 MOD 翻译工具</h1>

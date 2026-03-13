@@ -73,7 +73,7 @@ export interface ElectronAPI {
   saveBuiltinGlossary: (glossary: GlossaryEntry[]) => Promise<ApiResult>;
 
   // AI Translation
-  configure: (config: any) => Promise<void>;
+  configure: (config: any) => Promise<any>;
   getConfig: () => Promise<any>;
   translate: (options: TranslateOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
   polish: (options: PolishOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
@@ -133,6 +133,10 @@ export interface ElectronAPI {
   getRequestHistory: () => Promise<any[]>;
   getActiveRequests: () => Promise<Map<string, any>>;
   cancelRequest: (requestId: string) => Promise<boolean>;
+  getRequestDetail: (requestId: string) => Promise<any>;
+  clearRequestHistory: () => Promise<void>;
+  resetAIConfig: () => Promise<ApiResult<any>>;
+  parseMod: (modPath: string) => Promise<ApiResult<any>>;
 }
 
 declare global {

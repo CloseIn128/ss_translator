@@ -1,4 +1,3 @@
-import React from 'react';
 import { Form, Slider, Card } from 'antd';
 import { ControlOutlined } from '@ant-design/icons';
 import useProjectStore from '../../store/useProjectStore';

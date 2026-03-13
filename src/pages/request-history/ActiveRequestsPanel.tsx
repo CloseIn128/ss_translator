@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tag, Button } from 'antd';
 import {
   EyeOutlined,
@@ -6,7 +5,7 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 
-const TYPE_LABELS = {
+const TYPE_LABELS: Record<string, string> = {
   'batch-translate': '批量翻译',
   'entry-polish': '条目润色',
   'keyword-extract': '关键词提取',
@@ -15,13 +14,18 @@ const TYPE_LABELS = {
   'unknown': '未知',
 };
 
-function formatTime(isoStr) {
+function formatTime(isoStr: string) {
   if (!isoStr) return '-';
   const d = new Date(isoStr);
   return d.toLocaleTimeString('zh-CN', { hour12: false });
 }
 
-export default function ActiveRequestsPanel({ activeRequests, onViewDetail }) {
+interface ActiveRequestsPanelProps {
+  activeRequests: any[];
+  onViewDetail: (id: string) => void;
+}
+
+export default function ActiveRequestsPanel({ activeRequests, onViewDetail }: ActiveRequestsPanelProps) {
   if (activeRequests.length === 0) {
     return (
       <div style={{ padding: 24, textAlign: 'center', color: '#555' }}>
@@ -33,7 +37,7 @@ export default function ActiveRequestsPanel({ activeRequests, onViewDetail }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {activeRequests.map(req => (
+      {activeRequests.map((req: any) => (
         <div key={req.id} style={{
           padding: '8px 12px',
           background: 'var(--bg-card)',

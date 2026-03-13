@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal, Tag, Descriptions, Tabs, Empty } from 'antd';
 import {
   SyncOutlined,
@@ -8,7 +8,7 @@ import {
 
 const api = window.electronAPI;
 
-const TYPE_LABELS = {
+const TYPE_LABELS: Record<string, string> = {
   'batch-translate': '批量翻译',
   'entry-polish': '条目润色',
   'keyword-extract': '关键词提取',
@@ -17,40 +17,46 @@ const TYPE_LABELS = {
   'unknown': '未知',
 };
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, { color: string; icon: React.ReactNode; text: string }> = {
   pending: { color: 'processing', icon: <SyncOutlined spin />, text: '进行中' },
   success: { color: 'success', icon: <CheckCircleOutlined />, text: '成功' },
   error: { color: 'error', icon: <CloseCircleOutlined />, text: '失败' },
 };
 
-function formatTime(isoStr) {
+function formatTime(isoStr: string) {
   if (!isoStr) return '-';
   const d = new Date(isoStr);
   return d.toLocaleTimeString('zh-CN', { hour12: false });
 }
 
-function formatDuration(ms) {
+function formatDuration(ms: number | null) {
   if (ms == null) return '-';
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
-function formatResponseRaw(raw) {
+function formatResponseRaw(raw: string) {
   if (!raw) return '(空)';
   try { return JSON.stringify(JSON.parse(raw), null, 2); }
   catch { return raw; }
 }
 
-const preStyle = {
+const preStyle: React.CSSProperties = {
   background: '#111', padding: 12, borderRadius: 6,
   fontSize: 12, maxHeight: 300, overflow: 'auto',
   whiteSpace: 'pre-wrap', wordBreak: 'break-word',
 };
 
-export default function RequestDetailModal({ requestId, open, onClose }) {
-  const [detail, setDetail] = useState(null);
+interface RequestDetailModalProps {
+  requestId: string | null;
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function RequestDetailModal({ requestId, open, onClose }: RequestDetailModalProps) {
+  const [detail, setDetail] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const refreshRef = useRef(null);
+  const refreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (open && requestId != null) {
@@ -82,7 +88,7 @@ export default function RequestDetailModal({ requestId, open, onClose }) {
     };
   }, [open, requestId]);
 
-  const statusInfo = detail ? (STATUS_MAP[detail.status] || STATUS_MAP.pending) : null;
+  const statusInfo = detail ? (STATUS_MAP[detail.status] || STATUS_MAP.pending) : STATUS_MAP.pending;
 
   return (
     <Modal
