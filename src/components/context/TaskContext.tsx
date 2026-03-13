@@ -35,7 +35,7 @@ export interface TaskContextValue {
   clearLogs: () => void;
   currentTask: Task | null;
   startTask: (name: string) => number | null;
-  updateTaskProgress: (progress: string, message: string) => void;
+  updateTaskProgress: (progress: string, message?: string) => void;
   completeTask: (message?: string) => void;
   failTask: (error?: string) => void;
   cancelTask: () => void;
@@ -102,7 +102,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     return id;
   }, [currentTask, addLog]);
 
-  const updateTaskProgress = useCallback((progress: string, message: string) => {
+  const updateTaskProgress = useCallback((progress: string, message?: string) => {
     setCurrentTask(prev => {
       if (!prev || prev.status !== 'running') return prev;
       return { ...prev, progress: progress ?? prev.progress, message: message ?? prev.message };

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Input, Select, Button, Switch } from 'antd';
 import {
   HighlightOutlined,
@@ -7,6 +6,27 @@ import {
   DeleteOutlined,
   DiffOutlined,
 } from '@ant-design/icons';
+
+interface EditorHeaderProps {
+  stats: { total: number; translated: number };
+  filteredCount: number;
+  searchText: string;
+  onSearchChange: (value: string) => void;
+  categoryFilter: string;
+  onCategoryChange: (value: string) => void;
+  categories: string[];
+  statusFilter: string;
+  onStatusChange: (value: string) => void;
+  showIgnored: boolean;
+  onShowIgnoredChange: (value: boolean) => void;
+  batchTranslating: boolean;
+  isTaskRunning: boolean;
+  onBatchTranslate: () => void;
+  onBatchPolish: () => void;
+  onClearTranslations: () => void;
+  diffMode: boolean;
+  onDiffModeChange: (value: boolean) => void;
+}
 
 export default function EditorHeader({
   stats,
@@ -27,7 +47,7 @@ export default function EditorHeader({
   onClearTranslations,
   diffMode,
   onDiffModeChange,
-}) {
+}: EditorHeaderProps) {
   return (
     <div className="editor-header">
       {/* Filter bar */}
@@ -46,7 +66,7 @@ export default function EditorHeader({
           onChange={onCategoryChange}
           style={{ width: 140 }}
           size="small"
-          options={categories.map(c => ({
+          options={categories.map((c: string) => ({
             value: c,
             label: c === 'all' ? '全部分类' : c,
           }))}

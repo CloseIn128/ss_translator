@@ -16,6 +16,21 @@ export interface TranslateOptions {
   modPrompt?: string;
 }
 
+export interface TranslateResultEntry {
+  id: string;
+  target: string;
+  translated?: string;
+  status?: string;
+  error?: string;
+  original?: string;
+}
+
+export interface BatchProgressData {
+  completed: number;
+  total: number;
+  batchResults?: Array<{ id: string; [key: string]: any }>;
+}
+
 export interface PolishOptions {
   entries: Array<{ id: string; target: string; context?: string }>;
   glossary?: GlossaryEntry[];
@@ -60,11 +75,18 @@ export interface ElectronAPI {
   // AI Translation
   configure: (config: any) => Promise<void>;
   getConfig: () => Promise<any>;
-  translate: (options: TranslateOptions) => Promise<ApiResult<Array<{ id: string; target: string }>>>;
-  polish: (options: PolishOptions) => Promise<ApiResult<Array<{ id: string; target: string }>>>;
+  translate: (options: TranslateOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
+  polish: (options: PolishOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
+  polishBatch: (options: PolishOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
   translateSingle: (source: string, glossary?: GlossaryEntry[], modPrompt?: string) => Promise<ApiResult<string>>;
   polishSingle: (target: string, glossary?: GlossaryEntry[], modPrompt?: string) => Promise<ApiResult<string>>;
   getDefaultPrompts: () => Promise<{ systemPrompt: string; polishPrompt: string; keywordPrompt: string }>;
+
+  // Translate/polish progress listeners
+  onTranslateProgress: (callback: (data: BatchProgressData) => void) => (() => void);
+  removeTranslateProgressListener: (handler: (() => void) | null) => void;
+  onPolishProgress: (callback: (data: BatchProgressData) => void) => (() => void);
+  removePolishProgressListener: (handler: (() => void) | null) => void;
 
   // Keywords
   extractKeywords: (entries: any[], builtinGlossary: GlossaryEntry[], projectGlossary: GlossaryEntry[]) => Promise<void>;
@@ -93,7 +115,7 @@ export interface ElectronAPI {
   clearLegacyTranslation: () => Promise<ApiResult>;
 
   // File preview
-  getFilePreview: (filePath: string, entries: any[]) => Promise<ApiResult<{ original: string; translated: string }>>;
+  getFilePreview: (options: { modPath: string; relFile: string; entries: any[] }) => Promise<ApiResult<{ original: string; translated: string }>>;
 
   // Notifications
   sendNotification: (title: string, body: string) => Promise<void>;

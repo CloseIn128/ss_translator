@@ -1,8 +1,19 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Modal } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import { useTask } from '../../components/context/TaskContext';
+import type { Project, TranslationEntry, GlossaryEntry } from '../../../types';
 
 const api = window.electronAPI;
+
+interface UseTranslationActionsOptions {
+  project: Project | null;
+  filteredEntries: TranslationEntry[];
+  mergedGlossary: GlossaryEntry[];
+  onUpdateEntry: (entryId: string, updates: Record<string, any>) => void;
+  onBatchUpdate: (updates: Array<{ id: string; [key: string]: any }>) => void;
+  messageApi: MessageInstance;
+}
 
 export default function useTranslationActions({
   project,
@@ -11,11 +22,11 @@ export default function useTranslationActions({
   onUpdateEntry,
   onBatchUpdate,
   messageApi,
-}) {
+}: UseTranslationActionsOptions) {
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning, isTaskCancelled } = useTask();
-  const modPrompt = project.modPrompt || '';
-  const progressHandlerRef = useRef(null);
-  const [translatingIds, setTranslatingIds] = useState(new Set());
+  const modPrompt = project?.modPrompt || '';
+  const progressHandlerRef = useRef<(() => void) | null>(null);
+  const [translatingIds, setTranslatingIds] = useState<Set<string>>(new Set());
   const [batchTranslating, setBatchTranslating] = useState(false);
 
   // Cleanup progress event listeners on unmount
@@ -30,31 +41,32 @@ export default function useTranslationActions({
   }, []);
 
   // Translate single entry
-  const handleTranslate = useCallback(async (entry) => {
+  const handleTranslate = useCallback(async (entry: TranslationEntry) => {
     setTranslatingIds(prev => new Set(prev).add(entry.id));
     addLog('info', `翻译条目: ${entry.original.slice(0, 60)}...`, '翻译编辑');
     try {
       const result = await api.translate({
-        entries: [{ id: entry.id, original: entry.original, context: entry.context }],
+        entries: [{ id: entry.id, source: entry.original, context: entry.context }],
         glossary: mergedGlossary,
         modPrompt,
       });
-      if (result?.success && result.data?.length > 0) {
+      if (result?.success && result.data && result.data.length > 0) {
         const t = result.data[0];
-        onUpdateEntry(entry.id, { translated: t.translated, status: t.status });
+        onUpdateEntry(entry.id, { translated: t.translated || t.target, status: t.status || 'translated' });
         if (t.status === 'error') {
           addLog('error', `翻译失败: ${t.error || '未知错误'}`, '翻译编辑');
           messageApi.error(t.error || '翻译失败');
         } else {
-          addLog('success', `翻译完成: "${entry.original.slice(0, 30)}" → "${(t.translated || '').slice(0, 30)}"`, '翻译编辑');
+          addLog('success', `翻译完成: "${entry.original.slice(0, 30)}" → "${(t.translated || t.target || '').slice(0, 30)}"`, '翻译编辑');
         }
       } else {
         addLog('error', `翻译请求失败: ${result?.error || '未知错误'}`, '翻译编辑');
         messageApi.error(result?.error || '翻译请求失败');
       }
-    } catch (err) {
-      addLog('error', `翻译出错: ${err.message}`, '翻译编辑');
-      messageApi.error('翻译出错: ' + err.message);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `翻译出错: ${errMsg}`, '翻译编辑');
+      messageApi.error('翻译出错: ' + errMsg);
     } finally {
       setTranslatingIds(prev => {
         const s = new Set(prev);
@@ -65,7 +77,7 @@ export default function useTranslationActions({
   }, [mergedGlossary, modPrompt, onUpdateEntry, messageApi, addLog]);
 
   // Polish single entry
-  const handlePolish = useCallback(async (entry) => {
+  const handlePolish = useCallback(async (entry: TranslationEntry) => {
     if (!entry.translated) {
       messageApi.warning('请先翻译该条目');
       return;
@@ -74,20 +86,22 @@ export default function useTranslationActions({
     addLog('info', `润色条目: "${entry.original.slice(0, 40)}"`, '翻译编辑');
     try {
       const result = await api.polish({
-        entry: { id: entry.id, original: entry.original, translated: entry.translated },
+        entries: [{ id: entry.id, target: entry.translated, context: entry.context }],
         glossary: mergedGlossary,
         modPrompt,
       });
-      if (result?.success) {
-        onUpdateEntry(entry.id, { translated: result.data.translated, status: 'polished' });
-        addLog('success', `润色完成: "${(result.data.translated || '').slice(0, 40)}"`, '翻译编辑');
+      if (result?.success && result.data) {
+        const t = result.data[0];
+        onUpdateEntry(entry.id, { translated: t.translated || t.target, status: 'polished' });
+        addLog('success', `润色完成: "${(t.translated || t.target || '').slice(0, 40)}"`, '翻译编辑');
       } else {
         addLog('error', `润色失败: ${result?.error || '未知错误'}`, '翻译编辑');
         messageApi.error(result?.error || '润色失败');
       }
-    } catch (err) {
-      addLog('error', `润色出错: ${err.message}`, '翻译编辑');
-      messageApi.error('润色出错: ' + err.message);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `润色出错: ${errMsg}`, '翻译编辑');
+      messageApi.error('润色出错: ' + errMsg);
     } finally {
       setTranslatingIds(prev => {
         const s = new Set(prev);
@@ -99,7 +113,7 @@ export default function useTranslationActions({
 
   // Clear all translations in current scope
   const handleClearTranslations = useCallback(() => {
-    const translatedEntries = filteredEntries.filter(e => !e.ignored && e.status !== 'untranslated');
+    const translatedEntries = filteredEntries.filter((e: TranslationEntry) => !e.ignored && e.status !== 'untranslated');
     if (translatedEntries.length === 0) {
       messageApi.info('当前筛选下没有已翻译的条目');
       return;
@@ -112,10 +126,10 @@ export default function useTranslationActions({
       cancelText: '取消',
       okButtonProps: { danger: true },
       onOk() {
-        const updates = translatedEntries.map(e => ({
+        const updates = translatedEntries.map((e: TranslationEntry) => ({
           id: e.id,
           translated: '',
-          status: 'untranslated',
+          status: 'untranslated' as const,
         }));
         onBatchUpdate(updates);
         messageApi.success(`已清空 ${translatedEntries.length} 条翻译`);
@@ -126,7 +140,7 @@ export default function useTranslationActions({
 
   // Batch translate all entries in current filter
   const handleBatchTranslate = useCallback(async () => {
-    const targetEntries = filteredEntries.filter(e => !e.ignored);
+    const targetEntries = filteredEntries.filter((e: TranslationEntry) => !e.ignored);
     if (targetEntries.length === 0) {
       messageApi.info('当前筛选下没有条目');
       return;
@@ -165,9 +179,9 @@ export default function useTranslationActions({
 
         (async () => {
           try {
-            const batchInput = targetEntries.map(e => ({
+            const batchInput = targetEntries.map((e: TranslationEntry) => ({
               id: e.id,
-              original: e.original,
+              source: e.original,
               context: e.context,
             }));
             updateTaskProgress(`0/${targetEntries.length}`);
@@ -177,9 +191,9 @@ export default function useTranslationActions({
               modPrompt,
             });
             if (isTaskCancelled()) return;
-            if (result?.success) {
+            if (result?.success && result.data) {
               onBatchUpdate(result.data);
-              const successCount = result.data.filter(r => r.status === 'translated').length;
+              const successCount = result.data.filter((r) => r.status === 'translated').length;
               const msg = `批量翻译完成：${successCount}/${targetEntries.length} 成功`;
               addLog('success', msg, '翻译编辑');
               for (const r of result.data.slice(0, 5)) {
@@ -195,11 +209,12 @@ export default function useTranslationActions({
               failTask(errMsg);
               messageApi.error(errMsg);
             }
-          } catch (err) {
+          } catch (err: unknown) {
             if (!isTaskCancelled()) {
-              addLog('error', `批量翻译出错: ${err.message}`, '翻译编辑');
-              failTask(`批量翻译出错: ${err.message}`);
-              messageApi.error('批量翻译出错: ' + err.message);
+              const errMsg = err instanceof Error ? err.message : String(err);
+              addLog('error', `批量翻译出错: ${errMsg}`, '翻译编辑');
+              failTask(`批量翻译出错: ${errMsg}`);
+              messageApi.error('批量翻译出错: ' + errMsg);
             }
           } finally {
             setBatchTranslating(false);
@@ -215,7 +230,7 @@ export default function useTranslationActions({
 
   // Batch polish all translated
   const handleBatchPolish = useCallback(async () => {
-    const translated = filteredEntries.filter(e => !e.ignored && e.status === 'translated');
+    const translated = filteredEntries.filter((e: TranslationEntry) => !e.ignored && e.status === 'translated');
     if (translated.length === 0) {
       messageApi.info('当前筛选下没有可润色的条目');
       return;
@@ -253,10 +268,9 @@ export default function useTranslationActions({
 
         (async () => {
           try {
-            const batchInput = translated.map(e => ({
+            const batchInput = translated.map((e: TranslationEntry) => ({
               id: e.id,
-              original: e.original,
-              translated: e.translated,
+              target: e.translated,
               context: e.context,
             }));
             updateTaskProgress(`0/${translated.length}`);
@@ -266,9 +280,9 @@ export default function useTranslationActions({
               modPrompt,
             });
             if (isTaskCancelled()) return;
-            if (result?.success) {
+            if (result?.success && result.data) {
               onBatchUpdate(result.data);
-              const successCount = result.data.filter(r => r.status === 'polished').length;
+              const successCount = result.data.filter((r) => r.status === 'polished').length;
               const msg = `批量润色完成：${successCount}/${translated.length} 成功`;
               addLog('success', msg, '翻译编辑');
               completeTask(msg);
@@ -279,11 +293,12 @@ export default function useTranslationActions({
               failTask(errMsg);
               messageApi.error(errMsg);
             }
-          } catch (err) {
+          } catch (err: unknown) {
             if (!isTaskCancelled()) {
-              addLog('error', `批量润色出错: ${err.message}`, '翻译编辑');
-              failTask(`批量润色出错: ${err.message}`);
-              messageApi.error('批量润色出错: ' + err.message);
+              const errMsg = err instanceof Error ? err.message : String(err);
+              addLog('error', `批量润色出错: ${errMsg}`, '翻译编辑');
+              failTask(`批量润色出错: ${errMsg}`);
+              messageApi.error('批量润色出错: ' + errMsg);
             }
           } finally {
             setBatchTranslating(false);

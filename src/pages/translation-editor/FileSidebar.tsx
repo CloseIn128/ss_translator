@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { Tooltip } from 'antd';
 import {
   FileTextOutlined,
@@ -8,17 +8,34 @@ import {
   RightOutlined,
   DownOutlined,
 } from '@ant-design/icons';
+import type { TranslationEntry } from '../../../types';
 
 const MIN_SIDEBAR_WIDTH = 160;
 const MAX_SIDEBAR_WIDTH = 500;
 const DEFAULT_SIDEBAR_WIDTH = 220;
 
+interface FileStat {
+  file: string;
+  total: number;
+  translated: number;
+  percent: number;
+}
+
+interface FileTreeNode {
+  name: string;
+  path: string;
+  children: FileTreeNode[];
+  files: FileStat[];
+  total: number;
+  translated: number;
+}
+
 /**
  * Build a tree structure from flat file paths.
  * Each node: { name, path, children[], files[], total, translated }
  */
-function buildFileTree(fileStats) {
-  const root = { name: '', path: '', children: [], files: [], total: 0, translated: 0 };
+function buildFileTree(fileStats: FileStat[]): FileTreeNode {
+  const root: FileTreeNode = { name: '', path: '', children: [], files: [], total: 0, translated: 0 };
 
   for (const fs of fileStats) {
     const parts = fs.file.split('/');
@@ -47,9 +64,9 @@ function buildFileTree(fileStats) {
   }
 
   // Sort children and files alphabetically
-  function sortNode(node) {
-    node.children.sort((a, b) => a.name.localeCompare(b.name));
-    node.files.sort((a, b) => a.file.localeCompare(b.file));
+  function sortNode(node: FileTreeNode) {
+    node.children.sort((a: FileTreeNode, b: FileTreeNode) => a.name.localeCompare(b.name));
+    node.files.sort((a: FileStat, b: FileStat) => a.file.localeCompare(b.file));
     for (const child of node.children) sortNode(child);
   }
   sortNode(root);
@@ -57,7 +74,16 @@ function buildFileTree(fileStats) {
   return root;
 }
 
-function FolderNode({ node, depth, selectedFile, onSelectFile, expandedFolders, toggleFolder }) {
+interface FolderNodeProps {
+  node: FileTreeNode;
+  depth: number;
+  selectedFile: string | null;
+  onSelectFile: (file: string | null) => void;
+  expandedFolders: Set<string>;
+  toggleFolder: (path: string) => void;
+}
+
+function FolderNode({ node, depth, selectedFile, onSelectFile, expandedFolders, toggleFolder }: FolderNodeProps) {
   const isExpanded = expandedFolders.has(node.path);
   const percent = node.total > 0 ? Math.round((node.translated / node.total) * 100) : 0;
 
@@ -81,7 +107,7 @@ function FolderNode({ node, depth, selectedFile, onSelectFile, expandedFolders, 
       </div>
       {isExpanded && (
         <>
-          {node.children.map(child => (
+          {node.children.map((child: FileTreeNode) => (
             <FolderNode
               key={child.path}
               node={child}
@@ -92,7 +118,7 @@ function FolderNode({ node, depth, selectedFile, onSelectFile, expandedFolders, 
               toggleFolder={toggleFolder}
             />
           ))}
-          {node.files.map(({ file, total, translated, percent: filePct }) => (
+          {node.files.map(({ file, total, translated, percent: filePct }: FileStat) => (
             <Tooltip key={file} title={file} placement="right" mouseEnterDelay={0.5}>
               <div
                 className={`file-tree-item${selectedFile === file ? ' active' : ''}`}
@@ -120,20 +146,26 @@ function FolderNode({ node, depth, selectedFile, onSelectFile, expandedFolders, 
   );
 }
 
-export default function FileSidebar({ entries, selectedFile, onSelectFile }) {
+interface FileSidebarProps {
+  entries: TranslationEntry[];
+  selectedFile: string | null;
+  onSelectFile: (file: string | null) => void;
+}
+
+export default function FileSidebar({ entries, selectedFile, onSelectFile }: FileSidebarProps) {
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const dragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(0);
 
-  const handleResizeStart = useCallback((e) => {
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragging.current = true;
     startX.current = e.clientX;
     startWidth.current = sidebarWidth;
-    let rafId = null;
+    let rafId: number | null = null;
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (!dragging.current) return;
       if (rafId) return;
       rafId = requestAnimationFrame(() => {
@@ -155,7 +187,7 @@ export default function FileSidebar({ entries, selectedFile, onSelectFile }) {
   }, [sidebarWidth]);
 
   const fileStats = useMemo(() => {
-    const map = {};
+    const map: Record<string, { total: number; translated: number }> = {};
     for (const entry of entries) {
       if (!map[entry.file]) map[entry.file] = { total: 0, translated: 0 };
       map[entry.file].total++;
@@ -184,11 +216,11 @@ export default function FileSidebar({ entries, selectedFile, onSelectFile }) {
   const tree = useMemo(() => buildFileTree(fileStats), [fileStats]);
 
   // Expand all folders by default; re-initialize when tree changes
-  const [expandedFolders, setExpandedFolders] = useState(new Set());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const allPaths = new Set();
-    function collectPaths(node) {
+    const allPaths = new Set<string>();
+    function collectPaths(node: FileTreeNode) {
       if (node.path) allPaths.add(node.path);
       for (const child of node.children) collectPaths(child);
     }
@@ -196,7 +228,7 @@ export default function FileSidebar({ entries, selectedFile, onSelectFile }) {
     setExpandedFolders(allPaths);
   }, [tree]);
 
-  const toggleFolder = useCallback((path) => {
+  const toggleFolder = useCallback((path: string) => {
     setExpandedFolders(prev => {
       const next = new Set(prev);
       if (next.has(path)) next.delete(path);
