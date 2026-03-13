@@ -13,10 +13,8 @@
 
 /**
  * Strip comments and normalize relaxed JSON to parseable JSON
- * @param {string} text - Raw relaxed JSON text
- * @returns {string} - Standard JSON string
  */
-function relaxedJsonToJson(text) {
+function relaxedJsonToJson(text: string): string {
   let result = '';
   let i = 0;
   let inString = false;
@@ -73,14 +71,26 @@ function relaxedJsonToJson(text) {
     if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(next))) {
       let num = '';
       let j = i;
-      if (text[j] === '-') { num += '-'; j++; }
-      while (j < text.length && /[0-9]/.test(text[j])) { num += text[j]; j++; }
+      if (text[j] === '-') {
+        num += '-';
+        j++;
+      }
+      while (j < text.length && /[0-9]/.test(text[j])) {
+        num += text[j];
+        j++;
+      }
       if (j < text.length && text[j] === '.') {
-        num += '.'; j++;
-        while (j < text.length && /[0-9]/.test(text[j])) { num += text[j]; j++; }
+        num += '.';
+        j++;
+        while (j < text.length && /[0-9]/.test(text[j])) {
+          num += text[j];
+          j++;
+        }
       }
       // Strip Java float suffix 'f' or 'F'
-      if (j < text.length && (text[j] === 'f' || text[j] === 'F')) { j++; }
+      if (j < text.length && (text[j] === 'f' || text[j] === 'F')) {
+        j++;
+      }
       result += num;
       i = j;
       continue;
@@ -147,14 +157,12 @@ function relaxedJsonToJson(text) {
 
 /**
  * Parse Starsector relaxed JSON
- * @param {string} text - Raw file content
- * @returns {object} - Parsed JSON object
  */
-function parseRelaxedJson(text) {
+export function parseRelaxedJson(text: string): any {
   const jsonStr = relaxedJsonToJson(text);
   try {
     return JSON.parse(jsonStr);
-  } catch (e) {
+  } catch (e: any) {
     // Try trimming trailing commas/whitespace after root closing brace
     const trimmed = jsonStr.replace(/\}\s*,\s*$/, '}').replace(/\]\s*,\s*$/, ']');
     try {
@@ -162,7 +170,7 @@ function parseRelaxedJson(text) {
     } catch (_) {
       // ignore and throw original error
     }
-    const match = e.message.match(/position (\d+)/);
+    const match = e.message?.match(/position (\d+)/);
     if (match) {
       const pos = parseInt(match[1]);
       const context = jsonStr.substring(Math.max(0, pos - 50), pos + 50);
@@ -172,6 +180,7 @@ function parseRelaxedJson(text) {
   }
 }
 
-module.exports = { parseRelaxedJson, relaxedJsonToJson };
+export { relaxedJsonToJson };
+
 
 
