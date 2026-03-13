@@ -11,9 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "noEmit": true,
+    "outDir": "./electron-dist",
+    "rootDir": ".",
     "types": ["node"]
   },
   "include": ["electron/**/*", "types/**/*"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "electron-dist"]
 }

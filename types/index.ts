@@ -9,3 +9,4 @@ export * from './translator';
 export * from './glossary';
 export * from './modParser';
 export * from './legacy';
+export * from './ipc';

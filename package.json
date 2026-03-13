@@ -2,17 +2,17 @@
   "name": "ss_translator",
   "version": "1.0.0",
   "description": "远行星号 MOD 翻译工具",
-  "main": "electron/main.js",
+  "main": "electron-dist/electron/main.js",
   "scripts": {
     "dev:vite": "vite",
-    "dev:electron": "wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
+    "dev:electron": "wait-on http://localhost:5173 && tsc -p tsconfig.electron.json && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
     "dev": "concurrently \"pnpm dev:vite\" \"pnpm dev:electron\"",
     "build": "vite build",
-    "build:electron": "tsc -p tsconfig.electron.json",
+    "build:electron": "tsc -p tsconfig.electron.json && cp -r electron/data electron-dist/electron/",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit",
-    "start": "electron .",
-    "pack": "electron-builder --dir",
-    "dist": "vite build && electron-builder",
+    "start": "tsc -p tsconfig.electron.json && cp -r electron/data electron-dist/electron/ && electron .",
+    "pack": "vite build && tsc -p tsconfig.electron.json && cp -r electron/data electron-dist/electron/ && electron-builder --dir",
+    "dist": "vite build && tsc -p tsconfig.electron.json && cp -r electron/data electron-dist/electron/ && electron-builder",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -24,7 +24,7 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron-dist/**/*"
     ],
     "win": {
       "target": "nsis"

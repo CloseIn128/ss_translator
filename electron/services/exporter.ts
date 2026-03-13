@@ -25,7 +25,7 @@ interface CSVData {
  * @param projectData - Full project data with entries
  * @param outputDir - Output directory path
  */
-async function exportMod(projectData: Project, outputDir: string): Promise<ExportResult> {
+export async function exportMod(projectData: Project, outputDir: string): Promise<ExportResult> {
   const { modPath, entries, modInfo } = projectData;
   const modFolderName = path.basename(modPath) + '_translated';
   const destPath = path.join(outputDir, modFolderName);
@@ -151,7 +151,7 @@ function escapeForJsonSearch(str: string): string {
     .replace(/[.*+?^${}()|[\]]/g, '\\$&');
 }
 
-function getIdColumn(fileName: string): string {
+export function getIdColumn(fileName: string): string {
   const map: Record<string, string> = {
     'descriptions.csv': 'id',
     'ship_data.csv': 'id',

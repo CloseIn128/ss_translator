@@ -9,14 +9,14 @@
  * - Empty rows are allowed
  */
 
-interface CSVRow {
+export interface CSVRow {
   [key: string]: any;
   _lineIndex?: number;
   _empty?: boolean;
   _comment?: string;
 }
 
-interface ParsedCSV {
+export interface ParsedCSV {
   headers: string[];
   rows: CSVRow[];
 }

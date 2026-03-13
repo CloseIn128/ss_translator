@@ -177,3 +177,5 @@ class LegacyTranslationService {
 }
 
 module.exports = { LegacyTranslationService };
+
+export { LegacyTranslationService };
