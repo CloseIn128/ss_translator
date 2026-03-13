@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode, type Dispatch, type SetStateAction } from 'react';
 
 /**
  * Centralized task management and logging context.
@@ -9,33 +9,71 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
  *   not focused, and the task bar is highlighted.
  */
 
-const TaskContext = createContext(null);
+export type LogLevel = 'debug' | 'info' | 'success' | 'warning' | 'error';
 
-export function useTask() {
-  return useContext(TaskContext);
+export interface LogEntry {
+  id: number;
+  timestamp: Date;
+  level: LogLevel;
+  message: string;
+  source: string;
+}
+
+export interface Task {
+  id: number;
+  name: string;
+  status: 'running' | 'completed' | 'failed';
+  progress: string;
+  message: string;
+}
+
+export interface TaskContextValue {
+  logs: LogEntry[];
+  debugMode: boolean;
+  setDebugMode: Dispatch<SetStateAction<boolean>>;
+  addLog: (level: LogLevel, message: string, source: string) => void;
+  clearLogs: () => void;
+  currentTask: Task | null;
+  startTask: (name: string) => number | null;
+  updateTaskProgress: (progress: string, message: string) => void;
+  completeTask: (message?: string) => void;
+  failTask: (error?: string) => void;
+  cancelTask: () => void;
+  isTaskCancelled: () => boolean;
+  dismissTask: () => void;
+  isTaskRunning: boolean;
+  taskHighlight: boolean;
+}
+
+const TaskContext = createContext<TaskContextValue | null>(null);
+
+export function useTask(): TaskContextValue {
+  const ctx = useContext(TaskContext);
+  if (!ctx) throw new Error('useTask must be used within TaskProvider');
+  return ctx;
 }
 
 /** Log levels: debug | info | success | warning | error */
 const MAX_LOGS = 2000;
 let logIdCounter = 0;
 
-export function TaskProvider({ children }) {
-  const [logs, setLogs] = useState([]);
+export function TaskProvider({ children }: { children: ReactNode }) {
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [debugMode, setDebugMode] = useState(false);
-  const [currentTask, setCurrentTask] = useState(null); // { id, name, status, progress, message }
+  const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [taskHighlight, setTaskHighlight] = useState(false); // flash when task finishes
   const taskIdCounter = useRef(0);
   const cancelledRef = useRef(false);
 
   // ── Logging ──────────────────────────────────────────────────────────────
 
-  const addLog = useCallback((level, message, source) => {
-    const entry = {
+  const addLog = useCallback((level: LogLevel, message: string, source: string) => {
+    const entry: LogEntry = {
       id: ++logIdCounter,
       timestamp: new Date(),
-      level,   // 'debug' | 'info' | 'success' | 'warning' | 'error'
+      level,
       message,
-      source,  // e.g. '翻译编辑', '关键词提取'
+      source,
     };
     setLogs(prev => {
       const next = [...prev, entry];
@@ -50,13 +88,13 @@ export function TaskProvider({ children }) {
   /**
    * Start a new task. Returns the task id, or null if a task is already running.
    */
-  const startTask = useCallback((name) => {
+  const startTask = useCallback((name: string) => {
     // Check if a task is currently running
     if (currentTask && currentTask.status === 'running') {
       return null; // another task is in progress
     }
     const id = ++taskIdCounter.current;
-    const task = { id, name, status: 'running', progress: '', message: '' };
+    const task: Task = { id, name, status: 'running', progress: '', message: '' };
     setCurrentTask(task);
     setTaskHighlight(false);
     cancelledRef.current = false;
@@ -64,14 +102,14 @@ export function TaskProvider({ children }) {
     return id;
   }, [currentTask, addLog]);
 
-  const updateTaskProgress = useCallback((progress, message) => {
+  const updateTaskProgress = useCallback((progress: string, message: string) => {
     setCurrentTask(prev => {
       if (!prev || prev.status !== 'running') return prev;
       return { ...prev, progress: progress ?? prev.progress, message: message ?? prev.message };
     });
   }, []);
 
-  const completeTask = useCallback((message) => {
+  const completeTask = useCallback((message?: string) => {
     setCurrentTask(prev => {
       if (!prev) return prev;
       return { ...prev, status: 'completed', message: message || '任务完成' };
@@ -87,7 +125,7 @@ export function TaskProvider({ children }) {
     }
   }, [addLog]);
 
-  const failTask = useCallback((error) => {
+  const failTask = useCallback((error?: string) => {
     setCurrentTask(prev => {
       if (!prev) return prev;
       return { ...prev, status: 'failed', message: error || '任务失败' };
@@ -123,7 +161,7 @@ export function TaskProvider({ children }) {
 
   const isTaskRunning = !!(currentTask && currentTask.status === 'running');
 
-  const value = {
+  const value: TaskContextValue = {
     // Logging
     logs,
     debugMode,

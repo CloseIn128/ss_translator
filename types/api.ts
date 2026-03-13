@@ -80,6 +80,11 @@ export interface ElectronAPI {
   // Notifications
   sendNotification: (title: string, body: string) => Promise<void>;
 
+  // Window lifecycle
+  onBeforeClose: (callback: () => void | Promise<void>) => (() => void);
+  confirmClose: () => void;
+  removeBeforeCloseListener: (handler: (() => void) | undefined) => void;
+
   // Zoom
   setZoomFactor: (factor: number) => void;
 

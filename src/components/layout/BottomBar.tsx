@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button, Tag, Tooltip, Modal } from 'antd';
 import {
   CodeOutlined,
@@ -10,7 +9,12 @@ import {
 } from '@ant-design/icons';
 import { useTask } from '../context/TaskContext';
 
-export default function BottomBar({ logVisible, onToggleLog }) {
+interface BottomBarProps {
+  logVisible: boolean;
+  onToggleLog: () => void;
+}
+
+export default function BottomBar({ logVisible, onToggleLog }: BottomBarProps) {
   const { currentTask, taskHighlight, dismissTask, cancelTask, isTaskRunning } = useTask();
 
   const handleCancel = () => {
