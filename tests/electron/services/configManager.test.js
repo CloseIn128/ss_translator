@@ -1,10 +1,7 @@
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-const require = createRequire(import.meta.url);
-
-const { ConfigManager, DEFAULT_MODEL_CONFIG } = require('../../../electron/services/configManager');
+import { ConfigManager, DEFAULT_MODEL_CONFIG } from '../../../electron/services/configManager';
 
 describe('ConfigManager', () => {
   let tmpDir;

@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Alert, Button } from 'antd';
 import { WarningOutlined } from '@ant-design/icons';
+import type { MessageInstance } from 'antd/es/message/interface';
 import FileSidebar from './FileSidebar';
 import EditorHeader from './EditorHeader';
 import EntryRow from './EntryRow';
@@ -10,7 +11,11 @@ import useProjectStore from '../../store/useProjectStore';
 
 const PAGE_SIZE = 50;
 
-export default function TranslationEditor({ messageApi }) {
+interface TranslationEditorProps {
+  messageApi: MessageInstance;
+}
+
+export default function TranslationEditor({ messageApi }: TranslationEditorProps) {
   const project = useProjectStore(s => s.project);
   const selectedFile = useProjectStore(s => s.selectedFile);
   const setSelectedFile = useProjectStore(s => s.setSelectedFile);
@@ -22,8 +27,8 @@ export default function TranslationEditor({ messageApi }) {
 
   // Merge project glossary with keywords — only confirmed (reviewed) terms are included
   const mergedGlossary = useMemo(() => {
-    const glossary = project.glossary || [];
-    const keywords = project.keywords || [];
+    const glossary = project?.glossary || [];
+    const keywords = project?.keywords || [];
     const confirmedGlossary = glossary
       .filter(g => g.confirmed && g.target && g.target.trim())
       .map(g => ({ source: g.source, target: g.target, category: g.category || '通用' }));
@@ -32,15 +37,15 @@ export default function TranslationEditor({ messageApi }) {
       .filter(kw => kw.confirmed && kw.target && kw.target.trim() && !existingSources.has(kw.source.toLowerCase()))
       .map(kw => ({ source: kw.source, target: kw.target, category: kw.category || '通用' }));
     return [...confirmedGlossary, ...keywordGlossary];
-  }, [project.glossary, project.keywords]);
+  }, [project?.glossary, project?.keywords]);
 
   // Count untranslated terms (terms missing translation)
   const untranslatedTermCount = useMemo(() => {
-    const glossary = project.glossary || [];
-    const keywords = project.keywords || [];
+    const glossary = project?.glossary || [];
+    const keywords = project?.keywords || [];
     return glossary.filter(g => !g.target || !g.target.trim()).length +
       keywords.filter(kw => !kw.target || !kw.target.trim()).length;
-  }, [project.glossary, project.keywords]);
+  }, [project?.glossary, project?.keywords]);
 
   // Dismissible banner state
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -55,8 +60,8 @@ export default function TranslationEditor({ messageApi }) {
 
   // Active entries = non-ignored entries (used for sidebar stats and category building)
   const activeEntries = useMemo(() => {
-    return project.entries.filter(e => !e.ignored);
-  }, [project.entries]);
+    return (project?.entries || []).filter(e => !e.ignored);
+  }, [project?.entries]);
 
   // Build available category list (only from active entries)
   const categories = useMemo(() => {
@@ -66,7 +71,7 @@ export default function TranslationEditor({ messageApi }) {
 
   // Filter entries
   const filteredEntries = useMemo(() => {
-    let entries = project.entries;
+    let entries = project?.entries || [];
 
     // Hide ignored entries by default
     if (!showIgnored) {
@@ -93,7 +98,7 @@ export default function TranslationEditor({ messageApi }) {
     }
 
     return entries;
-  }, [project.entries, selectedFile, categoryFilter, statusFilter, searchText, showIgnored]);
+  }, [project?.entries, selectedFile, categoryFilter, statusFilter, searchText, showIgnored]);
 
   // Paginate
   const totalPages = Math.ceil(filteredEntries.length / PAGE_SIZE);
@@ -184,18 +189,18 @@ export default function TranslationEditor({ messageApi }) {
         {diffMode ? (
           /* Full diff comparison mode — replaces entry list */
           <FileDiffView
-            modPath={project.modPath}
+            modPath={project?.modPath || ''}
             selectedFile={selectedFile}
-            entries={project.entries}
+            entries={project?.entries || []}
             fullPage
           />
         ) : (
           <>
             {/* Compact file diff view (when a specific file is selected) */}
             <FileDiffView
-              modPath={project.modPath}
+              modPath={project?.modPath || ''}
               selectedFile={selectedFile}
-              entries={project.entries}
+              entries={project?.entries || []}
             />
 
             {/* Scrollable entries area */}

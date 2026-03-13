@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Tag, Button, Tooltip, Space, Spin } from 'antd';
 import {
   TranslationOutlined,
@@ -7,8 +7,9 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
+import type { TranslationEntry } from '../../../types';
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
   untranslated: { label: '未翻译', color: 'default' },
   translated: { label: '已翻译', color: 'success' },
   polished: { label: '已润色', color: 'processing' },
@@ -22,7 +23,7 @@ const STATUS_MAP = {
  * - JSON entries with a dot-path field: show "属性: <field>"
  * - Other JSON entries: show "字段: <field>"
  */
-function entrySourceLabel(entry) {
+function entrySourceLabel(entry: TranslationEntry): string {
   if (entry.fileType === 'csv') {
     const parts = [];
     if (entry.field) parts.push(`列: ${entry.field}`);
@@ -36,7 +37,15 @@ function entrySourceLabel(entry) {
   return '';
 }
 
-export default function EntryRow({ entry, isTranslating, onUpdateEntry, onTranslate, onPolish }) {
+interface EntryRowProps {
+  entry: TranslationEntry;
+  isTranslating: boolean;
+  onUpdateEntry: (entryId: string, updates: Record<string, any>) => void;
+  onTranslate: (entry: TranslationEntry) => void;
+  onPolish: (entry: TranslationEntry) => void;
+}
+
+export default function EntryRow({ entry, isTranslating, onUpdateEntry, onTranslate, onPolish }: EntryRowProps) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(entry.translated || '');
 

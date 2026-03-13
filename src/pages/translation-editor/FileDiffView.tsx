@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Spin } from 'antd';
 import {
   EyeOutlined,
   EyeInvisibleOutlined,
 } from '@ant-design/icons';
 import DiffViewer from '../../components/diff/DiffViewer';
+import type { TranslationEntry } from '../../../types';
 
 const api = window.electronAPI;
 
 /**
  * Detect file type from relative path.
  */
-function detectFileType(relFile) {
+function detectFileType(relFile: string | null): string {
   if (!relFile) return 'text';
   const lower = relFile.toLowerCase();
   if (lower.endsWith('.csv')) return 'csv';
@@ -26,7 +27,14 @@ function detectFileType(relFile) {
   return 'text';
 }
 
-export default function FileDiffView({ modPath, selectedFile, entries, fullPage = false }) {
+interface FileDiffViewProps {
+  modPath: string;
+  selectedFile: string | null;
+  entries: TranslationEntry[];
+  fullPage?: boolean;
+}
+
+export default function FileDiffView({ modPath, selectedFile, entries, fullPage = false }: FileDiffViewProps) {
   const [visible, setVisible] = useState(true);
   const [loading, setLoading] = useState(false);
   const [original, setOriginal] = useState('');
@@ -38,7 +46,7 @@ export default function FileDiffView({ modPath, selectedFile, entries, fullPage 
   // Get entries for the selected file
   const fileEntries = useMemo(() => {
     if (!selectedFile) return [];
-    return entries.filter(e => e.file === selectedFile);
+    return entries.filter((e: TranslationEntry) => e.file === selectedFile);
   }, [entries, selectedFile]);
 
   // Load file preview whenever selected file or entries change
@@ -56,15 +64,15 @@ export default function FileDiffView({ modPath, selectedFile, entries, fullPage 
     api.getFilePreview({ modPath, relFile: selectedFile, entries: fileEntries })
       .then(result => {
         if (cancelled) return;
-        if (result?.success) {
-          setOriginal(result.original);
-          setTranslated(result.translated);
+        if (result?.success && result.data) {
+          setOriginal(result.data.original);
+          setTranslated(result.data.translated);
         } else {
           setError(result?.error || '加载失败');
         }
       })
-      .catch(err => {
-        if (!cancelled) setError(err.message);
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useCallback, useEffect, Suspense } from 'react';
 import { ConfigProvider, theme, message, Modal, Spin } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import LeftNav from './components/layout/LeftNav';
@@ -24,7 +24,6 @@ function AppInner() {
   // ---- Read state from store ----
   const project = useProjectStore(s => s.project);
   const activeTab = useProjectStore(s => s.activeTab);
-  const setActiveTab = useProjectStore(s => s.setActiveTab);
   const logVisible = useProjectStore(s => s.logVisible);
   const setLogVisible = useProjectStore(s => s.setLogVisible);
   const zoomLevel = useProjectStore(s => s.zoomLevel);
@@ -120,24 +119,24 @@ function AppInner() {
   }, [messageApi, exportMod]);
 
   // Helper to wrap tab content with display:none for inactive tabs
-  const tabStyle = (tabKey) => ({
+  const tabStyle = (tabKey: string) => ({
     display: activeTab === tabKey ? 'flex' : 'none',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     flex: 1,
     minHeight: 0,
     overflow: 'hidden',
   });
 
   // CSS class for tab panels - editor gets no padding, others get padding
-  const tabClass = (tabKey) => tabKey === 'editor' ? 'tab-panel-editor' : 'tab-panel';
+  const tabClass = (tabKey: string) => tabKey === 'editor' ? 'tab-panel-editor' : 'tab-panel';
 
   // For project-requiring tabs, show WelcomePage if no project
-  const needsProject = (tabKey) => {
+  const needsProject = (tabKey: string) => {
     return ['info', 'editor', 'glossary', 'review'].includes(tabKey) && !project;
   };
 
   // Track which tabs have been visited to lazy-mount them (render on first visit, then keep mounted)
-  const [visitedTabs, setVisitedTabs] = useState(new Set([activeTab]));
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set([activeTab]));
   useEffect(() => {
     setVisitedTabs(prev => {
       if (prev.has(activeTab)) return prev;
@@ -153,7 +152,7 @@ function AppInner() {
   }, [project?.id]);
 
   // Only render tab if it has been visited
-  const shouldRender = (tabKey) => visitedTabs.has(tabKey);
+  const shouldRender = (tabKey: string) => visitedTabs.has(tabKey);
 
   const lazyFallback = (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flex: 1 }}>

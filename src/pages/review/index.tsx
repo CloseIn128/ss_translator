@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Button, Input, Tag, Space, Card, Select, Empty, Tooltip, Divider, Spin } from 'antd';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Button, Input, Tag, Card, Select, Empty, Tooltip, Divider, Spin } from 'antd';
 import {
   CheckOutlined,
   LeftOutlined,
@@ -7,6 +7,8 @@ import {
   TranslationOutlined,
   FileTextOutlined,
 } from '@ant-design/icons';
+import type { MessageInstance } from 'antd/es/message/interface';
+import type { TranslationEntry } from '../../../types/project';
 import DiffViewer from '../../components/diff/DiffViewer';
 import useProjectStore from '../../store/useProjectStore';
 
@@ -16,7 +18,7 @@ const CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '�
 const KEYWORD_CATEGORIES = ['通用', '势力名称', '舰船名称', '武器名称', '人名', '星球/星系名', '游戏术语', '物品名称', '其他'];
 const allCategories = [...new Set([...CATEGORIES, ...KEYWORD_CATEGORIES])];
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
   untranslated: { label: '未翻译', color: 'default' },
   translated: { label: '已翻译', color: 'success' },
   polished: { label: '已润色', color: 'processing' },
@@ -24,10 +26,24 @@ const STATUS_MAP = {
   error: { label: '错误', color: 'error' },
 };
 
+interface ReviewTermItem {
+  _type: 'glossary' | 'extracted';
+  _rowKey: string;
+  id?: string;
+  source: string;
+  target: string;
+  category: string;
+  confirmed?: boolean;
+  key?: string;
+  extractType?: string;
+  context?: string;
+  file?: string;
+}
+
 /**
  * Detect file type from relative path.
  */
-function detectFileType(relFile) {
+function detectFileType(relFile: string) {
   if (!relFile) return 'text';
   const lower = relFile.toLowerCase();
   if (lower.endsWith('.csv')) return 'csv';
@@ -42,7 +58,11 @@ function detectFileType(relFile) {
   return 'text';
 }
 
-export default function ReviewPanel({ messageApi }) {
+interface ReviewPanelProps {
+  messageApi: MessageInstance;
+}
+
+export default function ReviewPanel({ messageApi }: ReviewPanelProps) {
   const project = useProjectStore(s => s.project);
   const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
   const onUpdateKeywords = useProjectStore(s => s.updateKeywords);
@@ -58,9 +78,9 @@ export default function ReviewPanel({ messageApi }) {
   const [diffTranslated, setDiffTranslated] = useState('');
   const [diffLoading, setDiffLoading] = useState(false);
 
-  const glossary = project.glossary || [];
-  const keywords = project.keywords || [];
-  const entries = project.entries || [];
+  const glossary = project?.glossary || [];
+  const keywords = project?.keywords || [];
+  const entries = project?.entries || [];
 
   // Build merged glossary for translation context (only confirmed terms)
   const confirmedGlossary = useMemo(() => {
@@ -74,8 +94,8 @@ export default function ReviewPanel({ messageApi }) {
   }, [glossary, keywords]);
 
   // Unreviewed terms (both glossary entries and keywords without confirmed)
-  const unreviewedTerms = useMemo(() => {
-    const items = [];
+  const unreviewedTerms = useMemo<ReviewTermItem[]>(() => {
+    const items: ReviewTermItem[] = [];
     for (const g of glossary) {
       if (!g.confirmed) {
         items.push({ ...g, _type: 'glossary', _rowKey: `g_${g.id}` });
@@ -94,31 +114,36 @@ export default function ReviewPanel({ messageApi }) {
     return entries.filter(e => e.status !== 'reviewed' && e.translated && e.translated.trim());
   }, [entries]);
 
-  const currentItems = reviewMode === 'terms' ? unreviewedTerms : unreviewedEntries;
+  const currentItems: (ReviewTermItem | TranslationEntry)[] = reviewMode === 'terms' ? unreviewedTerms : unreviewedEntries;
   const currentItem = currentItems[currentIndex] || null;
+
+  // Stable keys for diff preview dependency tracking
+  const currentFileKey = reviewMode === 'entries' && currentItem && 'file' in currentItem ? currentItem.file : '';
+  const currentItemId = currentItem && 'id' in currentItem ? currentItem.id : currentIndex;
 
   // Load diff preview for current entry
   useEffect(() => {
-    if (reviewMode !== 'entries' || !currentItem || !currentItem.file || !project.modPath) {
+    if (reviewMode !== 'entries' || !currentItem || !('file' in currentItem) || !currentItem.file || !project?.modPath) {
       setDiffOriginal('');
       setDiffTranslated('');
       return;
     }
     let cancelled = false;
     setDiffLoading(true);
-    const fileEntries = entries.filter(e => e.file === currentItem.file);
-    api.getFilePreview({ modPath: project.modPath, relFile: currentItem.file, entries: fileEntries })
+    const currentFile = currentItem.file;
+    const fileEntries = entries.filter(e => e.file === currentFile);
+    api.getFilePreview({ modPath: project.modPath, relFile: currentFile, entries: fileEntries })
       .then(result => {
         if (cancelled) return;
-        if (result?.success) {
-          setDiffOriginal(result.original);
-          setDiffTranslated(result.translated);
+        if (result?.success && result.data) {
+          setDiffOriginal(result.data.original);
+          setDiffTranslated(result.data.translated);
         }
       })
       .catch(() => {})
       .finally(() => { if (!cancelled) setDiffLoading(false); });
     return () => { cancelled = true; };
-  }, [currentItem?.file, currentItem?.id, reviewMode, project.modPath, entries]);
+  }, [currentFileKey, currentItemId, reviewMode, project?.modPath, entries]);
 
   // Sync edit values when current item changes
   useEffect(() => {
@@ -128,11 +153,13 @@ export default function ReviewPanel({ messageApi }) {
       return;
     }
     if (reviewMode === 'terms') {
-      setEditTarget(currentItem.target || '');
-      setEditCategory(currentItem.category || '通用');
+      const termItem = currentItem as ReviewTermItem;
+      setEditTarget(termItem.target || '');
+      setEditCategory(termItem.category || '通用');
     } else {
-      setEditTarget(currentItem.translated || '');
-      setEditCategory(currentItem.category || '通用');
+      const entryItem = currentItem as TranslationEntry;
+      setEditTarget(entryItem.translated || '');
+      setEditCategory(entryItem.category || '通用');
     }
   }, [currentItem, currentIndex, reviewMode]);
 
@@ -153,20 +180,22 @@ export default function ReviewPanel({ messageApi }) {
   const handleApprove = useCallback(() => {
     if (!currentItem) return;
     if (reviewMode === 'terms') {
-      if (currentItem._type === 'glossary') {
+      const termItem = currentItem as ReviewTermItem;
+      if (termItem._type === 'glossary') {
         onUpdateGlossary(glossary.map(g =>
-          g.id === currentItem.id ? { ...g, confirmed: true, target: editTarget, category: editCategory } : g
+          g.id === termItem.id ? { ...g, confirmed: true, target: editTarget, category: editCategory } : g
         ));
       } else {
         onUpdateKeywords(keywords.map(kw =>
-          (kw.key || `k_${kw.source}`) === currentItem._rowKey
+          (kw.key || `k_${kw.source}`) === termItem._rowKey
             ? { ...kw, confirmed: true, target: editTarget, category: editCategory }
             : kw
         ));
       }
       messageApi.success('术语已审核');
     } else {
-      onUpdateEntry(currentItem.id, { translated: editTarget, status: 'reviewed' });
+      const entryItem = currentItem as TranslationEntry;
+      onUpdateEntry(entryItem.id, { translated: editTarget, status: 'reviewed' });
       messageApi.success('条目已审核');
     }
     if (currentIndex >= currentItems.length - 1 && currentIndex > 0) {
@@ -179,11 +208,13 @@ export default function ReviewPanel({ messageApi }) {
     if (!currentItem) return;
     setTranslating(true);
     try {
-      const original = reviewMode === 'terms' ? currentItem.source : currentItem.original;
+      const sourceText = reviewMode === 'terms'
+        ? (currentItem as ReviewTermItem).source
+        : (currentItem as TranslationEntry).original;
       const result = await api.translate({
-        entries: [{ id: 'review_single', original, context: currentItem.context || '' }],
+        entries: [{ id: 'review_single', source: sourceText, context: ('context' in currentItem ? currentItem.context : '') || '' }],
         glossary: confirmedGlossary,
-        modPrompt: project.modPrompt || '',
+        modPrompt: project?.modPrompt || '',
       });
       if (result?.success && result.data?.[0]?.translated) {
         setEditTarget(result.data[0].translated);
@@ -191,12 +222,12 @@ export default function ReviewPanel({ messageApi }) {
       } else {
         messageApi.error(result?.error || '翻译失败');
       }
-    } catch (err) {
-      messageApi.error('翻译出错: ' + err.message);
+    } catch (err: unknown) {
+      messageApi.error('翻译出错: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setTranslating(false);
     }
-  }, [currentItem, reviewMode, confirmedGlossary, project.modPrompt, messageApi]);
+  }, [currentItem, reviewMode, confirmedGlossary, project?.modPrompt, messageApi]);
 
   if (!project) {
     return <Empty description="请先加载项目" />;
@@ -270,7 +301,7 @@ export default function ReviewPanel({ messageApi }) {
         </div>
 
         {/* Diff preview for entry review */}
-        {reviewMode === 'entries' && currentItem && currentItem.file && (
+        {reviewMode === 'entries' && currentItem && 'file' in currentItem && currentItem.file && (
           <div style={{ flexShrink: 0, border: '1px solid var(--border-color)', borderRadius: 6, overflow: 'hidden' }}>
             <div style={{ padding: '4px 12px', fontSize: 12, color: '#8c8c8c', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
               <FileTextOutlined style={{ marginRight: 4 }} />
@@ -296,24 +327,24 @@ export default function ReviewPanel({ messageApi }) {
             <div style={{ marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <Tag color={reviewMode === 'terms'
-                  ? (currentItem._type === 'glossary' ? 'green' : 'blue')
-                  : STATUS_MAP[currentItem.status]?.color || 'default'
+                  ? ((currentItem as ReviewTermItem)._type === 'glossary' ? 'green' : 'blue')
+                  : STATUS_MAP[(currentItem as TranslationEntry).status]?.color || 'default'
                 }>
                   {reviewMode === 'terms'
-                    ? (currentItem._type === 'glossary' ? '手动术语' : '提取术语')
-                    : STATUS_MAP[currentItem.status]?.label || currentItem.status
+                    ? ((currentItem as ReviewTermItem)._type === 'glossary' ? '手动术语' : '提取术语')
+                    : STATUS_MAP[(currentItem as TranslationEntry).status]?.label || (currentItem as TranslationEntry).status
                   }
                 </Tag>
                 {currentItem.category && (
                   <Tag>{currentItem.category}</Tag>
                 )}
-                {reviewMode === 'entries' && currentItem.file && (
+                {reviewMode === 'entries' && 'file' in currentItem && currentItem.file && (
                   <span style={{ fontSize: 11, color: '#8c8c8c' }}>
                     <FileTextOutlined style={{ marginRight: 4 }} />
                     {currentItem.file}
                   </span>
                 )}
-                {reviewMode === 'terms' && currentItem.extractType && (
+                {reviewMode === 'terms' && 'extractType' in currentItem && currentItem.extractType && (
                   <span style={{ fontSize: 11, color: '#8c8c8c' }}>
                     提取方式: {currentItem.extractType === 'structure' ? '结构化' : 'AI'}
                   </span>
@@ -330,12 +361,12 @@ export default function ReviewPanel({ messageApi }) {
                 wordBreak: 'break-all',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}>
-                {reviewMode === 'terms' ? currentItem.source : currentItem.original}
+                {reviewMode === 'terms' ? (currentItem as ReviewTermItem).source : (currentItem as TranslationEntry).original}
               </div>
             </div>
 
             {/* Context info for entries */}
-            {reviewMode === 'entries' && currentItem.context && (
+            {reviewMode === 'entries' && 'context' in currentItem && currentItem.context && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 'bold', marginBottom: 4, color: '#8c8c8c' }}>上下文</div>
                 <div style={{

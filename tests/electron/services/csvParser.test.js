@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const { parseCSV, serializeCSV, parseCSVRow } = require('../../../electron/services/csvParser');
+import { parseCSV, serializeCSV, parseCSVRow } from '../../../electron/services/csvParser';
 
 describe('parseCSVRow', () => {
   it('parses a simple row', () => {

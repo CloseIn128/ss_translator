@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button, Tooltip, Divider, Switch } from 'antd';
 import {
   PlusOutlined,
@@ -8,11 +8,16 @@ import {
   HighlightOutlined,
   CheckOutlined,
 } from '@ant-design/icons';
+import type { MessageInstance } from 'antd/es/message/interface';
 import useKeywordActions from './useKeywordActions';
 import KeywordTable from './KeywordTable';
 
-export default function KeywordExtractor({ messageApi }) {
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+interface KeywordExtractorProps {
+  messageApi: MessageInstance;
+}
+
+export default function KeywordExtractor({ messageApi }: KeywordExtractorProps) {
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const {
     keywords,

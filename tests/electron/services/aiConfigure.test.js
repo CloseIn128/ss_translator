@@ -1,11 +1,8 @@
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-const require = createRequire(import.meta.url);
-
-const { ConfigManager } = require('../../../electron/services/configManager');
-const { TranslationService } = require('../../../electron/services/translator');
+import { ConfigManager } from '../../../electron/services/configManager';
+import { TranslationService } from '../../../electron/services/translator';
 
 /**
  * Tests for the AI configure flow to verify the bug fix:

@@ -3,66 +3,117 @@
 
 # 项目结构
 
+## 技术栈与语言
+
+- 整个项目已完成 **TypeScript 迁移**（包括 Electron 后端和 React 前端），所有源文件均为 `.ts` / `.tsx`
+- 后端（`electron/`）：TypeScript → CommonJS（通过 `tsconfig.electron.json` 编译到 `electron-dist/`），运行时为 Node.js CJS 模块
+- 前端（`src/`）：TypeScript + React（TSX），通过 Vite 构建为 ESM，开发时热重载
+- 类型定义（`types/`）：集中存放所有共享接口和类型，前后端均可引用
+- 测试（`tests/`）：vitest 框架，测试文件为 `.test.js`（ESM 语法，直接 import `.ts` 模块）
+
 ## 目录结构
 
 ```
-├── electron/                     # Electron 主进程（Node.js，CJS 模块）
-│   ├── main.js                   # 应用入口，窗口创建与服务初始化
-│   ├── preload.js                # 预加载脚本，暴露 IPC API
-│   ├── ipc/                      # IPC 处理器模块
-│   │   ├── dialogHandlers.js     # 对话框（文件夹选择等）
-│   │   ├── projectHandlers.js    # 项目管理（创建/保存/加载）
-│   │   ├── glossaryHandlers.js   # 术语库（项目 + 公共词库）
-│   │   ├── aiHandlers.js         # AI 翻译配置与调用
-│   │   ├── exportHandlers.js     # MOD 导出
-│   │   ├── keywordHandlers.js    # 关键词提取与翻译
-│   │   ├── legacyHandlers.js     # 老版本汉化加载/匹配
-│   │   ├── notificationHandlers.js # 系统通知
-│   │   └── fileHandlers.js       # 文件预览（diff 对比）
-│   ├── services/                 # 业务逻辑服务
-│   │   ├── configManager.js      # 配置持久化
-│   │   ├── translator.js         # AI 翻译服务
-│   │   ├── modParser.js          # MOD 文件解析
-│   │   ├── glossary.js           # 术语库管理
-│   │   ├── project.js            # 项目文件管理
-│   │   ├── exporter.js           # 翻译导出
-│   │   ├── legacyTranslation.js  # 老版本汉化匹配服务
-│   │   ├── csvParser.js          # CSV 解析/序列化
-│   │   ├── relaxedJson.js        # Starsector 宽松 JSON 解析
-│   │   └── uuid.js               # UUID 生成
+├── electron/                     # Electron 主进程（TypeScript，编译为 CJS）
+│   ├── main.ts                   # 应用入口，窗口创建与服务初始化
+│   ├── preload.ts                # 预加载脚本，暴露 IPC API（contextBridge）
+│   ├── ipc/                      # IPC 处理器模块（每个导出 register(ctx) 函数）
+│   │   ├── dialogHandlers.ts     # 对话框（文件夹选择等）
+│   │   ├── projectHandlers.ts    # 项目管理（创建/保存/加载/重载）
+│   │   ├── glossaryHandlers.ts   # 术语库（公共词库 CRUD、导入导出）
+│   │   ├── aiHandlers.ts         # AI 翻译配置与调用（translate/polish/单条）
+│   │   ├── exportHandlers.ts     # MOD 导出与导出预览
+│   │   ├── keywordHandlers.ts    # 关键词提取、翻译、润色（流式批次）
+│   │   ├── legacyHandlers.ts     # 老版本汉化加载/匹配
+│   │   ├── notificationHandlers.ts # 系统通知（Electron Notification）
+│   │   └── fileHandlers.ts       # 文件预览（diff 对比用原始/翻译内容）
+│   ├── services/                 # 业务逻辑服务（TypeScript 类/函数）
+│   │   ├── configManager.ts      # 配置持久化（ConfigManager 类，管理 model_config.json）
+│   │   ├── translator.ts         # AI 翻译服务（TranslationService 类，支持并发批次）
+│   │   ├── modParser.ts          # MOD 文件解析（parseModFolder 函数，解析 CSV/JSON/faction 等）
+│   │   ├── glossary.ts           # 术语库管理（GlossaryManager 类）
+│   │   ├── project.ts            # 项目文件管理（ProjectManager 类，.sst 格式）
+│   │   ├── exporter.ts           # 翻译导出（exportMod 函数，CSV 列替换 + JSON 正则替换）
+│   │   ├── legacyTranslation.ts  # 老版本汉化匹配服务（LegacyTranslationService 类）
+│   │   ├── csvParser.ts          # CSV 解析/序列化（parseCSV, serializeCSV, parseCSVRow）
+│   │   ├── relaxedJson.ts        # Starsector 宽松 JSON 解析（relaxedJsonToJson, parseRelaxedJson）
+│   │   └── uuid.ts               # UUID v4 生成
 │   └── data/
-│       └── default_glossary.json # 内置默认词库
-├── src/                          # React 前端（ESM，Vite 构建）
-│   ├── App.jsx                   # 应用根组件
-│   ├── main.jsx                  # 入口
+│       └── default_glossary.json # 内置默认词库（1278 条）
+├── types/                        # 共享 TypeScript 类型定义
+│   ├── index.ts                  # 类型统一导出入口
+│   ├── project.ts                # 核心数据类型（Project, TranslationEntry, GlossaryEntry, KeywordEntry, ProjectStats, ModInfo）
+│   ├── api.ts                    # 前端 IPC API 类型（ElectronAPI 接口, ApiResult, TranslateOptions 等）
+│   ├── config.ts                 # 配置类型（AIConfig, AppConfig）
+│   ├── translator.ts             # 翻译服务类型（TranslationConfig, TranslationRequest, TranslateEntryInput/Output）
+│   ├── glossary.ts               # 术语库类型（GlossaryImportEntry）
+│   ├── ipc.ts                    # IPC 上下文类型（IPCContext, IPCResponse）
+│   ├── modParser.ts              # MOD 解析类型（ParseOptions, FileParseResult）
+│   └── legacy.ts                 # 老版本汉化类型（LegacyTranslationEntry, LegacyMatchResult）
+├── src/                          # React 前端（TypeScript + TSX，Vite 构建）
+│   ├── App.tsx                   # 应用根组件（极简外壳，渲染布局 + message 反馈）
+│   ├── main.tsx                  # React 入口（createRoot）
 │   ├── index.css                 # 全局样式
 │   ├── store/
-│   │   └── useProjectStore.js    # Zustand 项目状态管理
-│   └── components/
-│       ├── context/
-│       │   └── TaskContext.jsx    # 任务管理与日志上下文
-│       ├── layout/
-│       │   ├── LeftNav.jsx       # 左侧导航栏（含详细进度）
-│       │   ├── LogPanel.jsx      # 日志面板
-│       │   └── BottomBar.jsx     # 底部状态栏
-│       └── pages/
-│           ├── WelcomePage.jsx        # 欢迎页
-│           ├── ProjectInfo.jsx        # 项目基本信息页
-│           ├── TranslationEditor.jsx  # 翻译编辑页（主协调组件）
-│           ├── editor/                    # 翻译编辑器子组件
-│           │   ├── EntryRow.jsx           # 单条翻译条目（含审核切换）
-│           │   ├── FileSidebar.jsx        # 左侧文件目录树（可拖拽调整宽度）
-│           │   ├── EditorHeader.jsx       # 筛选栏
-│           │   ├── FileDiffView.jsx       # 文件对比预览面板
-│           │   └── useTranslationActions.js # 翻译操作自定义 Hook
-│           ├── GlossaryPanel.jsx      # 词库管理页
-│           ├── KeywordExtractor.jsx   # 关键词提取页
-│           ├── ReviewPanel.jsx        # 审核页（逐条审核术语和翻译）
-│           ├── SettingsPanel.jsx      # 模型配置页
-│           ├── AppSettingsPanel.jsx   # 程序设置页（界面外观等）
-│           └── RequestHistory.jsx     # 请求历史页
-└── tests/                        # 自动化测试（vitest）
+│   │   └── useProjectStore.ts    # Zustand 状态管理（所有项目数据 + UI 状态 + IPC 操作）
+│   ├── components/
+│   │   ├── ExportPreviewModal.tsx # 导出预览弹窗（文件树 + Monaco diff）
+│   │   ├── context/
+│   │   │   └── TaskContext.tsx    # 任务管理与日志上下文（React Context）
+│   │   ├── diff/
+│   │   │   ├── DiffViewer.tsx    # 文件对比组件（Monaco DiffEditor + CSV 表格 diff）
+│   │   │   └── diffUtils.ts     # Diff 工具函数（CSV 解析、LCS 算法）
+│   │   └── layout/
+│   │       ├── LeftNav.tsx       # 左侧导航栏（含四维度进度条）
+│   │       ├── LogPanel.tsx      # 日志面板（可拖拽调整高度）
+│   │       └── BottomBar.tsx     # 底部状态栏（任务状态 + 进度）
+│   └── pages/                    # 页面模块（按功能拆分为独立目录）
+│       ├── welcome/
+│       │   └── index.tsx         # 欢迎页（新建/打开项目）
+│       ├── project-info/
+│       │   └── index.tsx         # 项目基本信息页（MOD 信息、MOD 专属提示词编辑）
+│       ├── translation-editor/   # 翻译编辑器（主工作区）
+│       │   ├── index.tsx         # 主协调组件（筛选状态、分页、文件选择）
+│       │   ├── FileSidebar.tsx   # 左侧文件目录树（可拖拽调整宽度，进度统计）
+│       │   ├── EditorHeader.tsx  # 筛选/操作栏（搜索、分类、状态、批量操作）
+│       │   ├── EntryRow.tsx      # 单条翻译条目（内联编辑、审核切换、忽略）
+│       │   ├── FileDiffView.tsx  # 文件对比预览面板（可折叠）
+│       │   └── useTranslationActions.ts # 翻译操作 Hook（单条/批量翻译、润色、清空）
+│       ├── glossary/             # 词库管理
+│       │   ├── index.tsx         # 词库页面（Tab 切换项目/公共词库）
+│       │   ├── ProjectGlossaryTab.tsx  # 项目术语库（支持导入/导出/关键词合并）
+│       │   └── PublicGlossaryTab.tsx   # 公共术语库（内置词库编辑）
+│       ├── keyword-extractor/    # 关键词提取
+│       │   ├── index.tsx         # 关键词提取页面（提取/翻译/润色流程）
+│       │   ├── KeywordTable.tsx  # 关键词表格（内联编辑、确认、分类）
+│       │   └── useKeywordActions.ts # 关键词操作 Hook（提取、翻译、润色、加入词库）
+│       ├── review/
+│       │   └── index.tsx         # 审核页（逐条审核术语和翻译条目）
+│       ├── settings/             # AI 模型设置
+│       │   ├── index.tsx         # 设置页面（Tab 切换模型/提示词）
+│       │   ├── ModelConfigTab.tsx    # 模型配置（API Key、URL、模型参数）
+│       │   └── PromptConfigTab.tsx   # 提示词配置（系统/润色/关键词提示词）
+│       ├── app-settings/
+│       │   └── index.tsx         # 程序设置页（界面外观：字体大小、缩放）
+│       └── request-history/      # 请求历史
+│           ├── index.tsx         # 请求历史页面（列表 + 活动请求面板）
+│           ├── ActiveRequestsPanel.tsx  # 活动请求面板（正在进行的 API 请求）
+│           └── RequestDetailModal.tsx   # 请求详情弹窗（提示词、响应、耗时）
+└── tests/                        # 自动化测试（vitest，ESM 语法）
+    ├── components/diff/
+    │   └── diffUtils.test.js     # Diff 工具函数测试
     └── electron/services/        # 后端服务单元测试
+        ├── aiConfigure.test.js   # AI 配置集成测试
+        ├── configManager.test.js # 配置管理测试
+        ├── csvParser.test.js     # CSV 解析测试
+        ├── exporter.test.js      # 导出功能测试
+        ├── glossary.test.js      # 术语库测试
+        ├── legacyTranslation.test.js # 老版本汉化测试
+        ├── modParser.test.js     # MOD 解析测试
+        ├── project.test.js       # 项目管理测试
+        ├── relaxedJson.test.js   # 宽松 JSON 解析测试
+        ├── translator.test.js    # 翻译服务测试
+        └── uuid.test.js          # UUID 生成测试
 ```
 
 ## 日志系统 (LogPanel / TaskContext)
@@ -83,6 +134,7 @@
 - 日志上下文通过 `TaskContext`（React Context）提供，组件内使用 `useTask()` 获取
 - 新增功能模块输出日志时需指定 `source` 字段（如 `'翻译编辑'`、`'关键词提取'`）
 - `debug` 级别用于详细的逐条翻译结果等开发信息，`info`/`success` 用于用户可见的状态变更
+- `TaskContext.tsx` 定义了 `LogEntry`、`Task`、`TaskContextValue` 接口，提供完整类型安全
 
 ## 任务管理系统 (TaskContext / BottomBar)
 
@@ -100,7 +152,7 @@
 - 使用 `updateTaskProgress(progress, message)` 更新进度文本
 - 使用 `completeTask(message)` 或 `failTask(error)` 结束任务
 - 各功能发起批量操作前需检查 `isTaskRunning`，若有任务运行中则提示用户等待
-- 系统通知通过 `app:notify` IPC 调用 Electron 的 `Notification` API，在 `preload.js` 中暴露为 `sendNotification(title, body)`
+- 系统通知通过 `app:notify` IPC 调用 Electron 的 `Notification` API，在 `preload.ts` 中暴露为 `sendNotification(title, body)`
 
 ## 关键词提取 (KeywordExtractor)
 
@@ -140,7 +192,8 @@
 
 - 提示词通过 `ConfigManager` 持久化，包括 `systemPrompt`、`polishPrompt`、`keywordPrompt`
 - `_ensureModelConfigComplete()` 在启动时自动迁移补全缺失字段
-- 后端文件（`electron/`）不经过 Vite 构建，修改后需用 `node --check ./electron/xxx.js` 验证语法
+- 后端文件（`electron/`）使用 TypeScript，编译到 `electron-dist/`。修改后运行 `npx tsc -p tsconfig.electron.json --noEmit` 验证类型
+- 前端文件（`src/`）使用 TypeScript + TSX，修改后运行 `npx tsc --noEmit` 验证类型
 - `ai:configure` IPC 处理器中，若前端传入空 `apiKey`，会自动从磁盘配置中恢复已保存的密钥，避免设置面板保存时意外清空内存中的 API Key
 - 批量翻译/润色的确认对话框（`Modal.confirm`）的 `onOk` 不返回 Promise，以确保对话框立即关闭，翻译任务在后台异步执行
 - `ai:translate` 和 `ai:polish` IPC 处理器接受可选的 `modPrompt` 字段，传递给 TranslationService
@@ -158,8 +211,8 @@
 
 ### 规范
 
-- IPC 处理器位于 `electron/ipc/legacyHandlers.js`，注册 `legacy:load`、`legacy:getInfo`、`legacy:match`、`legacy:clear`
-- `LegacyTranslationService` 在 `electron/services/legacyTranslation.js`，通过 `ctx.legacyTranslationService` 共享
+- IPC 处理器位于 `electron/ipc/legacyHandlers.ts`，注册 `legacy:load`、`legacy:getInfo`、`legacy:match`、`legacy:clear`
+- `LegacyTranslationService` 在 `electron/services/legacyTranslation.ts`，通过 `ctx.legacyTranslationService` 共享
 - 日志输出 source 为 `'老版本汉化'`
 
 ## MOD 专属提示词
@@ -169,13 +222,13 @@
 - 每个项目可设置独立的 MOD 专属提示词（`project.modPrompt`）
 - 提示词在 AI 翻译和润色时自动注入到上下文中，格式为 `【MOD设定说明】`
 - 提示词随项目一起保存/加载（存储在 `.sst` 项目文件中）
-- 编辑界面位于"基本信息"页面（`ProjectInfo.jsx`）
+- 编辑界面位于"基本信息"页面（`pages/project-info/index.tsx`）
 
 ### 规范
 
-- `modPrompt` 是 project 对象上的字符串字段，由 `App.jsx` 的 `handleProjectFieldsChange` 管理
-- `TranslationEditor` 自动从 `project.modPrompt` 读取并传递给 `ai:translate` 和 `ai:polish`
-- `translator.js` 的 `_buildModPromptText(modPrompt)` 负责格式化
+- `modPrompt` 是 project 对象上的字符串字段，由 zustand store 的 `updateProjectFields` 管理
+- 翻译编辑器自动从 `project.modPrompt` 读取并传递给 `ai:translate` 和 `ai:polish`
+- `translator.ts` 的 `_buildModPromptText(modPrompt)` 负责格式化
 
 # 界面布局
 
@@ -209,7 +262,7 @@
 
 ### 规范
 
-- 字体大小状态由 `App.jsx` 的 `AppInner` 组件管理，通过 props 传递给 `SettingsPanel`
+- 字体大小状态由 `App.tsx` 的 `AppInner` 组件管理，通过 props 传递给设置页面
 - `localStorage` key：`ss_translator_app_font_size`、`ss_translator_log_font_size`
 - 默认值：程序 13px，日志 12px；程序范围 10-24px，日志范围 8-20px
 
@@ -218,7 +271,10 @@
 - 安装依赖：`npm install`
 - 开发模式：`pnpm dev`
 - 前端构建：`npx vite build`
-- 语法检查后端文件：`node --check electron/main.js`
+- 后端编译：`npx tsc -p tsconfig.electron.json`（输出到 `electron-dist/`）
+- 类型检查（全量）：`npm run typecheck`（等同于 `tsc --noEmit && tsc -p tsconfig.electron.json --noEmit`）
+- 前端类型检查：`npx tsc --noEmit`
+- 后端类型检查：`npx tsc -p tsconfig.electron.json --noEmit`
 - 运行测试：`npm test`（或 `npx vitest run`）
 - 监听模式测试：`npm run test:watch`（或 `npx vitest`）
 
@@ -226,10 +282,10 @@
 
 - 测试框架：vitest（与 Vite 原生集成）
 - 测试文件位于 `tests/` 目录，与源码目录结构对应
-- 后端服务测试使用 ESM 语法 + `createRequire` 导入 CJS 模块
-- vitest 配置在 `vite.config.js` 的 `test` 字段中，已启用 `globals: true`
+- 测试文件使用 `.test.js` 扩展名，ESM 语法直接 `import` TypeScript 模块（vitest 自动转译）
+- vitest 配置在 `vite.config.ts` 的 `test` 字段中，已启用 `globals: true`
 - 新增后端服务或修改逻辑后，应在 `tests/electron/services/` 下编写或更新对应测试
-- 开发完成后需执行 `npm test` 确保所有测试通过
+- 开发完成后需执行 `npm test` 确保所有测试通过（当前共 148 个测试，12 个测试文件）
 
 ## 文件对比预览 (FileDiffView)
 
@@ -246,7 +302,7 @@
 
 ### 规范
 
-- 文件内容通过 `file:preview` IPC 获取，由 `fileHandlers.js` 处理
+- 文件内容通过 `file:preview` IPC 获取，由 `fileHandlers.ts` 处理
 - CSV 文件替换使用 `parseCSV`/`serializeCSV` 进行精确列替换
 - JSON 文件替换使用正则字符串替换（与导出逻辑一致）
 - 对比使用 LCS（最长公共子序列）算法，O(m*n) 时间/空间复杂度
@@ -258,24 +314,24 @@
 
 ### 组件拆分
 
-- `TranslationEditor.jsx`：主协调组件，管理筛选状态和分页，通过 zustand store 读取/更新项目数据
-- `editor/FileSidebar.jsx`：左侧文件目录树，按目录层级展示文件，支持拖拽调整宽度
-- `editor/EditorHeader.jsx`：筛选/操作栏（搜索、分类、状态、批量操作）
-- `editor/EntryRow.jsx`：单条翻译条目，支持内联编辑、AI 翻译/润色、审核状态切换
-- `editor/FileDiffView.jsx`：文件对比预览面板
-- `editor/useTranslationActions.js`：翻译操作自定义 Hook（单条翻译、润色、批量翻译、批量润色、清空翻译）
+- `translation-editor/index.tsx`：主协调组件，管理筛选状态和分页，通过 zustand store 读取/更新项目数据
+- `translation-editor/FileSidebar.tsx`：左侧文件目录树，按目录层级展示文件，支持拖拽调整宽度
+- `translation-editor/EditorHeader.tsx`：筛选/操作栏（搜索、分类、状态、批量操作）
+- `translation-editor/EntryRow.tsx`：单条翻译条目，支持内联编辑、AI 翻译/润色、审核状态切换
+- `translation-editor/FileDiffView.tsx`：文件对比预览面板
+- `translation-editor/useTranslationActions.ts`：翻译操作自定义 Hook（单条翻译、润色、批量翻译、批量润色、清空翻译）
 
 ### 状态管理（zustand）
 
-- 所有项目状态和 UI 状态通过 `src/store/useProjectStore.js`（zustand store）统一管理
-- Store 包含：
+- 所有项目状态和 UI 状态通过 `src/store/useProjectStore.ts`（zustand store）统一管理
+- Store 接口 `ProjectStore` 包含：
   - **项目数据**：`project`、`selectedFile`、`updateEntry`、`batchUpdate`、`updateGlossary`、`updateKeywords`、`updateProjectFields`
-  - **UI 状态**：`activeTab`、`zoomLevel`、`logVisible`
+  - **UI 状态**：`activeTab`（类型 `TabName`）、`zoomLevel`、`logVisible`
   - **IPC 操作**：`createProject`、`loadProject`、`saveProject`、`autoSave`、`exportMod`
   - **自动保存**：`startAutoSave`、`stopAutoSave`（3 分钟定时器）
-- `App.jsx` 是极简外壳：渲染布局、提供 message 反馈，不持有项目状态
+- `App.tsx` 是极简外壳：渲染布局、提供 message 反馈，不持有项目状态
 - 所有页面组件直接从 store 读取数据，不再通过 App.jsx 传递 props
-- 只有 `messageApi`（Ant Design 消息 API）和少量 UI 回调（`onNewProject`、`onLoadProject` 等含消息提示的包装函数）作为 props 传递
+- 只有 `messageApi`（Ant Design 消息 API，类型 `MessageInstance`）和少量 UI 回调作为 props 传递
 
 ### 术语未翻译横幅
 
@@ -310,9 +366,9 @@
 ## IPC 处理器架构
 
 - IPC 处理器从 `main.js` 拆分至 `electron/ipc/` 目录下的独立模块
-- 每个模块导出 `register(ctx)` 函数，接收共享上下文对象
+- 每个模块导出 `register(ctx)` 函数，接收共享上下文对象（类型 `IPCContext`，定义在 `types/ipc.ts`）
 - 共享上下文 `ctx` 包含：`getMainWindow()`、`glossaryManager`、`translationService`、`projectManager`、`configManager`、`legacyTranslationService`、`parseModFolder`、`exportMod`
-- 新增 IPC 处理器时，在对应模块中添加，并在 `main.js` 中注册
+- 新增 IPC 处理器时，在对应模块中添加，并在 `main.ts` 中注册
 
 ## 内置默认词库
 

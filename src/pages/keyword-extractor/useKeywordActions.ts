@@ -1,28 +1,34 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import { useTask } from '../../components/context/TaskContext';
 import useProjectStore from '../../store/useProjectStore';
+import type { KeywordEntry, GlossaryEntry } from '../../../types/project';
 
 const api = window.electronAPI;
+
+interface UseKeywordActionsOptions {
+  messageApi: MessageInstance;
+}
 
 /**
  * Custom hook for keyword extraction, translation, polishing and glossary operations.
  * Manages keyword state, event listeners, and all related business logic.
  */
-export default function useKeywordActions({ messageApi }) {
+export default function useKeywordActions({ messageApi }: UseKeywordActionsOptions) {
   const project = useProjectStore(s => s.project);
   const onUpdateKeywords = useProjectStore(s => s.updateKeywords);
   const onUpdateGlossary = useProjectStore(s => s.updateGlossary);
   const { addLog, startTask, updateTaskProgress, completeTask, failTask, isTaskRunning } = useTask();
-  const [keywords, setKeywords] = useState(() => project?.keywords || []);
+  const [keywords, setKeywords] = useState<KeywordEntry[]>(() => project?.keywords || []);
   const [extracting, setExtracting] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [polishing, setPolishing] = useState(false);
   const [extractPhase, setExtractPhase] = useState('');
   const [enableAI, setEnableAI] = useState(true);
   const keyCounterRef = useRef(project?.keywords?.length || 0);
-  const batchHandlerRef = useRef(null);
-  const logHandlerRef = useRef(null);
+  const batchHandlerRef = useRef<((data: any) => void) | null>(null);
+  const logHandlerRef = useRef<((data: any) => void) | null>(null);
 
   // Sync keywords back to project whenever they change
   useEffect(() => {
@@ -61,7 +67,7 @@ export default function useKeywordActions({ messageApi }) {
 
   // Register / cleanup the keywords:batch event listener
   useEffect(() => {
-    const handler = api.onKeywordBatch((data) => {
+    const handler = (data: any) => {
       if (data.phase === 'complete') {
         setExtracting(false);
         setExtractPhase('');
@@ -72,7 +78,7 @@ export default function useKeywordActions({ messageApi }) {
 
       if (data.keywords && data.keywords.length > 0) {
         const counter = keyCounterRef.current;
-        const newItems = data.keywords.map((kw, i) => ({
+        const newItems: KeywordEntry[] = data.keywords.map((kw: any, i: number) => ({
           ...kw,
           key: `${kw.extractType}_${counter + i}`,
           target: kw.target || '',
@@ -82,7 +88,8 @@ export default function useKeywordActions({ messageApi }) {
         setKeywords(prev => [...prev, ...newItems]);
         addLog('debug', `[${data.phase}] 发现 ${newItems.length} 个关键词`, '关键词提取');
       }
-    });
+    };
+    api.onKeywordBatch(handler);
     batchHandlerRef.current = handler;
 
     return () => {
@@ -95,9 +102,10 @@ export default function useKeywordActions({ messageApi }) {
 
   // Register / cleanup the keywords:log event listener
   useEffect(() => {
-    const handler = api.onKeywordLog((data) => {
+    const handler = (data: any) => {
       addLog(data.level, data.message, '关键词提取');
-    });
+    };
+    api.onKeywordLog(handler);
     logHandlerRef.current = handler;
 
     return () => {
@@ -109,7 +117,7 @@ export default function useKeywordActions({ messageApi }) {
   }, []);
 
   // ─── Confirmed status toggle ──────────────────────────────────────
-  const toggleConfirmed = useCallback((key) => {
+  const toggleConfirmed = useCallback((key: string) => {
     setKeywords(prev => {
       const updated = prev.map(kw =>
         kw.key === key ? { ...kw, confirmed: !kw.confirmed } : kw
@@ -119,12 +127,12 @@ export default function useKeywordActions({ messageApi }) {
     });
   }, [onUpdateKeywords]);
 
-  const confirmSelected = useCallback((selectedRowKeys) => {
+  const confirmSelected = useCallback((selectedRowKeys: React.Key[]) => {
     if (selectedRowKeys.length === 0) return;
     const selectedSet = new Set(selectedRowKeys);
     setKeywords(prev => {
       const updated = prev.map(kw =>
-        selectedSet.has(kw.key) ? { ...kw, confirmed: true } : kw
+        selectedSet.has(kw.key!) ? { ...kw, confirmed: true } : kw
       );
       if (onUpdateKeywords) onUpdateKeywords(updated);
       return updated;
@@ -149,7 +157,7 @@ export default function useKeywordActions({ messageApi }) {
     keyCounterRef.current = 0;
     setExtractPhase('structure');
     addLog('info', `开始提取关键词: ${targetPath}`, '关键词提取');
-    updateTaskProgress('结构提取中...');
+    updateTaskProgress('结构提取中...', '');
     try {
       const result = await api.extractAllKeywords({
         modPath: targetPath,
@@ -157,7 +165,7 @@ export default function useKeywordActions({ messageApi }) {
         skipAI: !enableAI,
       });
       if (result?.success) {
-        const msg = `提取完成：结构提取 ${result.total.structure} 个，AI提取 ${result.total.ai} 个`;
+        const msg = `提取完成：结构提取 ${result.data?.total?.structure ?? 0} 个，AI提取 ${result.data?.total?.ai ?? 0} 个`;
         addLog('success', msg, '关键词提取');
         completeTask(msg);
         messageApi.success(msg);
@@ -168,9 +176,10 @@ export default function useKeywordActions({ messageApi }) {
         messageApi.error(errMsg);
       }
     } catch (err) {
-      addLog('error', `提取出错: ${err.message}`, '关键词提取');
-      failTask(`提取出错: ${err.message}`);
-      messageApi.error('提取出错: ' + err.message);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `提取出错: ${errMsg}`, '关键词提取');
+      failTask(`提取出错: ${errMsg}`);
+      messageApi.error('提取出错: ' + errMsg);
       setExtracting(false);
       setExtractPhase('');
     }
@@ -196,7 +205,7 @@ export default function useKeywordActions({ messageApi }) {
   }, [project?.modPath, keywords.length, doExtract, messageApi]);
 
   // ─── Translation ──────────────────────────────────────────────────
-  const doTranslate = useCallback(async (toTranslate, extraGlossary = []) => {
+  const doTranslate = useCallback(async (toTranslate: KeywordEntry[], extraGlossary: GlossaryEntry[] = []) => {
     if (isTaskRunning) {
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
@@ -210,27 +219,27 @@ export default function useKeywordActions({ messageApi }) {
     addLog('info', `开始翻译 ${toTranslate.length} 个关键词`, '关键词提取');
     try {
       const result = await api.translateKeywords({
-        keywords: toTranslate.map(kw => ({ source: kw.source, category: kw.category })),
+        keywords: toTranslate.map(kw => ({ source: kw.source, target: kw.target || '', category: kw.category })),
         extraGlossary: extraGlossary,
       });
-      if (result?.success) {
-        const translationMap = new Map();
+      if (result?.success && result.data) {
+        const translationMap = new Map<string, string>();
         for (const item of result.data) {
           if (item.source && item.target) {
             translationMap.set(item.source.toLowerCase(), item.target);
           }
         }
-        const updatedKeywords = toTranslate.map(kw => {
+        const updatedKeywords = toTranslate.map((kw: KeywordEntry) => {
           const translation = translationMap.get(kw.source.toLowerCase());
           return translation ? { ...kw, target: translation } : kw;
         });
-        const fullMap = new Map(updatedKeywords.map(kw => [kw.key, kw]));
-        setKeywords(prev => {
-          const merged = prev.map(kw => fullMap.get(kw.key) || kw);
+        const fullMap = new Map<string, KeywordEntry>(updatedKeywords.map((kw: KeywordEntry) => [kw.key!, kw]));
+        setKeywords((prev: KeywordEntry[]) => {
+          const merged = prev.map((kw: KeywordEntry) => fullMap.get(kw.key!) || kw);
           if (onUpdateKeywords) onUpdateKeywords(merged);
           return merged;
         });
-        const translated = result.data.filter(d => d.target).length;
+        const translated = result.data.filter((d: KeywordEntry) => d.target).length;
         const msg = `已翻译 ${translated} 个关键词`;
         addLog('success', msg, '关键词提取');
         completeTask(msg);
@@ -242,23 +251,24 @@ export default function useKeywordActions({ messageApi }) {
         messageApi.error(errMsg);
       }
     } catch (err) {
-      addLog('error', `翻译出错: ${err.message}`, '关键词提取');
-      failTask(`翻译出错: ${err.message}`);
-      messageApi.error('翻译出错: ' + err.message);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `翻译出错: ${errMsg}`, '关键词提取');
+      failTask(`翻译出错: ${errMsg}`);
+      messageApi.error('翻译出错: ' + errMsg);
     } finally {
       setTranslating(false);
     }
   }, [isTaskRunning, startTask, completeTask, failTask, addLog, messageApi, onUpdateKeywords]);
 
-  const handleTranslateSelected = useCallback(async (selectedRowKeys) => {
+  const handleTranslateSelected = useCallback(async (selectedRowKeys: React.Key[]) => {
     if (selectedRowKeys.length === 0) {
       messageApi.warning('请先勾选要翻译的关键词');
       return;
     }
-    const keywordMap = new Map(keywords.map(kw => [kw.key, kw]));
+    const keywordMap = new Map<string, KeywordEntry>(keywords.map((kw: KeywordEntry) => [kw.key!, kw]));
     const toTranslate = selectedRowKeys
-      .map(k => keywordMap.get(k))
-      .filter(Boolean);
+      .map((k: React.Key) => keywordMap.get(String(k)))
+      .filter((kw): kw is KeywordEntry => !!kw);
     if (toTranslate.length === 0) return;
     await doTranslate(toTranslate);
   }, [keywords, doTranslate, messageApi]);
@@ -277,7 +287,7 @@ export default function useKeywordActions({ messageApi }) {
   }, [keywords, doTranslate, messageApi]);
 
   // ─── Polish ───────────────────────────────────────────────────────
-  const doPolish = useCallback(async (toPolish, extraGlossary = []) => {
+  const doPolish = useCallback(async (toPolish: KeywordEntry[], extraGlossary: GlossaryEntry[] = []) => {
     if (isTaskRunning) {
       messageApi.warning('已有任务正在执行，请等待完成后再操作');
       return;
@@ -294,8 +304,8 @@ export default function useKeywordActions({ messageApi }) {
         keywords: toPolish.map(kw => ({ source: kw.source, target: kw.target || '', category: kw.category })),
         extraGlossary: extraGlossary,
       });
-      if (result?.success) {
-        const polishMap = new Map();
+      if (result?.success && result.data) {
+        const polishMap = new Map<string, string>();
         for (const item of result.data) {
           if (item.source && item.target) {
             polishMap.set(item.source.toLowerCase(), item.target);
@@ -309,8 +319,8 @@ export default function useKeywordActions({ messageApi }) {
           if (onUpdateKeywords) onUpdateKeywords(merged);
           return merged;
         });
-        const origMap = new Map(toPolish.map(kw => [kw.source.toLowerCase(), kw.target || '']));
-        const changed = result.data.filter(d => {
+        const origMap = new Map(toPolish.map((kw: KeywordEntry) => [kw.source.toLowerCase(), kw.target || '']));
+        const changed = result.data.filter((d: KeywordEntry) => {
           const origTarget = origMap.get(d.source?.toLowerCase());
           return origTarget !== undefined && d.target !== origTarget;
         }).length;
@@ -325,9 +335,10 @@ export default function useKeywordActions({ messageApi }) {
         messageApi.error(errMsg);
       }
     } catch (err) {
-      addLog('error', `润色出错: ${err.message}`, '关键词提取');
-      failTask(`润色出错: ${err.message}`);
-      messageApi.error('润色出错: ' + err.message);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      addLog('error', `润色出错: ${errMsg}`, '关键词提取');
+      failTask(`润色出错: ${errMsg}`);
+      messageApi.error('润色出错: ' + errMsg);
     } finally {
       setPolishing(false);
     }
@@ -347,12 +358,13 @@ export default function useKeywordActions({ messageApi }) {
   }, [keywords, doPolish, messageApi]);
 
   // ─── Add to glossary ──────────────────────────────────────────────
-  const doAddToGlossary = useCallback(async (kwList, onDone) => {
+  const doAddToGlossary = useCallback(async (kwList: KeywordEntry[], onDone?: () => void) => {
+    if (!project) return;
     const glossary = project.glossary || [];
     const existingMap = new Map(glossary.map(g => [g.source, g]));
 
-    const newKws = kwList.filter(kw => kw && !existingMap.has(kw.source));
-    const overlapKws = kwList.filter(kw => kw && existingMap.has(kw.source));
+    const newKws = kwList.filter((kw: KeywordEntry) => kw && !existingMap.has(kw.source));
+    const overlapKws = kwList.filter((kw: KeywordEntry) => kw && existingMap.has(kw.source));
 
     const doAdd = async () => {
       let added = 0;
@@ -416,7 +428,7 @@ export default function useKeywordActions({ messageApi }) {
     }
   }, [project, onUpdateGlossary, messageApi]);
 
-  const handleAddSelectedToGlossary = useCallback(async (selectedRowKeys, onDone) => {
+  const handleAddSelectedToGlossary = useCallback(async (selectedRowKeys: React.Key[], onDone?: () => void) => {
     if (!project) {
       messageApi.warning('请先加载翻译项目，再添加到词库');
       return;
@@ -425,8 +437,8 @@ export default function useKeywordActions({ messageApi }) {
       messageApi.warning('请先勾选要添加的关键词');
       return;
     }
-    const keywordMap = new Map(keywords.map(kw => [kw.key, kw]));
-    const kwList = selectedRowKeys.map(k => keywordMap.get(k)).filter(Boolean);
+    const keywordMap = new Map<string, KeywordEntry>(keywords.map((kw: KeywordEntry) => [kw.key!, kw]));
+    const kwList = selectedRowKeys.map((k: React.Key) => keywordMap.get(String(k))).filter((kw): kw is KeywordEntry => !!kw);
     if (kwList.length === 0) return;
     await doAddToGlossary(kwList, onDone);
   }, [project, keywords, doAddToGlossary, messageApi]);
@@ -444,7 +456,7 @@ export default function useKeywordActions({ messageApi }) {
   }, [project, keywords, doAddToGlossary, messageApi]);
 
   // ─── Inline editing ───────────────────────────────────────────────
-  const updateKeyword = useCallback((key, field, value) => {
+  const updateKeyword = useCallback((key: string, field: string, value: string) => {
     setKeywords(prev => {
       const updated = prev.map(kw =>
         kw.key === key ? { ...kw, [field]: value } : kw

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Form, Input, Select, Button, InputNumber, Divider, Card, Alert,
   Modal,
 } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import type { MessageInstance } from 'antd/es/message/interface';
 
 const api = window.electronAPI;
 
@@ -13,29 +14,38 @@ const PROVIDERS = [
   { value: 'custom', label: '自定义 (OpenAI兼容)' },
 ];
 
-const DEFAULT_URLS = {
+const DEFAULT_URLS: Record<string, string> = {
   openai: 'https://api.openai.com/v1/chat/completions',
   deepseek: 'https://api.deepseek.com/v1/chat/completions',
   custom: '',
 };
 
-const DEFAULT_MODELS = {
+const DEFAULT_MODELS: Record<string, string> = {
   openai: 'gpt-4o-mini',
   deepseek: 'deepseek-chat',
   custom: '',
 };
 
-export default function ModelConfigTab({ messageApi }) {
+interface TestResult {
+  type: 'success' | 'error';
+  message: string;
+}
+
+interface ModelConfigTabProps {
+  messageApi: MessageInstance;
+}
+
+export default function ModelConfigTab({ messageApi }: ModelConfigTabProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [testResult, setTestResult] = useState(null);
+  const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
-  const saveTimerRef = useRef(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
-      const config = await api.getAIConfig();
+      const config = await api.getConfig();
       if (config) {
         setHasApiKey(!!config.hasApiKey);
         form.setFieldsValue({
@@ -61,13 +71,13 @@ export default function ModelConfigTab({ messageApi }) {
     saveTimerRef.current = setTimeout(async () => {
       try {
         const values = await form.validateFields();
-        const result = await api.configureAI(values);
+        const result = await api.configure(values);
         if (result?.success && values.apiKey) setHasApiKey(true);
       } catch { /* validation error */ }
     }, 800);
   }, [form]);
 
-  const handleProviderChange = (provider) => {
+  const handleProviderChange = (provider: string) => {
     form.setFieldsValue({
       apiUrl: DEFAULT_URLS[provider] || '',
       model: DEFAULT_MODELS[provider] || '',
@@ -80,9 +90,9 @@ export default function ModelConfigTab({ messageApi }) {
       const values = await form.validateFields();
       setTestResult(null);
       setLoading(true);
-      await api.configureAI(values);
+      await api.configure(values);
       const result = await api.translate({
-        entries: [{ id: 'test', original: 'The ship accelerated into the nebula.', context: '测试翻译' }],
+        entries: [{ id: 'test', source: 'The ship accelerated into the nebula.', context: '测试翻译' }],
         glossary: [],
       });
       if (result?.success && result.data?.[0]?.translated) {
@@ -90,8 +100,8 @@ export default function ModelConfigTab({ messageApi }) {
       } else {
         setTestResult({ type: 'error', message: result?.error || result?.data?.[0]?.error || '测试失败' });
       }
-    } catch (err) {
-      setTestResult({ type: 'error', message: err.message });
+    } catch (err: unknown) {
+      setTestResult({ type: 'error', message: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
@@ -144,7 +154,7 @@ export default function ModelConfigTab({ messageApi }) {
             <Input placeholder="https://api.openai.com/v1/chat/completions" />
           </Form.Item>
 
-          <Divider orientation="left" plain style={{ fontSize: 12 }}>高级参数</Divider>
+          <Divider titlePlacement="left" plain style={{ fontSize: 12 }}>高级参数</Divider>
 
           <div className="settings-row-2">
             <Form.Item label="最大Token数" name="maxTokens">

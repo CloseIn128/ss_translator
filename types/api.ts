@@ -2,7 +2,7 @@
  * IPC API types for communication between renderer and main process
  */
 
-import { Project, GlossaryEntry, KeywordEntry } from './project';
+import { Project, GlossaryEntry, KeywordEntry, TranslationEntry } from './project';
 
 export interface ApiResult<T = any> {
   success: boolean;
@@ -14,6 +14,21 @@ export interface TranslateOptions {
   entries: Array<{ id: string; source: string; context?: string }>;
   glossary?: GlossaryEntry[];
   modPrompt?: string;
+}
+
+export interface TranslateResultEntry {
+  id: string;
+  target: string;
+  translated?: string;
+  status?: string;
+  error?: string;
+  original?: string;
+}
+
+export interface BatchProgressData {
+  completed: number;
+  total: number;
+  batchResults?: Array<{ id: string; [key: string]: any }>;
 }
 
 export interface PolishOptions {
@@ -30,6 +45,13 @@ export interface KeywordTranslateOptions {
 export interface KeywordPolishOptions {
   keywords: KeywordEntry[];
   extraGlossary?: GlossaryEntry[];
+}
+
+export interface ExportPreviewFile {
+  relFile: string;
+  original: string;
+  translated: string;
+  fileType: 'text' | 'csv' | 'json';
 }
 
 export interface ElectronAPI {
@@ -51,22 +73,40 @@ export interface ElectronAPI {
   saveBuiltinGlossary: (glossary: GlossaryEntry[]) => Promise<ApiResult>;
 
   // AI Translation
-  configure: (config: any) => Promise<void>;
+  configure: (config: any) => Promise<any>;
   getConfig: () => Promise<any>;
-  translate: (options: TranslateOptions) => Promise<ApiResult<Array<{ id: string; target: string }>>>;
-  polish: (options: PolishOptions) => Promise<ApiResult<Array<{ id: string; target: string }>>>;
+  translate: (options: TranslateOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
+  polish: (options: PolishOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
+  polishBatch: (options: PolishOptions) => Promise<ApiResult<TranslateResultEntry[]>>;
   translateSingle: (source: string, glossary?: GlossaryEntry[], modPrompt?: string) => Promise<ApiResult<string>>;
   polishSingle: (target: string, glossary?: GlossaryEntry[], modPrompt?: string) => Promise<ApiResult<string>>;
   getDefaultPrompts: () => Promise<{ systemPrompt: string; polishPrompt: string; keywordPrompt: string }>;
 
+  // Translate/polish progress listeners
+  onTranslateProgress: (callback: (data: BatchProgressData) => void) => (() => void);
+  removeTranslateProgressListener: (handler: (() => void) | null) => void;
+  onPolishProgress: (callback: (data: BatchProgressData) => void) => (() => void);
+  removePolishProgressListener: (handler: (() => void) | null) => void;
+
   // Keywords
   extractKeywords: (entries: any[], builtinGlossary: GlossaryEntry[], projectGlossary: GlossaryEntry[]) => Promise<void>;
-  translateKeywords: (options: KeywordTranslateOptions) => Promise<void>;
-  polishKeywords: (options: KeywordPolishOptions) => Promise<void>;
+  extractAllKeywords: (data: any) => Promise<ApiResult<any>>;
+  translateKeywords: (options: KeywordTranslateOptions) => Promise<ApiResult<KeywordEntry[]>>;
+  polishKeywords: (options: KeywordPolishOptions) => Promise<ApiResult<KeywordEntry[]>>;
+
+  // Keyword event listeners
+  onKeywordBatch: (callback: (data: any) => void) => void;
+  removeKeywordBatchListener: (callback: (data: any) => void) => void;
+  onKeywordLog: (callback: (data: any) => void) => void;
+  removeKeywordLogListener: (callback: (data: any) => void) => void;
+
+  // Glossary CRUD
+  addGlossaryEntry: (entry: any) => Promise<GlossaryEntry | null>;
+  updateGlossaryEntry: (entry: any) => Promise<GlossaryEntry | null>;
 
   // Export
   exportMod: (options: { projectData: Project }) => Promise<ApiResult<{ outputPath: string }>>;
-  getExportPreview: (project: Project) => Promise<ApiResult<Array<{ file: string; changes: number }>>>;
+  getExportPreview: (options: { modPath: string; entries: TranslationEntry[] }) => Promise<ApiResult<{ files: ExportPreviewFile[] }>>;
 
   // Legacy translation
   loadLegacyTranslation: (legacyModPath: string) => Promise<ApiResult>;
@@ -75,10 +115,15 @@ export interface ElectronAPI {
   clearLegacyTranslation: () => Promise<ApiResult>;
 
   // File preview
-  getFilePreview: (filePath: string, entries: any[]) => Promise<ApiResult<{ original: string; translated: string }>>;
+  getFilePreview: (options: { modPath: string; relFile: string; entries: any[] }) => Promise<ApiResult<{ original: string; translated: string }>>;
 
   // Notifications
   sendNotification: (title: string, body: string) => Promise<void>;
+
+  // Window lifecycle
+  onBeforeClose: (callback: () => void | Promise<void>) => (() => void);
+  confirmClose: () => void;
+  removeBeforeCloseListener: (handler: (() => void) | undefined) => void;
 
   // Zoom
   setZoomFactor: (factor: number) => void;
@@ -88,6 +133,10 @@ export interface ElectronAPI {
   getRequestHistory: () => Promise<any[]>;
   getActiveRequests: () => Promise<Map<string, any>>;
   cancelRequest: (requestId: string) => Promise<boolean>;
+  getRequestDetail: (requestId: string) => Promise<any>;
+  clearRequestHistory: () => Promise<void>;
+  resetAIConfig: () => Promise<ApiResult<any>>;
+  parseMod: (modPath: string) => Promise<ApiResult<any>>;
 }
 
 declare global {

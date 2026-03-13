@@ -1,7 +1,4 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-const { v4 } = require('../../../electron/services/uuid');
+import { v4 } from '../../../electron/services/uuid';
 
 describe('uuid', () => {
   it('generates a valid v4 UUID string', () => {

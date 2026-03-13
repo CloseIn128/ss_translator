@@ -1,25 +1,27 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal, Spin, Tree } from 'antd';
+import type { DataNode } from 'antd/es/tree';
 import {
   FileTextOutlined,
   FolderOutlined,
 } from '@ant-design/icons';
 import DiffViewer from './diff/DiffViewer';
+import type { Project } from '../../types/project';
+import type { ExportPreviewFile } from '../../types/api';
 
 const api = window.electronAPI;
 
-/**
- * ExportPreviewModal – shows a preview of all changed files before exporting.
- *
- * @param {boolean} open        – Whether the modal is visible
- * @param {object}  project     – Current project data (with modPath, entries)
- * @param {function} onClose    – Called when the modal is closed
- * @param {function} onConfirm  – Called when user confirms export
- */
-export default function ExportPreviewModal({ open, project, onClose, onConfirm }) {
+interface ExportPreviewModalProps {
+  open: boolean;
+  project: Project | null;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export default function ExportPreviewModal({ open, project, onClose, onConfirm }: ExportPreviewModalProps) {
   const [loading, setLoading] = useState(false);
-  const [files, setFiles] = useState([]);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [files, setFiles] = useState<ExportPreviewFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   // Load preview data when modal opens
@@ -33,10 +35,10 @@ export default function ExportPreviewModal({ open, project, onClose, onConfirm }
 
     api.getExportPreview({ modPath: project.modPath, entries: project.entries || [] })
       .then(result => {
-        if (result?.success) {
-          setFiles(result.files || []);
-          if (result.files?.length > 0) {
-            setSelectedFile(result.files[0].relFile);
+        if (result?.success && result.data) {
+          setFiles(result.data.files || []);
+          if (result.data.files?.length > 0) {
+            setSelectedFile(result.data.files[0].relFile);
           }
         } else {
           setError(result?.error || '预览加载失败');
@@ -88,7 +90,7 @@ export default function ExportPreviewModal({ open, project, onClose, onConfirm }
               selectedKeys={selectedFile ? [selectedFile] : []}
               onSelect={(keys) => {
                 if (keys.length > 0 && files.some(f => f.relFile === keys[0])) {
-                  setSelectedFile(keys[0]);
+                  setSelectedFile(keys[0] as string);
                 }
               }}
               defaultExpandAll
@@ -119,12 +121,16 @@ export default function ExportPreviewModal({ open, project, onClose, onConfirm }
 /**
  * Build a tree structure from flat file paths for Ant Design Tree.
  */
-function buildFileTree(filePaths) {
-  const root = {};
+interface FileTreeNode {
+  [key: string]: FileTreeNode;
+}
+
+function buildFileTree(filePaths: string[]): DataNode[] {
+  const root: FileTreeNode = {};
 
   for (const filePath of filePaths) {
     const parts = filePath.replace(/\\/g, '/').split('/');
-    let node = root;
+    let node: FileTreeNode = root;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       if (!node[part]) node[part] = {};
@@ -132,7 +138,7 @@ function buildFileTree(filePaths) {
     }
   }
 
-  function toTreeData(node, prefix = '') {
+  function toTreeData(node: FileTreeNode, prefix = ''): DataNode[] {
     const entries = Object.entries(node);
     return entries.map(([name, children]) => {
       const key = prefix ? `${prefix}/${name}` : name;
@@ -152,7 +158,7 @@ function buildFileTree(filePaths) {
         title: name,
         icon: <FolderOutlined />,
         selectable: false,
-        children: toTreeData(children, key),
+        children: toTreeData(children as FileTreeNode, key),
       };
     });
   }

@@ -1,10 +1,7 @@
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-
-const require = createRequire(import.meta.url);
-const { exportMod, getIdColumn } = require('../../../electron/services/exporter');
+import { exportMod, getIdColumn } from '../../../electron/services/exporter';
 
 function createTempDir(files) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exporter-test-'));

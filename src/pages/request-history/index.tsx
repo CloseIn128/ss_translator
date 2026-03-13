@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Table, Button, Tag, Pagination } from 'antd';
 import {
   ReloadOutlined,
@@ -13,7 +13,7 @@ import RequestDetailModal from './RequestDetailModal';
 
 const api = window.electronAPI;
 
-const TYPE_LABELS = {
+const TYPE_LABELS: Record<string, string> = {
   'batch-translate': '批量翻译',
   'entry-polish': '条目润色',
   'keyword-extract': '关键词提取',
@@ -22,33 +22,33 @@ const TYPE_LABELS = {
   'unknown': '未知',
 };
 
-const STATUS_MAP = {
+const STATUS_MAP: Record<string, { color: string; icon: React.ReactNode; text: string }> = {
   pending: { color: 'processing', icon: <SyncOutlined spin />, text: '进行中' },
   success: { color: 'success', icon: <CheckCircleOutlined />, text: '成功' },
   error: { color: 'error', icon: <CloseCircleOutlined />, text: '失败' },
 };
 
-function formatTime(isoStr) {
+function formatTime(isoStr: string) {
   if (!isoStr) return '-';
   const d = new Date(isoStr);
   return d.toLocaleTimeString('zh-CN', { hour12: false });
 }
 
-function formatDuration(ms) {
+function formatDuration(ms: number | null) {
   if (ms == null) return '-';
   if (ms < 1000) return `${ms}ms`;
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
 export default function RequestHistory() {
-  const [history, setHistory] = useState([]);
-  const [activeRequests, setActiveRequests] = useState([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [activeRequests, setActiveRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [detailId, setDetailId] = useState(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [pageSize, setPageSize] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
-  const refreshTimerRef = useRef(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
 
   const fetchData = async () => {
@@ -59,7 +59,8 @@ export default function RequestHistory() {
     ]);
     if (!mountedRef.current) return;
     setHistory((historyData || []).reverse());
-    setActiveRequests(activeData || []);
+    const activeArr = activeData instanceof Map ? Array.from(activeData.values()) : (activeData as any[] || []);
+    setActiveRequests(activeArr);
     setLoading(false);
   };
 
@@ -69,8 +70,9 @@ export default function RequestHistory() {
     refreshTimerRef.current = setInterval(async () => {
       const activeData = await api.getActiveRequests();
       if (!mountedRef.current) return;
-      setActiveRequests(activeData || []);
-      if (activeData && activeData.length > 0) {
+      const activeArr = activeData instanceof Map ? Array.from(activeData.values()) : (activeData as any[] || []);
+      setActiveRequests(activeArr);
+      if (activeArr.length > 0) {
         const historyData = await api.getRequestHistory();
         if (!mountedRef.current) return;
         setHistory((historyData || []).reverse());
@@ -87,7 +89,7 @@ export default function RequestHistory() {
     setHistory([]);
   };
 
-  const handleViewDetail = (id) => {
+  const handleViewDetail = (id: string) => {
     setDetailId(id);
     setDetailOpen(true);
   };
@@ -98,7 +100,7 @@ export default function RequestHistory() {
       dataIndex: 'id',
       key: 'id',
       width: 60,
-      render: (id) => <span style={{ fontSize: 11, color: '#8c8c8c' }}>#{id}</span>,
+      render: (id: any) => <span style={{ fontSize: 11, color: '#8c8c8c' }}>#{id}</span>,
     },
     {
       title: '类型',
@@ -106,8 +108,8 @@ export default function RequestHistory() {
       key: 'type',
       width: 110,
       filters: Object.entries(TYPE_LABELS).map(([k, v]) => ({ text: v, value: k })),
-      onFilter: (value, record) => record.type === value,
-      render: (type) => <Tag style={{ fontSize: 11 }}>{TYPE_LABELS[type] || type}</Tag>,
+      onFilter: (value: any, record: any) => record.type === value,
+      render: (type: any) => <Tag style={{ fontSize: 11 }}>{TYPE_LABELS[type] || type}</Tag>,
     },
     {
       title: '状态',
@@ -119,8 +121,8 @@ export default function RequestHistory() {
         { text: '失败', value: 'error' },
         { text: '进行中', value: 'pending' },
       ],
-      onFilter: (value, record) => record.status === value,
-      render: (status) => {
+      onFilter: (value: any, record: any) => record.status === value,
+      render: (status: any) => {
         const info = STATUS_MAP[status] || STATUS_MAP.pending;
         return <Tag color={info.color} icon={info.icon} style={{ fontSize: 11 }}>{info.text}</Tag>;
       },
@@ -130,22 +132,22 @@ export default function RequestHistory() {
       dataIndex: 'model',
       key: 'model',
       width: 120,
-      render: (model) => <span style={{ fontSize: 12 }}>{model}</span>,
+      render: (model: any) => <span style={{ fontSize: 12 }}>{model}</span>,
     },
     {
       title: '耗时',
       dataIndex: 'durationMs',
       key: 'duration',
       width: 80,
-      sorter: (a, b) => (a.durationMs || 0) - (b.durationMs || 0),
-      render: (ms) => <span style={{ fontSize: 12 }}>{formatDuration(ms)}</span>,
+      sorter: (a: any, b: any) => (a.durationMs || 0) - (b.durationMs || 0),
+      render: (ms: any) => <span style={{ fontSize: 12 }}>{formatDuration(ms)}</span>,
     },
     {
       title: 'Token',
       dataIndex: 'tokenUsage',
       key: 'tokens',
       width: 100,
-      render: (usage) => {
+      render: (usage: any) => {
         if (!usage) return <span style={{ fontSize: 12, color: '#555' }}>-</span>;
         const total = (usage.prompt_tokens || 0) + (usage.completion_tokens || 0);
         return <span style={{ fontSize: 12 }}>{total}</span>;
@@ -156,20 +158,20 @@ export default function RequestHistory() {
       dataIndex: 'startTime',
       key: 'time',
       width: 80,
-      render: (t) => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{formatTime(t)}</span>,
+      render: (t: any) => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{formatTime(t)}</span>,
     },
     {
       title: '预览',
       dataIndex: 'responsePreview',
       key: 'preview',
       ellipsis: true,
-      render: (text) => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{text || '-'}</span>,
+      render: (text: any) => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{text || '-'}</span>,
     },
     {
       title: '操作',
       key: 'actions',
       width: 60,
-      render: (_, record) => (
+      render: (_: any, record: any) => (
         <Button size="small" type="text" icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record.id)} />
       ),

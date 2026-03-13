@@ -13,7 +13,7 @@ const clampZoom = (v: string | number | null): number => {
   return Number.isFinite(num) && num >= MIN_ZOOM && num <= MAX_ZOOM ? num : DEFAULT_ZOOM_LEVEL;
 };
 
-type TabName = 'editor' | 'info' | 'glossary' | 'keywords' | 'review' | 'settings' | 'app-settings' | 'history';
+export type TabName = 'editor' | 'info' | 'glossary' | 'keywords' | 'review' | 'settings' | 'app-settings' | 'appSettings' | 'history' | 'requestHistory';
 
 interface ProjectStore {
   // ---- Core project state ----

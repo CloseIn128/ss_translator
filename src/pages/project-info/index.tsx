@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Descriptions, Input, Button, Typography, Alert, Space, Modal } from 'antd';
 import {
   FolderOpenOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
+import type { MessageInstance } from 'antd/es/message/interface';
 import useProjectStore from '../../store/useProjectStore';
 
 const api = window.electronAPI;
 
-export default function ProjectInfo({ messageApi }) {
+interface ProjectInfoProps {
+  messageApi: MessageInstance;
+}
+
+export default function ProjectInfo({ messageApi }: ProjectInfoProps) {
   const project = useProjectStore(s => s.project);
   const updateProjectFields = useProjectStore(s => s.updateProjectFields);
   const [localPrompt, setLocalPrompt] = useState(project?.modPrompt || '');
@@ -29,7 +34,7 @@ export default function ProjectInfo({ messageApi }) {
     );
   }
 
-  const parseAndUpdateModPath = async (modPath) => {
+  const parseAndUpdateModPath = async (modPath: string) => {
     messageApi.loading({ content: '正在解析MOD文件...', key: 'parse', duration: 0 });
     try {
       const result = await api.parseMod(modPath);
@@ -46,9 +51,9 @@ export default function ProjectInfo({ messageApi }) {
       } else {
         messageApi.error(result?.error || '解析MOD失败');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       messageApi.destroy('parse');
-      messageApi.error('解析MOD出错: ' + err.message);
+      messageApi.error('解析MOD出错: ' + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -84,7 +89,7 @@ export default function ProjectInfo({ messageApi }) {
     if (selectedPath) updateProjectFields({ outputDir: selectedPath });
   };
 
-  const formatDate = (ts) => {
+  const formatDate = (ts: number) => {
     if (!ts) return '—';
     return new Date(ts).toLocaleString('zh-CN');
   };

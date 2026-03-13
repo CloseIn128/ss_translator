@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useCallback } from 'react';
+import { useMemo, useState, useRef, useCallback } from 'react';
 import { Button, Progress } from 'antd';
 import {
   PlusOutlined,
@@ -15,17 +15,25 @@ import {
   AuditOutlined,
 } from '@ant-design/icons';
 import useProjectStore from '../../store/useProjectStore';
+import type { TabName } from '../../store/useProjectStore';
 
 const MIN_NAV_WIDTH = 160;
 const MAX_NAV_WIDTH = 420;
 const DEFAULT_NAV_WIDTH = 220;
+
+interface LeftNavProps {
+  onNewProject: () => void;
+  onLoadProject: () => void;
+  onSaveProject: () => void;
+  onExport: () => void;
+}
 
 export default function LeftNav({
   onNewProject,
   onLoadProject,
   onSaveProject,
   onExport,
-}) {
+}: LeftNavProps) {
   const project = useProjectStore(s => s.project);
   const activeTab = useProjectStore(s => s.activeTab);
   const setActiveTab = useProjectStore(s => s.setActiveTab);
@@ -34,14 +42,14 @@ export default function LeftNav({
   const startX = useRef(0);
   const startWidth = useRef(0);
 
-  const handleResizeStart = useCallback((e) => {
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragging.current = true;
     startX.current = e.clientX;
     startWidth.current = navWidth;
-    let rafId = null;
+    let rafId: number | null = null;
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (!dragging.current) return;
       if (rafId) return; // throttle via rAF
       rafId = requestAnimationFrame(() => {
@@ -97,7 +105,7 @@ export default function LeftNav({
     };
   }, [project]);
 
-  const pct = (n, d) => d > 0 ? Math.round((n / d) * 100) : 0;
+  const pct = (n: number, d: number) => d > 0 ? Math.round((n / d) * 100) : 0;
 
   return (
     <div className="left-nav" style={{ width: navWidth }}>
@@ -141,7 +149,7 @@ export default function LeftNav({
             <div
               key={item.key}
               className={`left-nav-item${activeTab === item.key ? ' active' : ''}${disabled ? ' disabled' : ''}`}
-              onClick={() => !disabled && setActiveTab(item.key)}
+              onClick={() => !disabled && setActiveTab(item.key as TabName)}
             >
               {item.icon}
               <span>{item.label}</span>
